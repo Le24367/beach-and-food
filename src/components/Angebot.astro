@@ -190,7 +190,11 @@ const popupData = items.map(cat => ({
     }
 
     backdrop.setAttribute('aria-hidden', 'false')
+    var scrollY = window.scrollY
     document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = '-' + scrollY + 'px'
+    document.body.style.width = '100%'
     bodyEl.scrollTop = 0
 
     // Zwei rAF-Ticks: Browser rendert erst Startposition, dann triggert die Transition
@@ -204,7 +208,12 @@ const popupData = items.map(cat => ({
   function closeModal() {
     backdrop.classList.remove('open')
     backdrop.setAttribute('aria-hidden', 'true')
+    var scrollY = parseInt(document.body.style.top || '0') * -1
     document.body.style.overflow = ''
+    document.body.style.position = ''
+    document.body.style.top = ''
+    document.body.style.width = ''
+    window.scrollTo(0, scrollY)
   }
 
   document.querySelectorAll('[data-category-id]').forEach(function(btn) {
