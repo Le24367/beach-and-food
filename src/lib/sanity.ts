@@ -99,6 +99,7 @@ export interface MenuItem {
   price: number
   description?: string
   image?: SanityImageSource
+  emoji?: string
   badges?: { label: string; color: string }[]
   order: number
   active: boolean
@@ -113,6 +114,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
       price,
       description,
       image,
+      emoji,
       badges,
       order,
       active

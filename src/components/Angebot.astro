@@ -43,6 +43,7 @@ const popupData = items.map(cat => ({
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
     imgUrl: p.image ? urlFor(p.image).width(320).height(320).fit('crop').auto('format').url() : null,
+    emoji: p.emoji ?? null,
     badges: p.badges ?? [],
   })),
 }))
@@ -159,7 +160,7 @@ const popupData = items.map(cat => ({
         if (p.imgUrl) {
           html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" />'
         } else {
-          html += '<div style="' + sPH + '">' + (cat.emoji || '\uD83C\uDF7D\uFE0F') + '</div>'
+          html += '<div style="' + sPH + '">' + (p.emoji || cat.emoji || '\uD83C\uDF7D\uFE0F') + '</div>'
         }
         html += '</div>'
         html += '<div style="' + sBODY + '">'
