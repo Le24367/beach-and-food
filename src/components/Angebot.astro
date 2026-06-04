@@ -43,6 +43,7 @@ const popupData = items.map(cat => ({
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
     imgUrl: p.image ? urlFor(p.image).width(320).height(320).fit('crop').auto('format').url() : null,
+    imgUrlFull: p.image ? urlFor(p.image).width(1200).auto('format').url() : null,
     emoji: p.emoji ?? null,
     badges: p.badges ?? [],
   })),
@@ -168,7 +169,7 @@ const popupData = items.map(cat => ({
         html += '<li style="' + sITEM + '">'
         html += '<div style="' + sIMGW + '">'
         if (p.imgUrl) {
-          html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" data-lightbox="' + p.imgUrl + '" data-alt="' + p.title + '" />'
+          html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" data-lightbox="' + p.imgUrlFull + '" data-alt="' + p.title + '" />'
         } else {
           html += '<div style="' + sPH + '">' + (p.emoji || cat.emoji || '\uD83C\uDF7D\uFE0F') + '</div>'
         }
