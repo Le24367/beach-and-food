@@ -1,4 +1,7 @@
 ---
+import { Analytics } from '@vercel/analytics/astro'
+import { SpeedInsights } from '@vercel/speed-insights/astro'
+
 export interface Props {
   title?: string;
 }
@@ -15,6 +18,8 @@ const { title = 'Beach and Food – Foodtruck 2.0 am Sütel-Strand' } = Astro.pr
 </head>
 <body>
   <slot />
+  <Analytics />
+  <SpeedInsights />
   <script>
     // Scroll reveal
     const observer = new IntersectionObserver((entries) => {
