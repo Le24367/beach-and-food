@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --sand: #F5E6C8;
+  --sand-light: #FBF4E6;
+  --ocean: #1A3A4A;
+  --ocean-deep: #0D2233;
+  --wave: #2E6E7E;
+  --sun: #F4A820;
+  --sun-bright: #FF9500;
+  --foam: #FFFFFF;
+  --coral: #E85D3A;
+  --text: #1A1A1A;
+  --text-muted: #666;
+  --radius: 16px;
+  --radius-lg: 28px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--sand-light);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* Dunkle Sections — volle Browserbreite */
+.ueber-uns,
+.vibes {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Scroll animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}

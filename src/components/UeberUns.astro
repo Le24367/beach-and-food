@@ -1,0 +1,459 @@
+---
+const YT_ID = "QuSgl1-ZICE";
+
+// Alle Bilder aus /public/images/ueberuns/ automatisch einlesen
+const imageModules = import.meta.glob<{ default: ImageMetadata }>(
+  '/public/images/ueberuns/*.{jpg,jpeg,png,webp,avif,gif,JPG,JPEG,PNG,WEBP,AVIF,GIF}',
+  { eager: true }
+);
+
+// Dateinamen extrahieren und als src-Pfad aufbereiten
+const images = Object.keys(imageModules).map((path) => {
+  const filename = path.split('/').pop()!;
+  const alt = filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+  return { src: `/images/ueberuns/${filename}`, alt };
+});
+
+// Fallback wenn der Ordner noch leer ist
+const slides = images.length > 0 ? images : [
+  { src: '/images/logo.png', alt: 'Beach and Food' }
+];
+---
+<section class="ueber-uns" id="ueber-uns">
+  <div class="uu-card">
+  <div class="container">
+
+    <!-- Top: Text links, Bild rechts -->
+    <div class="uu-grid">
+      <div class="uu-content reveal">
+        <span class="section-label">Über uns</span>
+        <h2>Vom kleinen Anhänger zum Foodtruck 2.0.</h2>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-year">2014</div>
+            <div class="tl-text">
+              <strong>Die Anfänge.</strong> Mit einem kleinen Imbissanhänger begonnen —
+              und von Anfang an mit Qualität und Frische überzeugt.
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">2020</div>
+            <div class="tl-text">
+              <strong>Eine neue Dimension.</strong> Ein umgebauter Linienbus, speziell auf
+              uns zugeschnitten — mit Indoorbereich für unsere Gäste. Einzigartig.
+            </div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-year">2024</div>
+            <div class="tl-text">
+              <strong>Digital angekommen.</strong> Online-Bestellung, Self-Order-Terminals
+              und Abholnummern auf Bildschirmen.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bildkarussell — Bilder einfach in /public/images/ueberuns/ ablegen -->
+      <div class="uu-image reveal" style="transition-delay:0.15s">
+        <div class="carousel" id="uu-carousel">
+          <div class="carousel-track">
+            {slides.map((slide, i) => (
+              <div class={`carousel-slide${i === 0 ? ' active' : ''}`}>
+                <img src={slide.src} alt={slide.alt} loading={i === 0 ? 'eager' : 'lazy'} />
+              </div>
+            ))}
+          </div>
+
+          {slides.length > 1 && (
+            <>
+              <button class="carousel-btn carousel-prev" aria-label="Vorheriges Bild">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="carousel-btn carousel-next" aria-label="Nächstes Bild">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <div class="carousel-dots" id="uu-dots"></div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <!-- YouTube Video -->
+    <div class="uu-video reveal" style="transition-delay:0.25s">
+      <div class="video-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/><polygon fill="white" points="9.75,15.5 15.5,12 9.75,8.5"/></svg>
+        Schau mal rein — unser Truck in Aktion
+      </div>
+      <div class="video-wrapper">
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${YT_ID}?rel=0&modestbranding=1&color=white`}
+          title="Beach and Food – Foodtruck am Sütel-Strand"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+      </div>
+    </div>
+
+    <!-- Stats-Badges -->
+    <div class="uu-badges reveal" style="transition-delay:0.35s">
+      <div class="badge-card">
+        <div class="bc-number">167°C</div>
+        <div class="bc-label">Frittiertemperatur</div>
+        <div class="bc-sub">Alles andere ist Wissenschaft.</div>
+      </div>
+      <div class="badge-card">
+        <div class="bc-icon">🚌</div>
+        <div class="bc-label">Indoor Sitzbereich</div>
+        <div class="bc-sub">Einzigartiger Linienbus-Umbau</div>
+      </div>
+      <div class="badge-card">
+        <div class="bc-icon">📱</div>
+        <div class="bc-label">Digital Bestellen</div>
+        <div class="bc-sub">Self-Order & Online seit 2024</div>
+      </div>
+      <div class="badge-card">
+        <div class="bc-number">Seit<br/>2014</div>
+        <div class="bc-sub">am Sütel-Strand</div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+</section>
+
+<style>
+.ueber-uns {
+  padding: 9rem 0;
+  background: transparent;
+  color: var(--foam);
+  position: relative;
+  z-index: 1;
+}
+.ueber-uns .uu-card {
+  background: var(--ocean-deep);
+  padding: 8rem max(1.5rem, calc((100vw - 1200px) / 2 + 1.5rem));
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 4%, 100% 0%, 100% 96%, 0% 100%);
+}
+.ueber-uns::before {
+  content: '';
+  position: absolute;
+  top: -200px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(46,110,126,0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ---- top grid: content + image ---- */
+.uu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6rem;
+  align-items: center;
+  margin-bottom: 6rem;
+}
+.uu-content .section-label {
+  color: var(--sun);
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 1rem;
+}
+.uu-content h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 3rem;
+}
+.timeline { display: flex; flex-direction: column; gap: 2.5rem; }
+.tl-item { display: flex; gap: 1.5rem; align-items: flex-start; }
+.tl-year {
+  min-width: 52px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sun);
+  padding-top: 0.15rem;
+}
+.tl-text {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.75;
+  border-left: 2px solid rgba(232,93,58,0.5);
+  padding-left: 1.2rem;
+}
+.tl-text strong { color: var(--foam); }
+
+/* ---- Karussell ---- */
+.uu-image {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.carousel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  height: 480px;
+  background: #0d2233;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.carousel-track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.carousel-slide {
+  position: absolute;
+  inset: 0;
+  transform: translateX(100%);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.carousel-slide.active {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Pfeilbuttons */
+.carousel-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(13,34,51,0.7);
+  border: 1px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  color: var(--foam);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s, opacity 0.2s;
+  opacity: 0.75;
+}
+.carousel-btn:hover {
+  background: rgba(244,168,32,0.85);
+  color: var(--ocean-deep);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.08);
+}
+.carousel-prev { left: 1rem; }
+.carousel-next { right: 1rem; }
+
+/* Dots */
+.carousel-dots {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.4rem;
+  z-index: 10;
+}
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  border: none;
+  cursor: pointer;
+  transition: background 0.25s, transform 0.25s;
+  padding: 0;
+}
+.carousel-dot.active {
+  background: var(--sun);
+  transform: scale(1.3);
+}
+
+
+
+/* ---- YouTube embed ---- */
+.uu-video {
+  margin-bottom: 5rem;
+}
+.video-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.video-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ---- badges ---- */
+.uu-badges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+.badge-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  padding: 2rem;
+  transition: background 0.25s, transform 0.25s;
+}
+.badge-card:hover {
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-3px);
+}
+.bc-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--coral);
+  line-height: 1.1;
+  margin-bottom: 0.3rem;
+}
+.bc-icon { font-size: 2rem; margin-bottom: 0.3rem; }
+.bc-label { font-size: 0.9rem; font-weight: 600; color: var(--foam); margin-bottom: 0.2rem; }
+.bc-sub { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+
+@media (max-width: 900px) {
+  .uu-grid { grid-template-columns: 1fr; gap: 3.5rem; }
+  .uu-badges { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .uu-badges { grid-template-columns: 1fr; }
+  .carousel { height: 300px; }
+}
+
+.section-wave--bottom { margin-top: 3rem; }
+</style>
+
+<script>
+  function initCarousel(carouselEl: Element) {
+    const slides = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'));
+    const dotsContainer = carouselEl.querySelector<HTMLElement>('.carousel-dots');
+    const prevBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-prev');
+    const nextBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-next');
+
+    let current = 0;
+    let animating = false;
+    let autoTimer: ReturnType<typeof setInterval>;
+    const total = slides.length;
+
+    // Dots dynamisch erzeugen
+    if (dotsContainer) {
+      dotsContainer.innerHTML = '';
+      slides.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', `Bild ${i + 1}`);
+        dot.addEventListener('click', () => { stopAuto(); goTo(i); startAuto(); });
+        dotsContainer.appendChild(dot);
+      });
+    }
+
+    // Alle Slides initial positionieren
+    slides.forEach((slide, i) => {
+      slide.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
+    });
+
+    function goTo(index: number, reverse = false) {
+      if (animating || index === current) return;
+      animating = true;
+
+      const next = (index + total) % total;
+      const direction = reverse ? -1 : 1;
+
+      // Nächstes Slide auf die einkommende Seite positionieren (ohne Animation)
+      slides[next].style.transition = 'none';
+      slides[next].style.transform = `translateX(${direction * 100}%)`;
+
+      // Reflow erzwingen
+      slides[next].getBoundingClientRect();
+
+      // Beide Slides gleichzeitig animieren
+      slides[next].style.transition = '';
+      slides[current].style.transition = '';
+
+      slides[next].style.transform = 'translateX(0)';
+      slides[current].style.transform = `translateX(${-direction * 100}%)`;
+
+      // Dots aktualisieren
+      dotsContainer?.querySelectorAll('.carousel-dot')[current]?.classList.remove('active');
+      dotsContainer?.querySelectorAll('.carousel-dot')[next]?.classList.add('active');
+
+      slides[next].addEventListener('transitionend', () => {
+        slides[current].classList.remove('active');
+        slides[next].classList.add('active');
+        current = next;
+        animating = false;
+      }, { once: true });
+    }
+
+    function startAuto() {
+      autoTimer = setInterval(() => goTo((current + 1) % total), 4000);
+    }
+    function stopAuto() { clearInterval(autoTimer); }
+
+    prevBtn?.addEventListener('click', () => {
+      stopAuto();
+      goTo((current - 1 + total) % total, true);
+      startAuto();
+    });
+    nextBtn?.addEventListener('click', () => {
+      stopAuto();
+      goTo((current + 1) % total);
+      startAuto();
+    });
+
+    // Touch/Swipe
+    let touchStartX = 0;
+    carouselEl.addEventListener('touchstart', (e: Event) => {
+      touchStartX = (e as TouchEvent).changedTouches[0].clientX;
+    }, { passive: true });
+    carouselEl.addEventListener('touchend', (e: Event) => {
+      const diff = touchStartX - (e as TouchEvent).changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) {
+        stopAuto();
+        diff > 0 ? goTo((current + 1) % total) : goTo((current - 1 + total) % total, true);
+        startAuto();
+      }
+    }, { passive: true });
+
+    startAuto();
+  }
+
+  document.querySelectorAll('.carousel').forEach(initCarousel);
+</script>

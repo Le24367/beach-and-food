@@ -1,0 +1,334 @@
+---
+import { getSiteSettings } from '../lib/sanity'
+import type { SiteSettings } from '../lib/sanity'
+
+let settings: SiteSettings | null = null
+try {
+  settings = await getSiteSettings()
+} catch (e) {
+  console.warn('[Kontakt] Sanity nicht erreichbar, Fallback-Daten werden verwendet.', e)
+}
+
+// Fallback wenn Sanity noch nicht konfiguriert
+const address = settings?.address ?? {
+  name: 'Campingplatz Sütel',
+  street: 'Sütel-Strand',
+  zip: '23779 Neukirchen',
+  mapsUrl: 'https://maps.google.com/?q=Campingplatz+Sütel+Neukirchen',
+}
+const contact = settings?.contact ?? {
+  email: 'info@beachandfood.de',
+  whatsapp: 'https://wa.me/4915164652760',
+  whatsappDisplay: '0151 64652760',
+}
+const openingHours = settings?.openingHours ?? [
+  { _key: 'mo-do', days: 'Mo – Do', hours: 'Geschlossen', closed: true },
+  { _key: 'fr-so', days: 'Fr – So', hours: '11:30 – 20:00', closed: false },
+]
+const seasonNote = settings?.seasonNote
+---
+<section class="kontakt" id="kontakt">
+  <div class="container">
+    <div class="kontakt-grid">
+      <div class="k-info reveal">
+        <span class="section-label">Kontakt & Anfahrt</span>
+        <h2>Besuch uns.</h2>
+        <p>Direkt am Sütel-Strand auf dem Campingplatz Sütel. Frisch, digital, einzigartig.</p>
+
+        <div class="k-details">
+          <div class="k-item">
+            <div class="k-icon">📍</div>
+            <div>
+              <div class="k-label">Adresse</div>
+              <div class="k-val">
+                {address.name}<br/>
+                {address.street}<br/>
+                {address.zip}
+              </div>
+            </div>
+          </div>
+          <div class="k-item">
+            <div class="k-icon">🕐</div>
+            <div>
+              <div class="k-label">Öffnungszeiten</div>
+              <div class="k-val">
+                {openingHours.map((entry, i) => (
+                  <span>
+                    <span class={entry.closed ? 'closed' : 'open'}>
+                      {entry.days}: {entry.hours}
+                    </span>
+                    {i < openingHours.length - 1 && <br/>}
+                  </span>
+                ))}
+                {seasonNote && <><br/><span class="season-note">{seasonNote}</span></>}
+              </div>
+            </div>
+          </div>
+          <div class="k-item">
+            <div class="k-icon">✉️</div>
+            <div>
+              <div class="k-label">Kontakt</div>
+              <div class="k-val">
+                <a href={`mailto:${contact.email}`}>{contact.email}</a><br/>
+                <a href={contact.whatsapp}>WhatsApp: {contact.whatsappDisplay}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="k-map reveal" style="transition-delay:0.2s">
+        <div class="map-placeholder">
+          <div class="map-pin">📍</div>
+          <div class="map-label">Beach and Food</div>
+          <div class="map-sub">{address.name} · {address.zip}</div>
+          <a
+            href={address.mapsUrl}
+            target="_blank"
+            rel="noopener"
+            class="map-btn"
+          >
+            In Google Maps öffnen
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-logo">
+      <img
+        src="https://le-cdn.website-editor.net/b027c68ee438471e875aabacd5abae82/dms3rep/multi/opt/Beach+-+Food+Final-1920w.jpg"
+        alt="Beach and Food"
+        class="footer-logo-img"
+      />
+    </div>
+    <p class="footer-tagline">Bei exakt 167°C — alles andere ist Wissenschaft.</p>
+    <div class="footer-links">
+      <a href="#angebot">Speisekarte</a>
+      <a href="#ueber-uns">Über uns</a>
+      <a href="#bestellen">Online bestellen</a>
+      <a href="#kontakt">Kontakt</a>
+    </div>
+    <div class="footer-legal">
+      <p>© 2026 Beach and Food — Inhaber Martin Heidrich, Schäferkamp 3c, 23569 Lübeck</p>
+      <div class="footer-legal-links">
+        <a href="#">Impressum</a>
+        <a href="#">Datenschutz</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+/* ---- KONTAKT ---- */
+.kontakt {
+  padding: 7rem 0;
+  background: var(--sand-light);
+}
+.kontakt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+.k-info .section-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wave);
+  margin-bottom: 1rem;
+}
+.k-info h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  color: var(--ocean-deep);
+  margin-bottom: 1rem;
+}
+.k-info > p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.65;
+  margin-bottom: 2.5rem;
+}
+.k-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.k-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.k-icon {
+  font-size: 1.4rem;
+  min-width: 2rem;
+  margin-top: 0.1rem;
+}
+.k-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+.k-val {
+  font-size: 0.95rem;
+  color: var(--ocean-deep);
+  line-height: 1.65;
+}
+.k-val a {
+  color: var(--wave);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+.k-val a:hover { text-decoration-color: var(--wave); }
+.open { color: #2D8B4E; font-weight: 600; }
+.season-note { font-size: 0.82rem; color: var(--text-muted); font-style: italic; }
+.closed { color: var(--text-muted); }
+
+/* Map */
+.k-map {
+  position: sticky;
+  top: 100px;
+}
+.map-placeholder {
+  background: linear-gradient(135deg, #c8e6d4 0%, #a8d5e2 50%, #8bbfd4 100%);
+  border-radius: var(--radius-lg);
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+}
+.map-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.07) 0, rgba(255,255,255,0.07) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0, rgba(255,255,255,0.07) 1px, transparent 1px, transparent 40px);
+}
+.map-pin { font-size: 3rem; position: relative; z-index: 1; animation: bounce 2s ease infinite; }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.map-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--ocean-deep);
+  position: relative;
+  z-index: 1;
+}
+.map-sub {
+  font-size: 0.85rem;
+  color: var(--ocean);
+  position: relative;
+  z-index: 1;
+  margin-bottom: 1rem;
+}
+.map-btn {
+  background: var(--ocean);
+  color: var(--foam);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 100px;
+  position: relative;
+  z-index: 1;
+  transition: background 0.2s, transform 0.15s;
+}
+.map-btn:hover { background: var(--ocean-deep); transform: translateY(-2px); }
+
+/* ---- FOOTER ---- */
+.footer {
+  background: var(--ocean-deep);
+  padding: 4rem 0 2.5rem;
+}
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+.footer-logo {
+  display: flex;
+  justify-content: center;
+}
+.footer-logo {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 10px 24px;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+}
+.footer-logo-img {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.footer-tagline {
+  color: var(--coral);
+  opacity: 0.85;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+.footer-links {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.footer-links a {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--coral); }
+.footer-legal {
+  width: 100%;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.footer-legal p { font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+.footer-legal-links { display: flex; gap: 1.2rem; }
+.footer-legal-links a {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  transition: color 0.2s;
+}
+.footer-legal-links a:hover { color: rgba(255,255,255,0.6); }
+
+@media (max-width: 900px) {
+  .kontakt-grid { grid-template-columns: 1fr; }
+  .k-map { position: static; }
+}
+@media (max-width: 600px) {
+  .footer-legal { flex-direction: column; text-align: center; }
+}
+
+</style>

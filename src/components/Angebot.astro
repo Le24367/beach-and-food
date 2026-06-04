@@ -1,0 +1,585 @@
+﻿---
+import { getMenuCategories, getMenuItems, urlFor } from '../lib/sanity'
+import type { MenuCategory, MenuItem } from '../lib/sanity'
+
+let items: MenuCategory[] = []
+let menuItems: MenuItem[] = []
+
+try {
+  ;[items, menuItems] = await Promise.all([getMenuCategories(), getMenuItems()])
+} catch (e) {
+  console.warn('[Angebot] Sanity nicht erreichbar, Fallback wird verwendet.', e)
+}
+
+if (items.length === 0) {
+  items = [
+    { _id: '1', title: 'Fischbroetchen', description: 'Frisch gebacken, frisch belegt.', emoji: '🐟', badge: { label: 'Beliebt', color: '#E85D3A' }, order: 1, active: true },
+    { _id: '2', title: 'Currywurst', description: 'Hausgemachte Sosse, perfekt gewuerzt.', emoji: '🌭', badge: { label: 'Klassiker', color: '#E85D3A' }, order: 2, active: true },
+    { _id: '3', title: 'Pommes frites', description: 'Goldgelb, knusprig, bei exakt 167 Grad frittiert.', emoji: '🍟', badge: { label: '167C', color: '#F4A820' }, order: 3, active: true },
+    { _id: '4', title: 'Coole Drinks', description: 'Eiskalte Erfrischung fuer heisse Strandtage.', emoji: '🍹', badge: { label: 'Frisch', color: '#3A8C6E' }, order: 4, active: true },
+  ] as MenuCategory[]
+}
+
+function badgeColor(item: MenuCategory): string {
+  const badge = item.badge
+  if (!badge) return '#E85D3A'
+  if (badge.color === 'custom' && badge.customColor) return badge.customColor
+  return badge.color || '#E85D3A'
+}
+
+function itemsForCategory(categoryId: string): MenuItem[] {
+  return menuItems.filter(p => p.categoryId === categoryId)
+}
+
+const popupData = items.map(cat => ({
+  id: cat._id,
+  title: cat.title,
+  emoji: cat.emoji ?? null,
+  accentColor: badgeColor(cat),
+  badgeLabel: cat.badge?.label ?? null,
+  products: itemsForCategory(cat._id).map(p => ({
+    id: p._id,
+    title: p.title,
+    price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
+    description: p.description ?? null,
+    imgUrl: p.image ? urlFor(p.image).width(320).height(320).fit('crop').auto('format').url() : null,
+    badges: p.badges ?? [],
+  })),
+}))
+---
+
+<section class="angebot" id="angebot">
+  <div class="container">
+    <div class="section-head reveal">
+      <span class="section-label">Speisekarte</span>
+      <h2>Frisch, knusprig,<br/>unwiderstehlich.</h2>
+      <p class="section-sub">
+        Klassiker, die wir mit Hingabe perfektioniert haben.<br/>
+        Taeglich frisch zubereitet aus besten Zutaten.
+      </p>
+    </div>
+
+    <div class="menu-grid">
+      {items.map((item, i) => {
+        const color = badgeColor(item)
+        const imgUrl = item.image ? urlFor(item.image).width(600).height(420).fit('crop').auto('format').url() : null
+        const productCount = itemsForCategory(item._id).length
+        return (
+          <button
+            class="menu-card reveal"
+            style={`--accent: ${color}; transition-delay: ${i * 0.08}s`}
+            data-category-id={item._id}
+            aria-label={`${item.title}`}
+          >
+            <div class="card-visual">
+              {imgUrl
+                ? <img src={imgUrl} alt={item.title} loading="lazy" class="card-img" />
+                : <div class="card-emoji">{item.emoji ?? '🍽️'}</div>
+              }
+              {item.badge?.label && (
+                <div class="card-tag" style={`background:${color};`}>{item.badge.label}</div>
+              )}
+            </div>
+            <div class="card-inner">
+              <h3 class="card-title">{item.title}</h3>
+              <p class="card-desc">{item.description}</p>
+              <div class="card-cta">
+                <span>{productCount > 0 ? `${productCount} Produkte ansehen` : 'Ansehen'}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </div>
+            </div>
+          </button>
+        )
+      })}
+    </div>
+  </div>
+</section>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="mh-icon" id="mh-icon"></div>
+        <div class="mh-text">
+          <div class="mh-label">Speisekarte</div>
+          <h2 class="mh-title" id="mh-title"></h2>
+        </div>
+      </div>
+      <button class="modal-close" id="modal-close" aria-label="Schliessen">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body" id="modal-body"></div>
+
+  </div>
+</div>
+
+<script define:vars={{ popupData }}>
+  const backdrop = document.getElementById('modal-backdrop')
+  const closeBtn = document.getElementById('modal-close')
+  const iconEl   = document.getElementById('mh-icon')
+  const titleEl  = document.getElementById('mh-title')
+  const bodyEl   = document.getElementById('modal-body')
+
+  const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
+
+  function openModal(categoryId) {
+    const cat = dataMap[categoryId]
+    if (!cat) return
+
+    iconEl.textContent  = cat.emoji || '🍽️'
+    titleEl.textContent = cat.title
+
+    if (cat.products.length === 0) {
+      bodyEl.innerHTML = '<p style="color:#888;font-size:0.95rem;padding:2rem 0;text-align:center;font-family:DM Sans,sans-serif;">Noch keine Produkte hinterlegt.</p>'
+    } else {
+      var sLIST  = 'list-style:none!important;padding:0!important;margin:0!important;display:flex;flex-direction:column;gap:10px;'
+      var sITEM  = 'list-style:none!important;display:flex!important;flex-direction:row!important;align-items:stretch;background:#faf8f5;border-radius:16px;overflow:hidden;border:1px solid #f0ebe3;'
+      var sIMGW  = 'width:96px;min-width:96px;flex-shrink:0;background:#f0ebe3;overflow:hidden;display:flex;align-items:stretch;'
+      var sIMG   = 'width:100%;height:100%;object-fit:cover;display:block;'
+      var sPH    = 'width:100%;min-height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;'
+      var sBODY  = 'flex:1;min-width:0;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:4px;'
+      var sTOP   = 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;'
+      var sNAME  = 'font-family:DM Sans,sans-serif;font-weight:600;font-size:0.9rem;color:#0D2233;line-height:1.3;'
+      var sBADGS = 'display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;'
+      var sBADG  = 'font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;padding:2px 7px;border-radius:100px;white-space:nowrap;'
+      var sDESC  = 'font-family:DM Sans,sans-serif;font-size:0.78rem;color:#888;line-height:1.5;flex:1;margin:0;'
+      var sFOOT  = 'display:flex;align-items:center;margin-top:8px;'
+      var sPRICE = 'font-family:DM Sans,sans-serif;font-weight:700;font-size:0.97rem;color:#E85D3A;letter-spacing:-0.01em;'
+
+      let html = '<ul style="' + sLIST + '">'
+      cat.products.forEach(function(p) {
+        html += '<li style="' + sITEM + '">'
+        html += '<div style="' + sIMGW + '">'
+        if (p.imgUrl) {
+          html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" />'
+        } else {
+          html += '<div style="' + sPH + '">' + (cat.emoji || '\uD83C\uDF7D\uFE0F') + '</div>'
+        }
+        html += '</div>'
+        html += '<div style="' + sBODY + '">'
+        html += '<div>'
+        html += '<div style="' + sTOP + '">'
+        html += '<span style="' + sNAME + '">' + p.title + '</span>'
+        if (p.badges && p.badges.length > 0) {
+          html += '<div style="' + sBADGS + '">'
+          p.badges.forEach(function(b) {
+            html += '<span style="' + sBADG + 'background:' + b.color + '18;color:' + b.color + ';border:1px solid ' + b.color + '44">' + b.label + '</span>'
+          })
+          html += '</div>'
+        }
+        html += '</div>'
+        if (p.description) {
+          html += '<p style="' + sDESC + '">' + p.description + '</p>'
+        }
+        html += '</div>'
+        html += '<div style="' + sFOOT + '">'
+        html += '<span style="' + sPRICE + '">' + p.price + '</span>'
+        html += '</div>'
+        html += '</div>'
+        html += '</li>'
+      })
+      html += '</ul>'
+      bodyEl.innerHTML = html
+    }
+
+    backdrop.setAttribute('aria-hidden', 'false')
+    document.body.style.overflow = 'hidden'
+    bodyEl.scrollTop = 0
+
+    // Zwei rAF-Ticks: Browser rendert erst Startposition, dann triggert die Transition
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        backdrop.classList.add('open')
+      })
+    })
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('open')
+    backdrop.setAttribute('aria-hidden', 'true')
+    document.body.style.overflow = ''
+  }
+
+  document.querySelectorAll('[data-category-id]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      openModal(btn.getAttribute('data-category-id'))
+    })
+  })
+
+  closeBtn.addEventListener('click', closeModal)
+  backdrop.addEventListener('click', function(e) {
+    if (e.target === backdrop) closeModal()
+  })
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal()
+  })
+</script>
+
+<style>
+/* ───── Section ───── */
+.angebot {
+  padding: 6rem 0 8rem;
+  background: var(--sand-light);
+}
+.section-head {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+.section-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--wave);
+  margin-bottom: 1rem;
+}
+.section-head h2 {
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  color: var(--ocean-deep);
+  line-height: 1.1;
+  margin-bottom: 1rem;
+}
+.section-sub {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* ───── Menu Grid ───── */
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 1.5rem;
+}
+.menu-card {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  width: 100%;
+  font-family: inherit;
+  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease;
+  display: flex;
+  flex-direction: column;
+}
+.menu-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.13);
+}
+.menu-card:hover .card-img { transform: scale(1.06); }
+.menu-card:hover .card-cta {
+  color: var(--accent, #E85D3A);
+  gap: 0.6rem;
+}
+.card-visual {
+  position: relative;
+  height: 190px;
+  background: linear-gradient(135deg, #f0ebe3 0%, #e8e0d4 100%);
+  overflow: hidden;
+}
+.card-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.card-emoji {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4.5rem;
+}
+.card-tag {
+  position: absolute;
+  top: 0.75rem; left: 0.75rem;
+  font-size: 0.65rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: #fff;
+  padding: 0.25rem 0.65rem;
+  border-radius: 100px;
+}
+.card-inner {
+  padding: 1.4rem 1.6rem 1.6rem;
+  display: flex; flex-direction: column;
+  gap: 0.4rem; flex: 1;
+}
+.card-title {
+  font-size: 1.25rem; font-weight: 800;
+  color: var(--ocean-deep); line-height: 1.2;
+}
+.card-desc {
+  font-size: 0.87rem; color: var(--text-muted);
+  line-height: 1.55; flex: 1;
+}
+.card-cta {
+  display: inline-flex; align-items: center;
+  gap: 0.4rem; font-size: 0.82rem; font-weight: 700;
+  color: var(--wave); margin-top: 0.6rem;
+  transition: color 0.2s, gap 0.2s;
+}
+
+/* ───── Modal Backdrop ───── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 20, 30, 0.72);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+@media (min-width: 640px) {
+  .modal-backdrop {
+    align-items: center;
+    padding: 1.5rem;
+  }
+}
+.modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ───── Modal Box ───── */
+.modal {
+  background: #ffffff !important;
+  width: 100%;
+  max-width: 600px;
+  max-height: 88vh;
+  border-radius: 28px 28px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(48px);
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease;
+  opacity: 0;
+  will-change: transform, opacity;
+  box-shadow: 0 -4px 60px rgba(0,0,0,0.2);
+}
+@media (min-width: 640px) {
+  .modal {
+    border-radius: 24px;
+    transform: none;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.3);
+  }
+}
+.modal-backdrop.open .modal {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ───── Modal Header ───── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 18px;
+  border-bottom: 1px solid #f0ebe3;
+  background: #ffffff !important;
+  flex-shrink: 0;
+}
+.modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mh-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: #FFF4ED;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.mh-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #E85D3A;
+  margin-bottom: 2px;
+}
+.mh-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ocean-deep, #002434);
+  line-height: 1.15;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.modal-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid #eee;
+  background: #fafafa;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.modal-close:hover {
+  background: #f0ebe3;
+  color: var(--ocean-deep, #002434);
+  transform: rotate(90deg);
+}
+
+/* ───── Modal Body ───── */
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 24px;
+  background: #ffffff;
+}
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb { background: #e0d9cf; border-radius: 10px; }
+
+.mp-empty {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+/* ───── Produktliste ───── */
+.mp-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mp-list li {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.mp-item {
+  display: flex;
+  align-items: stretch;
+  background: #faf8f5;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #f0ebe3;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.mp-item:hover {
+  box-shadow: 0 8px 28px rgba(0, 36, 52, 0.09);
+  transform: translateY(-2px);
+}
+
+/* Bild */
+.mpi-img-wrap {
+  width: 96px;
+  min-width: 96px;
+  flex-shrink: 0;
+  background: #f0ebe3;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+}
+.mpi-img {
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mpi-placeholder {
+  width: 100%;
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+}
+
+/* Text */
+.mpi-body {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+}
+.mpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.mpi-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ocean-deep, #002434);
+  line-height: 1.3;
+}
+.mpi-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.mpi-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 2px 7px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+.mpi-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted, #8a7f74);
+  line-height: 1.5;
+  flex: 1;
+}
+.mpi-footer {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+.mpi-price {
+  font-weight: 700;
+  font-size: 0.97rem;
+  color: #E85D3A;
+  letter-spacing: -0.01em;
+}
+
+/* ───── Mobile ───── */
+@media (max-width: 480px) {
+  .modal-header { padding: 16px 16px 14px; }
+  .modal-body { padding: 12px 12px 20px; }
+  .mpi-img-wrap { width: 80px; min-width: 80px; }
+  .mh-icon { width: 40px; height: 40px; font-size: 18px; }
+  .mh-title { font-size: 1.15rem; }
+}
+</style>

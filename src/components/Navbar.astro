@@ -1,0 +1,148 @@
+---
+---
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="logo">
+      <img
+        src="https://le-cdn.website-editor.net/b027c68ee438471e875aabacd5abae82/dms3rep/multi/opt/Beach+-+Food+Final-1920w.jpg"
+        alt="Beach and Food"
+        class="logo-img"
+      />
+    </a>
+    <ul class="nav-links">
+      <li><a href="#angebot">Speisekarte</a></li>
+      <li><a href="#ueber-uns">Über uns</a></li>
+      <li><a href="#vibes">Beach Vibes</a></li>
+      <li><a href="#kontakt">Kontakt</a></li>
+    </ul>
+    <a href="#bestellen" class="nav-cta">Jetzt bestellen</a>
+    <button class="burger" aria-label="Menü öffnen">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="mobile-menu">
+    <ul>
+      <li><a href="#angebot">Speisekarte</a></li>
+      <li><a href="#ueber-uns">Über uns</a></li>
+      <li><a href="#vibes">Beach Vibes</a></li>
+      <li><a href="#kontakt">Kontakt</a></li>
+      <li><a href="#bestellen" class="nav-cta-mobile">Jetzt bestellen</a></li>
+    </ul>
+  </div>
+</nav>
+
+<style>
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(244, 168, 32, 0.25);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  border-radius: 0 0 20px 20px;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.logo-img {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+  margin-left: auto;
+}
+.nav-links a {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ocean);
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--sun-bright); }
+.nav-cta {
+  background: var(--sun);
+  color: var(--ocean-deep);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.55rem 1.2rem;
+  border-radius: 100px;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.nav-cta:hover {
+  background: var(--coral);
+  transform: scale(1.04);
+}
+.burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 4px;
+}
+.burger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--ocean);
+  border-radius: 2px;
+  transition: transform 0.3s, opacity 0.3s;
+}
+.mobile-menu {
+  display: none;
+  padding: 1rem 1.5rem 1.5rem;
+  background: var(--sand-light);
+}
+.mobile-menu.open { display: block; }
+.mobile-menu ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.mobile-menu a {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--ocean);
+}
+.nav-cta-mobile {
+  display: inline-block;
+  background: var(--sun);
+  color: var(--ocean-deep) !important;
+  font-weight: 600;
+  padding: 0.6rem 1.4rem;
+  border-radius: 100px;
+  margin-top: 0.5rem;
+}
+@media (max-width: 768px) {
+  .nav-links, .nav-cta { display: none; }
+  .burger { display: flex; }
+}
+</style>
+
+<script>
+  const burger = document.querySelector('.burger');
+  const mobileMenu = document.querySelector('.mobile-menu');
+  burger?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('open');
+  });
+  mobileMenu?.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => mobileMenu.classList.remove('open'));
+  });
+</script>
