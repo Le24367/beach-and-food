@@ -120,6 +120,16 @@ const popupData = items.map(cat => ({
   </div>
 </div>
 
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <button class="lightbox-close" id="lightbox-close" aria-label="Schliessen">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="" />
+</div>
+
 <script define:vars={{ popupData }}>
   const backdrop = document.getElementById('modal-backdrop')
   const closeBtn = document.getElementById('modal-close')
@@ -142,7 +152,7 @@ const popupData = items.map(cat => ({
       var sLIST  = 'list-style:none!important;padding:0!important;margin:0!important;display:flex;flex-direction:column;gap:10px;'
       var sITEM  = 'list-style:none!important;display:flex!important;flex-direction:row!important;align-items:stretch;background:#faf8f5;border-radius:16px;overflow:hidden;border:1px solid #f0ebe3;'
       var sIMGW  = 'width:96px;min-width:96px;flex-shrink:0;background:#f0ebe3;overflow:hidden;display:flex;align-items:stretch;'
-      var sIMG   = 'width:100%;height:100%;object-fit:cover;display:block;'
+      var sIMG   = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;'
       var sPH    = 'width:100%;min-height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;'
       var sBODY  = 'flex:1;min-width:0;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:4px;'
       var sTOP   = 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;'
@@ -158,7 +168,7 @@ const popupData = items.map(cat => ({
         html += '<li style="' + sITEM + '">'
         html += '<div style="' + sIMGW + '">'
         if (p.imgUrl) {
-          html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" />'
+          html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" data-lightbox="' + p.imgUrl + '" data-alt="' + p.title + '" />'
         } else {
           html += '<div style="' + sPH + '">' + (p.emoji || cat.emoji || '\uD83C\uDF7D\uFE0F') + '</div>'
         }
@@ -221,6 +231,39 @@ const popupData = items.map(cat => ({
   })
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal()
+  })
+
+  // Lightbox
+  var lightbox     = document.getElementById('lightbox')
+  var lightboxImg  = document.getElementById('lightbox-img')
+  var lightboxClose = document.getElementById('lightbox-close')
+
+  function openLightbox(src, alt) {
+    lightboxImg.src = src
+    lightboxImg.alt = alt
+    lightbox.classList.add('open')
+    lightbox.setAttribute('aria-hidden', 'false')
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('open')
+    lightbox.setAttribute('aria-hidden', 'true')
+  }
+
+  bodyEl.addEventListener('click', function(e) {
+    var img = e.target.closest('[data-lightbox]')
+    if (img) {
+      e.stopPropagation()
+      openLightbox(img.getAttribute('data-lightbox'), img.getAttribute('data-alt'))
+    }
+  })
+
+  lightboxClose.addEventListener('click', closeLightbox)
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) closeLightbox()
+  })
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox()
   })
 </script>
 
@@ -585,5 +628,54 @@ const popupData = items.map(cat => ({
   .mpi-img-wrap { width: 80px; min-width: 80px; }
   .mh-icon { width: 40px; height: 40px; font-size: 18px; }
   .mh-title { font-size: 1.15rem; }
+}
+
+/* ───── Lightbox ───── */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.lightbox.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  border-radius: 16px;
+  object-fit: contain;
+  transform: scale(0.92);
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.lightbox.open .lightbox-img {
+  transform: scale(1);
+}
+.lightbox-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.lightbox-close:hover {
+  background: rgba(255,255,255,0.2);
 }
 </style>
