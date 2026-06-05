@@ -1,29 +1,26 @@
 ---
 const YT_ID = "QuSgl1-ZICE";
 
-// Alle Bilder aus /public/images/ueberuns/ automatisch einlesen
 const imageModules = import.meta.glob<{ default: ImageMetadata }>(
   '/public/images/ueberuns/*.{jpg,jpeg,png,webp,avif,gif,JPG,JPEG,PNG,WEBP,AVIF,GIF}',
   { eager: true }
 );
 
-// Dateinamen extrahieren und als src-Pfad aufbereiten
 const images = Object.keys(imageModules).map((path) => {
   const filename = path.split('/').pop()!;
   const alt = filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
   return { src: `/images/ueberuns/${filename}`, alt };
 });
 
-// Fallback wenn der Ordner noch leer ist
+// Fallback: kein Logo mehr — leerer Fallback verhindert den 404
 const slides = images.length > 0 ? images : [
-  { src: '/images/logo.png', alt: 'Beach and Food' }
+  { src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food' }
 ];
 ---
 <section class="ueber-uns" id="ueber-uns">
   <div class="uu-card">
   <div class="container">
 
-    <!-- Top: Text links, Bild rechts -->
     <div class="uu-grid">
       <div class="uu-content reveal">
         <span class="section-label">Über uns</span>
@@ -53,13 +50,25 @@ const slides = images.length > 0 ? images : [
         </div>
       </div>
 
-      <!-- Bildkarussell — Bilder einfach in /public/images/ueberuns/ ablegen -->
       <div class="uu-image reveal" style="transition-delay:0.15s">
         <div class="carousel" id="uu-carousel">
-          <div class="carousel-track">
+
+          <!-- aria-live: Screen-Reader kündigt Slide-Wechsel an -->
+          <div
+            class="carousel-track"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {slides.map((slide, i) => (
-              <div class={`carousel-slide${i === 0 ? ' active' : ''}`}>
-                <img src={slide.src} alt={slide.alt} loading={i === 0 ? 'eager' : 'lazy'} />
+              <div
+                class={`carousel-slide${i === 0 ? ' active' : ''}`}
+                aria-hidden={i !== 0 ? 'true' : 'false'}
+              >
+                <img
+                  src={slide.src}
+                  alt={slide.alt}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                />
               </div>
             ))}
           </div>
@@ -72,14 +81,13 @@ const slides = images.length > 0 ? images : [
               <button class="carousel-btn carousel-next" aria-label="Nächstes Bild">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
-              <div class="carousel-dots" id="uu-dots"></div>
+              <div class="carousel-dots" id="uu-dots" role="tablist" aria-label="Bildauswahl"></div>
             </>
           )}
         </div>
       </div>
     </div>
 
-    <!-- YouTube Video -->
     <div class="uu-video reveal" style="transition-delay:0.25s">
       <div class="video-label">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/><polygon fill="white" points="9.75,15.5 15.5,12 9.75,8.5"/></svg>
@@ -97,7 +105,6 @@ const slides = images.length > 0 ? images : [
       </div>
     </div>
 
-    <!-- Stats-Badges -->
     <div class="uu-badges reveal" style="transition-delay:0.35s">
       <div class="badge-card">
         <div class="bc-number">167°C</div>
@@ -147,8 +154,6 @@ const slides = images.length > 0 ? images : [
   background: radial-gradient(circle, rgba(46,110,126,0.3) 0%, transparent 70%);
   pointer-events: none;
 }
-
-/* ---- top grid: content + image ---- */
 .uu-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -190,12 +195,10 @@ const slides = images.length > 0 ? images : [
 }
 .tl-text strong { color: var(--foam); }
 
-/* ---- Karussell ---- */
 .uu-image {
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
-
 .carousel {
   position: relative;
   border-radius: var(--radius-lg);
@@ -204,7 +207,6 @@ const slides = images.length > 0 ? images : [
   background: #0d2233;
   box-shadow: 0 20px 60px rgba(0,0,0,0.4);
 }
-
 .carousel-track {
   display: flex;
   height: 100%;
@@ -212,7 +214,6 @@ const slides = images.length > 0 ? images : [
   position: relative;
   overflow: hidden;
 }
-
 .carousel-slide {
   position: absolute;
   inset: 0;
@@ -230,8 +231,6 @@ const slides = images.length > 0 ? images : [
   object-fit: cover;
   display: block;
 }
-
-/* Pfeilbuttons */
 .carousel-btn {
   position: absolute;
   top: 50%;
@@ -259,8 +258,6 @@ const slides = images.length > 0 ? images : [
 }
 .carousel-prev { left: 1rem; }
 .carousel-next { right: 1rem; }
-
-/* Dots */
 .carousel-dots {
   position: absolute;
   bottom: 1rem;
@@ -284,13 +281,7 @@ const slides = images.length > 0 ? images : [
   background: var(--sun);
   transform: scale(1.3);
 }
-
-
-
-/* ---- YouTube embed ---- */
-.uu-video {
-  margin-bottom: 5rem;
-}
+.uu-video { margin-bottom: 5rem; }
 .video-label {
   display: inline-flex;
   align-items: center;
@@ -305,7 +296,7 @@ const slides = images.length > 0 ? images : [
 .video-wrapper {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%; /* 16:9 */
+  padding-bottom: 56.25%;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: #000;
@@ -318,8 +309,6 @@ const slides = images.length > 0 ? images : [
   height: 100%;
   border: none;
 }
-
-/* ---- badges ---- */
 .uu-badges {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -356,104 +345,152 @@ const slides = images.length > 0 ? images : [
   .uu-badges { grid-template-columns: 1fr; }
   .carousel { height: 300px; }
 }
-
-.section-wave--bottom { margin-top: 3rem; }
 </style>
 
 <script>
   function initCarousel(carouselEl: Element) {
-    const slides = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'));
-    const dotsContainer = carouselEl.querySelector<HTMLElement>('.carousel-dots');
-    const prevBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-prev');
-    const nextBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-next');
+    const slides = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'))
+    const dotsContainer = carouselEl.querySelector<HTMLElement>('.carousel-dots')
+    const prevBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-prev')
+    const nextBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-next')
 
-    let current = 0;
-    let animating = false;
-    let autoTimer: ReturnType<typeof setInterval>;
-    const total = slides.length;
+    let current = 0
+    let animating = false
+    let autoTimer: ReturnType<typeof setInterval> | null = null
+    const total = slides.length
 
-    // Dots dynamisch erzeugen
+    // ── Dots dynamisch erzeugen ──────────────────────────────────
     if (dotsContainer) {
-      dotsContainer.innerHTML = '';
+      dotsContainer.innerHTML = ''
       slides.forEach((_, i) => {
-        const dot = document.createElement('button');
-        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
-        dot.setAttribute('aria-label', `Bild ${i + 1}`);
-        dot.addEventListener('click', () => { stopAuto(); goTo(i); startAuto(); });
-        dotsContainer.appendChild(dot);
-      });
+        const dot = document.createElement('button')
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '')
+        dot.setAttribute('aria-label', `Bild ${i + 1}`)
+        dot.setAttribute('role', 'tab')
+        dot.setAttribute('aria-selected', i === 0 ? 'true' : 'false')
+        dot.addEventListener('click', () => { stopAuto(); goTo(i); startAuto() })
+        dotsContainer.appendChild(dot)
+      })
     }
 
     // Alle Slides initial positionieren
     slides.forEach((slide, i) => {
-      slide.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
-    });
+      slide.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)'
+    })
+
+    function updateAria(prev: number, next: number) {
+      slides[prev].setAttribute('aria-hidden', 'true')
+      slides[next].setAttribute('aria-hidden', 'false')
+      dotsContainer?.querySelectorAll<HTMLElement>('.carousel-dot').forEach((dot, i) => {
+        dot.setAttribute('aria-selected', i === next ? 'true' : 'false')
+      })
+    }
 
     function goTo(index: number, reverse = false) {
-      if (animating || index === current) return;
-      animating = true;
+      if (animating || index === current) return
+      animating = true
 
-      const next = (index + total) % total;
-      const direction = reverse ? -1 : 1;
+      const next = (index + total) % total
+      const direction = reverse ? -1 : 1
 
-      // Nächstes Slide auf die einkommende Seite positionieren (ohne Animation)
-      slides[next].style.transition = 'none';
-      slides[next].style.transform = `translateX(${direction * 100}%)`;
+      // Nächstes Slide auf einkommende Seite setzen (ohne Transition)
+      slides[next].style.transition = 'none'
+      slides[next].style.transform = `translateX(${direction * 100}%)`
 
       // Reflow erzwingen
-      slides[next].getBoundingClientRect();
+      slides[next].getBoundingClientRect()
 
-      // Beide Slides gleichzeitig animieren
-      slides[next].style.transition = '';
-      slides[current].style.transition = '';
-
-      slides[next].style.transform = 'translateX(0)';
-      slides[current].style.transform = `translateX(${-direction * 100}%)`;
+      // Beide Slides animieren
+      slides[next].style.transition = ''
+      slides[current].style.transition = ''
+      slides[next].style.transform = 'translateX(0)'
+      slides[current].style.transform = `translateX(${-direction * 100}%)`
 
       // Dots aktualisieren
-      dotsContainer?.querySelectorAll('.carousel-dot')[current]?.classList.remove('active');
-      dotsContainer?.querySelectorAll('.carousel-dot')[next]?.classList.add('active');
+      dotsContainer?.querySelectorAll('.carousel-dot')[current]?.classList.remove('active')
+      dotsContainer?.querySelectorAll('.carousel-dot')[next]?.classList.add('active')
+
+      // Aria aktualisieren
+      updateAria(current, next)
+
+      const prevIndex = current
+
+      // ── Race-Condition-Fix: Timeout als Fallback ─────────────
+      // Falls transitionend nicht feuert (Tab im Hintergrund,
+      // display:none, reduzierte Animationen), wird animating
+      // nach 600ms automatisch freigegeben
+      const fallbackTimer = setTimeout(() => {
+        slides[prevIndex].classList.remove('active')
+        slides[next].classList.add('active')
+        current = next
+        animating = false
+      }, 600)
 
       slides[next].addEventListener('transitionend', () => {
-        slides[current].classList.remove('active');
-        slides[next].classList.add('active');
-        current = next;
-        animating = false;
-      }, { once: true });
+        clearTimeout(fallbackTimer)
+        slides[prevIndex].classList.remove('active')
+        slides[next].classList.add('active')
+        current = next
+        animating = false
+      }, { once: true })
     }
 
+    // ── Autoplay nur wenn sichtbar (IntersectionObserver) ────────
     function startAuto() {
-      autoTimer = setInterval(() => goTo((current + 1) % total), 4000);
+      if (total <= 1) return
+      autoTimer = setInterval(() => goTo((current + 1) % total), 4000)
     }
-    function stopAuto() { clearInterval(autoTimer); }
+    function stopAuto() {
+      if (autoTimer) clearInterval(autoTimer)
+      autoTimer = null
+    }
 
+    const visibilityObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            startAuto()
+          } else {
+            stopAuto()
+          }
+        })
+      },
+      { threshold: 0.2 }
+    )
+    visibilityObserver.observe(carouselEl)
+
+    // ── Pfeil-Buttons ────────────────────────────────────────────
     prevBtn?.addEventListener('click', () => {
-      stopAuto();
-      goTo((current - 1 + total) % total, true);
-      startAuto();
-    });
+      stopAuto()
+      goTo((current - 1 + total) % total, true)
+      startAuto()
+    })
     nextBtn?.addEventListener('click', () => {
-      stopAuto();
-      goTo((current + 1) % total);
-      startAuto();
-    });
+      stopAuto()
+      goTo((current + 1) % total)
+      startAuto()
+    })
 
-    // Touch/Swipe
-    let touchStartX = 0;
+    // ── Touch / Swipe ────────────────────────────────────────────
+    let touchStartX = 0
     carouselEl.addEventListener('touchstart', (e: Event) => {
-      touchStartX = (e as TouchEvent).changedTouches[0].clientX;
-    }, { passive: true });
+      touchStartX = (e as TouchEvent).changedTouches[0].clientX
+    }, { passive: true })
     carouselEl.addEventListener('touchend', (e: Event) => {
-      const diff = touchStartX - (e as TouchEvent).changedTouches[0].clientX;
+      const diff = touchStartX - (e as TouchEvent).changedTouches[0].clientX
       if (Math.abs(diff) > 40) {
-        stopAuto();
-        diff > 0 ? goTo((current + 1) % total) : goTo((current - 1 + total) % total, true);
-        startAuto();
+        stopAuto()
+        diff > 0
+          ? goTo((current + 1) % total)
+          : goTo((current - 1 + total) % total, true)
+        startAuto()
       }
-    }, { passive: true });
+    }, { passive: true })
 
-    startAuto();
+    // ── Pause bei Hover (bessere UX) ─────────────────────────────
+    carouselEl.addEventListener('mouseenter', stopAuto)
+    carouselEl.addEventListener('mouseleave', startAuto)
   }
 
-  document.querySelectorAll('.carousel').forEach(initCarousel);
+  document.querySelectorAll('.carousel').forEach(initCarousel)
 </script>
