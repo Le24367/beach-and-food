@@ -512,7 +512,10 @@ const popupData = items.map(cat => ({
 .modal-body::-webkit-scrollbar-track { background: transparent; }
 .modal-body::-webkit-scrollbar-thumb { background: #e0d9cf; border-radius: 10px; }
 
-/* ───── Produktliste ───── */
+</style>
+
+<style is:global>
+/* ───── Produktliste (is:global — wird per innerHTML eingefügt) ───── */
 .mp-empty {
   color: var(--text-muted);
   font-size: 0.95rem;
