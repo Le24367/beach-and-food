@@ -249,6 +249,10 @@ const popupData = items.map(cat => ({
   function closeLightbox() {
     lightbox.classList.remove('open')
     lightbox.setAttribute('aria-hidden', 'true')
+    setTimeout(function() {
+      lightboxImg.src = ''
+      lightboxImg.alt = ''
+    }, 250)
   }
 
   bodyEl.addEventListener('click', function(e) {
