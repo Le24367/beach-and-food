@@ -11,8 +11,9 @@
     </a>
     <ul class="nav-links">
       <li><a href="#angebot">Speisekarte</a></li>
-      <li><a href="#ueber-uns">Über uns</a></li>
+      <li><a href="#bestellen">Online bestellen</a></li>
       <li><a href="#vibes">Beach Vibes</a></li>
+      <li><a href="#ueber-uns">Über uns</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
       <li><a href="https://www.bon-bon.de/gutschein/beach-and-food/?popup" target="_blank" rel="noopener">🎁 Gutschein</a></li>
     </ul>
@@ -24,8 +25,9 @@
   <div class="mobile-menu">
     <ul>
       <li><a href="#angebot">Speisekarte</a></li>
-      <li><a href="#ueber-uns">Über uns</a></li>
+      <li><a href="#bestellen">Online bestellen</a></li>
       <li><a href="#vibes">Beach Vibes</a></li>
+      <li><a href="#ueber-uns">Über uns</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
       <li><a href="https://www.bon-bon.de/gutschein/beach-and-food/?popup" target="_blank" rel="noopener">🎁 Gutschein</a></li>
       <li><a href="https://igetnow.com/KWFQC" target="_blank" rel="noopener" class="nav-cta-mobile">Jetzt bestellen</a></li>
@@ -137,13 +139,13 @@
   transform: translateY(0);
   opacity: 1;
 }
-/* Staggered delay per item */
 .mobile-menu.open li:nth-child(1) { transition-delay: 0.05s; }
 .mobile-menu.open li:nth-child(2) { transition-delay: 0.10s; }
 .mobile-menu.open li:nth-child(3) { transition-delay: 0.15s; }
 .mobile-menu.open li:nth-child(4) { transition-delay: 0.20s; }
 .mobile-menu.open li:nth-child(5) { transition-delay: 0.25s; }
 .mobile-menu.open li:nth-child(6) { transition-delay: 0.30s; }
+.mobile-menu.open li:nth-child(7) { transition-delay: 0.35s; }
 .mobile-menu a {
   display: block;
   font-size: 1.05rem;
@@ -184,7 +186,6 @@
   burger?.addEventListener('click', () => {
     burger.classList.toggle('open');
     mobileMenu?.classList.toggle('open');
-    // Wenn geschlossen: li-Delays resetten damit nächstes Öffnen wieder animiert
     if (!mobileMenu?.classList.contains('open')) {
       mobileMenu?.querySelectorAll('li').forEach(li => {
         li.style.transitionDelay = '0s';

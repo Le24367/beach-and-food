@@ -3,12 +3,12 @@ import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.astro';
 import Angebot from '../components/Angebot.astro';
-import UeberUns from '../components/UeberUns.astro';
 import Bestellen from '../components/Bestellen.astro';
+import UeberUns from '../components/UeberUns.astro';
 import Kontakt from '../components/Kontakt.astro';
 
-// Reihenfolge im DOM entspricht jetzt der Navbar-Navigation:
-// #angebot → #ueber-uns → #vibes (in Bestellen.astro) → #bestellen → #kontakt
+// Reihenfolge: Hero → Speisekarte → Bestellen → Über uns → Kontakt
+// Nutzer werden nach dem Stöbern direkt zum Bestellen geführt
 ---
 
 <Layout>
@@ -16,8 +16,8 @@ import Kontakt from '../components/Kontakt.astro';
   <main>
     <Hero />
     <Angebot />
-    <UeberUns />
     <Bestellen />
+    <UeberUns />
     <Kontakt />
   </main>
 </Layout>
