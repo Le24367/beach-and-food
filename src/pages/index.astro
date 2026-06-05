@@ -6,6 +6,9 @@ import Angebot from '../components/Angebot.astro';
 import UeberUns from '../components/UeberUns.astro';
 import Bestellen from '../components/Bestellen.astro';
 import Kontakt from '../components/Kontakt.astro';
+
+// Reihenfolge im DOM entspricht jetzt der Navbar-Navigation:
+// #angebot → #ueber-uns → #vibes (in Bestellen.astro) → #bestellen → #kontakt
 ---
 
 <Layout>
@@ -13,8 +16,8 @@ import Kontakt from '../components/Kontakt.astro';
   <main>
     <Hero />
     <Angebot />
-    <Bestellen />
     <UeberUns />
+    <Bestellen />
     <Kontakt />
   </main>
 </Layout>
