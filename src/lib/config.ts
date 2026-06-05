@@ -20,7 +20,7 @@ export const LINKS = {
   whatsapp: 'https://wa.me/4915164652760',
 
   /** Spotify-Playlist */
-  spotify: 'https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n',
+  spotify: 'https://open.spotify.com/intl-de/track/7x87bSfQ3eFLSp6UN4by6X',
 
   /** Google Maps */
   maps: 'https://maps.google.com/?q=Campingplatz+Sütel+Neukirchen',
