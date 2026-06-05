@@ -1,4 +1,5 @@
 ---
+import { LINKS } from '../lib/config'
 ---
 <nav class="navbar">
   <div class="container nav-inner">
@@ -14,9 +15,9 @@
       <li><a href="#vibes">Beach Vibes</a></li>
       <li><a href="#ueber-uns">Über uns</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
-      <li><a href="https://www.bon-bon.de/gutschein/beach-and-food/?popup" target="_blank" rel="noopener">🎁 Gutschein</a></li>
+      <li><a href={LINKS.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
     </ul>
-    <a href="https://igetnow.com/KWFQC" target="_blank" rel="noopener" class="nav-cta">Jetzt bestellen</a>
+    <a href={LINKS.order} target="_blank" rel="noopener" class="nav-cta">Jetzt bestellen</a>
     <button class="burger" aria-label="Menü öffnen">
       <span></span><span></span><span></span>
     </button>
@@ -27,8 +28,8 @@
       <li><a href="#vibes">Beach Vibes</a></li>
       <li><a href="#ueber-uns">Über uns</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
-      <li><a href="https://www.bon-bon.de/gutschein/beach-and-food/?popup" target="_blank" rel="noopener">🎁 Gutschein</a></li>
-      <li><a href="https://igetnow.com/KWFQC" target="_blank" rel="noopener" class="nav-cta-mobile">Jetzt bestellen</a></li>
+      <li><a href={LINKS.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
+      <li><a href={LINKS.order} target="_blank" rel="noopener" class="nav-cta-mobile">Jetzt bestellen</a></li>
     </ul>
   </div>
 </nav>
@@ -50,17 +51,8 @@
   padding-top: 1rem;
   padding-bottom: 1rem;
 }
-.logo {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.logo-img {
-  height: 44px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
+.logo { display: flex; align-items: center; flex-shrink: 0; }
+.logo-img { height: 44px; width: auto; object-fit: contain; display: block; }
 .nav-links {
   display: flex;
   list-style: none;
@@ -84,10 +76,7 @@
   transition: background 0.2s, transform 0.15s;
   white-space: nowrap;
 }
-.nav-cta:hover {
-  background: var(--coral);
-  transform: scale(1.04);
-}
+.nav-cta:hover { background: var(--coral); transform: scale(1.04); }
 .burger {
   display: none;
   flex-direction: column;
@@ -110,8 +99,7 @@
   max-height: 0;
   overflow: hidden;
   background: var(--sand-light);
-  transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.35s ease;
+  transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
   opacity: 0;
 }
 .mobile-menu.open {
@@ -128,21 +116,31 @@
 }
 .mobile-menu li {
   border-bottom: 1px solid rgba(0,0,0,0.06);
+  /* Basis-State: unsichtbar und versetzt */
   transform: translateY(-8px);
   opacity: 0;
+  /* Transition läuft immer, Delay kommt per CSS-Klasse */
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
 .mobile-menu li:last-child { border-bottom: none; }
-.mobile-menu.open li {
-  transform: translateY(0);
-  opacity: 1;
-}
+
+/* Staggered Delays als CSS-Klassen — kein JS-Style-Patching mehr */
 .mobile-menu.open li:nth-child(1) { transition-delay: 0.05s; }
 .mobile-menu.open li:nth-child(2) { transition-delay: 0.10s; }
 .mobile-menu.open li:nth-child(3) { transition-delay: 0.15s; }
 .mobile-menu.open li:nth-child(4) { transition-delay: 0.20s; }
 .mobile-menu.open li:nth-child(5) { transition-delay: 0.25s; }
 .mobile-menu.open li:nth-child(6) { transition-delay: 0.30s; }
+
+/* Beim Schließen: kein Delay, sofort ausblenden */
+.mobile-menu:not(.open) li {
+  transition-delay: 0s !important;
+}
+
+.mobile-menu.open li {
+  transform: translateY(0);
+  opacity: 1;
+}
 .mobile-menu a {
   display: block;
   font-size: 1.05rem;
@@ -151,10 +149,7 @@
   padding: 0.9rem 0;
   transition: color 0.2s, padding-left 0.2s;
 }
-.mobile-menu a:hover {
-  color: var(--sun);
-  padding-left: 0.4rem;
-}
+.mobile-menu a:hover { color: var(--sun); padding-left: 0.4rem; }
 .nav-cta-mobile {
   display: block;
   text-align: center;
@@ -166,7 +161,6 @@
   margin-top: 0.5rem;
   margin-bottom: 0.25rem;
 }
-/* Burger → X Animation */
 .burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -177,34 +171,27 @@
 </style>
 
 <script>
-  const burger = document.querySelector('.burger');
-  const mobileMenu = document.querySelector('.mobile-menu');
+  const burger = document.querySelector('.burger')
+  const mobileMenu = document.querySelector('.mobile-menu')
 
   burger?.addEventListener('click', () => {
-    burger.classList.toggle('open');
-    mobileMenu?.classList.toggle('open');
-    if (!mobileMenu?.classList.contains('open')) {
-      mobileMenu?.querySelectorAll('li').forEach(li => {
-        li.style.transitionDelay = '0s';
-      });
-    } else {
-      mobileMenu?.querySelectorAll('li').forEach((li, i) => {
-        li.style.transitionDelay = '';
-      });
-    }
-  });
+    burger.classList.toggle('open')
+    mobileMenu?.classList.toggle('open')
+    // Kein manuelles li.style.transitionDelay mehr nötig —
+    // das erledigt jetzt .mobile-menu:not(.open) li { transition-delay: 0s }
+  })
 
   mobileMenu?.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', () => {
-      mobileMenu.classList.remove('open');
-      burger?.classList.remove('open');
-    });
-  });
+      mobileMenu.classList.remove('open')
+      burger?.classList.remove('open')
+    })
+  })
 
   window.addEventListener('resize', () => {
     if (window.innerWidth > 1024) {
-      mobileMenu?.classList.remove('open');
-      burger?.classList.remove('open');
+      mobileMenu?.classList.remove('open')
+      burger?.classList.remove('open')
     }
-  });
+  })
 </script>

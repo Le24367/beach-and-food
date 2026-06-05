@@ -1,6 +1,7 @@
 ---
 import { getSiteSettings } from '../lib/sanity'
 import type { SiteSettings } from '../lib/sanity'
+import { LINKS, CONTACT, SITE } from '../lib/config'
 
 let settings: SiteSettings | null = null
 try {
@@ -9,17 +10,16 @@ try {
   console.warn('[Kontakt] Sanity nicht erreichbar, Fallback-Daten werden verwendet.', e)
 }
 
-// Fallback wenn Sanity noch nicht konfiguriert
 const address = settings?.address ?? {
   name: 'Campingplatz Sütel',
   street: 'Sütel-Strand',
   zip: '23779 Neukirchen',
-  mapsUrl: 'https://maps.google.com/?q=Campingplatz+Sütel+Neukirchen',
+  mapsUrl: LINKS.maps,
 }
 const contact = settings?.contact ?? {
-  email: 'info@beachandfood.de',
-  whatsapp: 'https://wa.me/4915164652760',
-  whatsappDisplay: '0151 64652760',
+  email: CONTACT.email,
+  whatsapp: LINKS.whatsapp,
+  whatsappDisplay: CONTACT.whatsappDisplay,
 }
 const openingHours = settings?.openingHours ?? [
   { _key: 'mo-do', days: 'Mo – Do', hours: 'Geschlossen', closed: true },
@@ -82,12 +82,7 @@ const seasonNote = settings?.seasonNote
           <div class="map-pin">📍</div>
           <div class="map-label">Beach and Food</div>
           <div class="map-sub">{address.name} · {address.zip}</div>
-          <a
-            href={address.mapsUrl}
-            target="_blank"
-            rel="noopener"
-            class="map-btn"
-          >
+          <a href={address.mapsUrl} target="_blank" rel="noopener" class="map-btn">
             In Google Maps öffnen
           </a>
         </div>
@@ -95,6 +90,7 @@ const seasonNote = settings?.seasonNote
     </div>
   </div>
 </section>
+
 <footer class="footer">
   <div class="container footer-inner">
     <div class="footer-logo">
@@ -104,15 +100,15 @@ const seasonNote = settings?.seasonNote
         class="footer-logo-img"
       />
     </div>
-    <p class="footer-tagline">Bei exakt 167°C — alles andere ist Wissenschaft.</p>
+    <p class="footer-tagline">{SITE.tagline}</p>
     <div class="footer-links">
       <a href="#angebot">Speisekarte</a>
       <a href="#ueber-uns">Über uns</a>
-      <a href="https://igetnow.com/KWFQC" target="_blank" rel="noopener">Online bestellen</a>
+      <a href={LINKS.order} target="_blank" rel="noopener">Online bestellen</a>
       <a href="#kontakt">Kontakt</a>
     </div>
     <div class="footer-legal">
-      <p>© 2026 Beach and Food — Inhaber Martin Heidrich, Schäferkamp 3c, 23569 Lübeck</p>
+      <p>© {new Date().getFullYear()} {SITE.name} — Inhaber {CONTACT.owner}, {CONTACT.address}</p>
       <div class="footer-legal-links">
         <a href="#">Impressum</a>
         <a href="#">Datenschutz</a>
@@ -123,16 +119,8 @@ const seasonNote = settings?.seasonNote
 
 <style>
 /* ---- KONTAKT ---- */
-.kontakt {
-  padding: 7rem 0;
-  background: var(--sand-light);
-}
-.kontakt-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: start;
-}
+.kontakt { padding: 7rem 0; background: var(--sand-light); }
+.kontakt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
 .k-info .section-label {
   display: inline-block;
   font-size: 0.75rem;
@@ -142,62 +130,19 @@ const seasonNote = settings?.seasonNote
   color: var(--wave);
   margin-bottom: 1rem;
 }
-.k-info h2 {
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 900;
-  color: var(--ocean-deep);
-  margin-bottom: 1rem;
-}
-.k-info > p {
-  color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1.65;
-  margin-bottom: 2.5rem;
-}
-.k-details {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-.k-item {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-}
-.k-icon {
-  font-size: 1.4rem;
-  min-width: 2rem;
-  margin-top: 0.1rem;
-}
-.k-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin-bottom: 0.3rem;
-}
-.k-val {
-  font-size: 0.95rem;
-  color: var(--ocean-deep);
-  line-height: 1.65;
-}
-.k-val a {
-  color: var(--wave);
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  transition: text-decoration-color 0.2s;
-}
+.k-info h2 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: var(--ocean-deep); margin-bottom: 1rem; }
+.k-info > p { color: var(--text-muted); font-size: 1rem; line-height: 1.65; margin-bottom: 2.5rem; }
+.k-details { display: flex; flex-direction: column; gap: 1.5rem; }
+.k-item { display: flex; gap: 1rem; align-items: flex-start; }
+.k-icon { font-size: 1.4rem; min-width: 2rem; margin-top: 0.1rem; }
+.k-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.3rem; }
+.k-val { font-size: 0.95rem; color: var(--ocean-deep); line-height: 1.65; }
+.k-val a { color: var(--wave); text-decoration: underline; text-decoration-color: transparent; transition: text-decoration-color 0.2s; }
 .k-val a:hover { text-decoration-color: var(--wave); }
 .open { color: #2D8B4E; font-weight: 600; }
 .season-note { font-size: 0.82rem; color: var(--text-muted); font-style: italic; }
 .closed { color: var(--text-muted); }
-
-/* Map */
-.k-map {
-  position: sticky;
-  top: 100px;
-}
+.k-map { position: sticky; top: 100px; }
 .map-placeholder {
   background: linear-gradient(135deg, #c8e6d4 0%, #a8d5e2 50%, #8bbfd4 100%);
   border-radius: var(--radius-lg);
@@ -226,21 +171,8 @@ const seasonNote = settings?.seasonNote
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-.map-label {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  font-weight: 900;
-  color: var(--ocean-deep);
-  position: relative;
-  z-index: 1;
-}
-.map-sub {
-  font-size: 0.85rem;
-  color: var(--ocean);
-  position: relative;
-  z-index: 1;
-  margin-bottom: 1rem;
-}
+.map-label { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 900; color: var(--ocean-deep); position: relative; z-index: 1; }
+.map-sub { font-size: 0.85rem; color: var(--ocean); position: relative; z-index: 1; margin-bottom: 1rem; }
 .map-btn {
   background: var(--ocean);
   color: var(--foam);
@@ -255,21 +187,8 @@ const seasonNote = settings?.seasonNote
 .map-btn:hover { background: var(--ocean-deep); transform: translateY(-2px); }
 
 /* ---- FOOTER ---- */
-.footer {
-  background: var(--ocean-deep);
-  padding: 4rem 0 2.5rem;
-}
-.footer-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  text-align: center;
-}
-.footer-logo {
-  display: flex;
-  justify-content: center;
-}
+.footer { background: var(--ocean-deep); padding: 4rem 0 2.5rem; }
+.footer-inner { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; }
 .footer-logo {
   background: #ffffff;
   border-radius: 16px;
@@ -278,31 +197,10 @@ const seasonNote = settings?.seasonNote
   align-items: center;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
-.footer-logo-img {
-  height: 52px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
-
-.footer-tagline {
-  color: var(--coral);
-  opacity: 0.85;
-  font-size: 0.9rem;
-  font-style: italic;
-}
-.footer-links {
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.footer-links a {
-  color: rgba(255,255,255,0.55);
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: color 0.2s;
-}
+.footer-logo-img { height: 52px; width: auto; object-fit: contain; display: block; }
+.footer-tagline { color: var(--coral); opacity: 0.85; font-size: 0.9rem; font-style: italic; }
+.footer-links { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
+.footer-links a { color: rgba(255,255,255,0.55); font-size: 0.85rem; font-weight: 500; transition: color 0.2s; }
 .footer-links a:hover { color: var(--coral); }
 .footer-legal {
   width: 100%;
@@ -316,11 +214,7 @@ const seasonNote = settings?.seasonNote
 }
 .footer-legal p { font-size: 0.75rem; color: rgba(255,255,255,0.3); }
 .footer-legal-links { display: flex; gap: 1.2rem; }
-.footer-legal-links a {
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.3);
-  transition: color 0.2s;
-}
+.footer-legal-links a { font-size: 0.75rem; color: rgba(255,255,255,0.3); transition: color 0.2s; }
 .footer-legal-links a:hover { color: rgba(255,255,255,0.6); }
 
 @media (max-width: 900px) {
@@ -330,5 +224,4 @@ const seasonNote = settings?.seasonNote
 @media (max-width: 600px) {
   .footer-legal { flex-direction: column; text-align: center; }
 }
-
 </style>

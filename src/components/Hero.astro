@@ -1,4 +1,5 @@
 ---
+import { LINKS } from '../lib/config'
 ---
 <section class="hero" id="hero">
   <div class="hero-bg">
@@ -27,21 +28,17 @@
       <span class="temp">167°C</span><br/>
       immer frisch.
     </h1>
-    <p class="hero-sub">
-      Alles andere ist Wissenschaft.
-    </p>
+    <p class="hero-sub">Alles andere ist Wissenschaft.</p>
     <p class="hero-desc">
       Fischbrötchen, Currywurst, Pommes und kalte Drinks —<br class="br-lg"/>
       direkt am Sütel-Strand auf dem Campingplatz Sütel.
     </p>
     <div class="hero-actions">
-      <a href="https://igetnow.com/KWFQC" target="_blank" rel="noopener" class="btn-primary">
+      <a href={LINKS.order} target="_blank" rel="noopener" class="btn-primary">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         Jetzt online bestellen
       </a>
-      <a href="#angebot" class="btn-secondary">
-        Speisekarte ansehen
-      </a>
+      <a href="#angebot" class="btn-secondary">Speisekarte ansehen</a>
     </div>
     <div class="hero-stats">
       <div class="stat">
@@ -76,46 +73,25 @@
   background: var(--ocean-deep);
   padding: 8rem 0 12rem;
 }
-
-/* Im Querformat ist die Viewport-Höhe gering — Hero muss länger werden damit
-   die Stats nicht in die Wellenzone rutschen */
 @media (max-height: 600px) and (orientation: landscape) {
-  .hero {
-    min-height: 130vh;
-    padding-bottom: 14rem;
-  }
+  .hero { min-height: 130vh; padding-bottom: 14rem; }
 }
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+.hero-bg { position: absolute; inset: 0; pointer-events: none; }
 .sun-orb {
   position: absolute;
-  top: -120px;
-  right: -80px;
-  width: 600px;
-  height: 600px;
+  top: -120px; right: -80px;
+  width: 600px; height: 600px;
   background: radial-gradient(circle, rgba(244,168,32,0.35) 0%, rgba(255,149,0,0.15) 40%, transparent 70%);
   border-radius: 50%;
 }
 .waves-container {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   height: 160px;
   overflow: hidden;
 }
-.waves {
-  position: absolute;
-  bottom: 0;
-  width: 200%;
-  height: 100%;
-}
-.wave-parallax > use {
-  animation: wave-move 20s cubic-bezier(.55,.5,.45,.5) infinite;
-}
+.waves { position: absolute; bottom: 0; width: 200%; height: 100%; }
+.wave-parallax > use { animation: wave-move 20s cubic-bezier(.55,.5,.45,.5) infinite; }
 .wave-layer1 { fill: rgba(251,244,230,0.7); animation-duration: 12s; animation-delay: -2s; }
 .wave-layer2 { fill: rgba(251,244,230,0.5); animation-duration: 16s; animation-delay: -4s; }
 .wave-layer3 { fill: rgba(251,244,230,0.3); animation-duration: 20s; animation-delay: -6s; }
@@ -124,11 +100,7 @@
   0%   { transform: translate3d(-90px, 0, 0); }
   100% { transform: translate3d(85px,  0, 0); }
 }
-.hero-inner {
-  position: relative;
-  z-index: 2;
-  color: var(--foam);
-}
+.hero-inner { position: relative; z-index: 2; color: var(--foam); }
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -146,8 +118,7 @@
   animation: fadeDown 0.8s ease both;
 }
 .badge-dot {
-  width: 8px;
-  height: 8px;
+  width: 8px; height: 8px;
   background: var(--coral);
   border-radius: 50%;
   animation: pulse 2s ease infinite;
@@ -173,7 +144,7 @@
 }
 @keyframes glow {
   from { text-shadow: 0 0 20px rgba(244,168,32,0.3); }
-  to { text-shadow: 0 0 60px rgba(244,168,32,0.7); }
+  to   { text-shadow: 0 0 60px rgba(244,168,32,0.7); }
 }
 .hero-sub {
   font-size: 1.1rem;
@@ -229,10 +200,7 @@
   border: 1px solid rgba(255,255,255,0.2);
   transition: background 0.2s, transform 0.15s;
 }
-.btn-secondary:hover {
-  background: rgba(255,255,255,0.2);
-  transform: translateY(-2px);
-}
+.btn-secondary:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
 .hero-stats {
   display: flex;
   align-items: center;
@@ -253,15 +221,10 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.stat-divider {
-  width: 1px;
-  height: 40px;
-  background: rgba(255,255,255,0.15);
-}
+.stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.15); }
 .hero-scroll {
   position: absolute;
-  bottom: 220px;
-  right: 2rem;
+  bottom: 220px; right: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -274,20 +237,19 @@
   animation: fadeDown 1s 1s ease both;
 }
 .scroll-line {
-  width: 1px;
-  height: 60px;
+  width: 1px; height: 60px;
   background: linear-gradient(to bottom, rgba(255,255,255,0.35), transparent);
   animation: scrollLine 2s ease infinite;
 }
 @keyframes scrollLine {
-  0% { transform: scaleY(0); transform-origin: top; }
+  0%  { transform: scaleY(0); transform-origin: top; }
   50% { transform: scaleY(1); transform-origin: top; }
   51% { transform: scaleY(1); transform-origin: bottom; }
-  100% { transform: scaleY(0); transform-origin: bottom; }
+  100%{ transform: scaleY(0); transform-origin: bottom; }
 }
 @keyframes fadeDown {
   from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: none; }
+  to   { opacity: 1; transform: none; }
 }
 @media (max-width: 768px) {
   .hero-scroll { display: none; }
