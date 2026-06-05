@@ -1,12 +1,17 @@
 ﻿---
-import { getMenuCategories, getMenuItems, urlFor } from '../lib/sanity'
-import type { MenuCategory, MenuItem } from '../lib/sanity'
+import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from '../lib/sanity'
+import type { MenuCategory, MenuItem, MenuSubCategory } from '../lib/sanity'
 
 let items: MenuCategory[] = []
 let menuItems: MenuItem[] = []
+let subCategories: MenuSubCategory[] = []
 
 try {
-  ;[items, menuItems] = await Promise.all([getMenuCategories(), getMenuItems()])
+  ;[items, menuItems, subCategories] = await Promise.all([
+    getMenuCategories(),
+    getMenuItems(),
+    getMenuSubCategories(),
+  ])
 } catch (e) {
   console.warn('[Angebot] Sanity nicht erreichbar, Fallback wird verwendet.', e)
 }
@@ -31,23 +36,74 @@ function itemsForCategory(categoryId: string): MenuItem[] {
   return menuItems.filter(p => p.categoryId === categoryId)
 }
 
-const popupData = items.map(cat => ({
-  id: cat._id,
-  title: cat.title,
-  emoji: cat.emoji ?? null,
-  accentColor: badgeColor(cat),
-  badgeLabel: cat.badge?.label ?? null,
-  products: itemsForCategory(cat._id).map(p => ({
+function subCatsForCategory(categoryId: string): MenuSubCategory[] {
+  return subCategories.filter(s => s.categoryId === categoryId)
+}
+
+const popupData = items.map(cat => {
+  const color = badgeColor(cat)
+  const allItems = itemsForCategory(cat._id)
+  const subs = subCatsForCategory(cat._id)
+
+  // Produkte ohne Subkategorie
+  const uncategorized = allItems.filter(p => !p.subCategoryId)
+
+  // Gruppen: erst Subkategorien (sortiert), dann ggf. "Weitere" am Ende
+  const groups = [
+    ...subs.map(sub => ({
+      id: sub._id,
+      title: sub.title,
+      description: sub.description ?? null,
+      emoji: sub.emoji ?? null,
+      imgUrl: sub.image
+        ? urlFor(sub.image).width(80).height(80).fit('crop').auto('format').url()
+        : null,
+      products: allItems
+        .filter(p => p.subCategoryId === sub._id)
+        .map(p => mapProduct(p, cat)),
+    })),
+    // Produkte ohne Subkategorie: nur anzeigen wenn vorhanden
+    ...(uncategorized.length > 0
+      ? [{
+          id: '__uncategorized__',
+          title: subs.length > 0 ? 'Weitere' : null, // Kein Titel wenn es keine Subkats gibt
+          description: null,
+          emoji: null,
+          imgUrl: null,
+          products: uncategorized.map(p => mapProduct(p, cat)),
+        }]
+      : []),
+  ]
+
+  return {
+    id: cat._id,
+    title: cat.title,
+    emoji: cat.emoji ?? null,
+    accentColor: color,
+    badgeLabel: cat.badge?.label ?? null,
+    hasSubCategories: subs.length > 0,
+    groups,
+    // Für die Karten-Anzeige: Gesamtanzahl Produkte
+    totalProducts: allItems.length,
+  }
+})
+
+function mapProduct(p: MenuItem, cat: MenuCategory) {
+  return {
     id: p._id,
     title: p.title,
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
-    imgUrl: p.image ? urlFor(p.image).width(320).height(320).fit('crop').auto('format').url() : null,
-    imgUrlFull: p.image ? urlFor(p.image).width(1200).auto('format').url() : null,
+    imgUrl: p.image
+      ? urlFor(p.image).width(320).height(320).fit('crop').auto('format').url()
+      : null,
+    imgUrlFull: p.image
+      ? urlFor(p.image).width(1200).auto('format').url()
+      : null,
     emoji: p.emoji ?? null,
     badges: p.badges ?? [],
-  })),
-}))
+  }
+}
 ---
 
 <section class="angebot" id="angebot">
@@ -57,21 +113,23 @@ const popupData = items.map(cat => ({
       <h2>Frisch, knusprig,<br/>unwiderstehlich.</h2>
       <p class="section-sub">
         Klassiker, die wir mit Hingabe perfektioniert haben.<br/>
-        Taeglich frisch zubereitet aus besten Zutaten.
+        Täglich frisch zubereitet aus besten Zutaten.
       </p>
     </div>
 
     <div class="menu-grid">
       {items.map((item, i) => {
         const color = badgeColor(item)
-        const imgUrl = item.image ? urlFor(item.image).width(600).height(420).fit('crop').auto('format').url() : null
+        const imgUrl = item.image
+          ? urlFor(item.image).width(600).height(420).fit('crop').auto('format').url()
+          : null
         const productCount = itemsForCategory(item._id).length
         return (
           <button
             class="menu-card reveal"
             style={`--accent: ${color}; transition-delay: ${i * 0.08}s`}
             data-category-id={item._id}
-            aria-label={`${item.title}`}
+            aria-label={item.title}
           >
             <div class="card-visual">
               {imgUrl
@@ -100,7 +158,6 @@ const popupData = items.map(cat => ({
 <!-- Modal -->
 <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
   <div class="modal" id="modal" role="dialog" aria-modal="true">
-
     <div class="modal-header">
       <div class="modal-header-left">
         <div class="mh-icon" id="mh-icon"></div>
@@ -115,9 +172,7 @@ const popupData = items.map(cat => ({
         </svg>
       </button>
     </div>
-
     <div class="modal-body" id="modal-body"></div>
-
   </div>
 </div>
 
@@ -139,59 +194,80 @@ const popupData = items.map(cat => ({
   const bodyEl    = document.getElementById('modal-body')
 
   const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
-
-  // ── Cache: HTML pro Kategorie nur einmal bauen ──────────────────
   const htmlCache = {}
 
+  // ── Produkt-HTML ─────────────────────────────────────────────
   function buildProductHTML(cat) {
-    if (cat.products.length === 0) {
+    if (!cat.groups || cat.groups.every(g => g.products.length === 0)) {
       return '<p class="mp-empty">Noch keine Produkte hinterlegt.</p>'
     }
 
-    let html = '<ul class="mp-list">'
-    cat.products.forEach(function(p) {
-      html += '<li>'
-      html += '<div class="mp-item">'
+    let html = ''
 
-      // Bild oder Emoji
-      html += '<div class="mpi-img-wrap">'
-      if (p.imgUrl) {
-        html += '<img class="mpi-img" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy"'
-             +  ' data-lightbox="' + p.imgUrlFull + '" data-alt="' + p.title + '" />'
-      } else {
-        html += '<div class="mpi-placeholder">' + (p.emoji || cat.emoji || '🍽️') + '</div>'
-      }
-      html += '</div>'
+    cat.groups.forEach(function(group) {
+      if (group.products.length === 0) return
 
-      // Text
-      html += '<div class="mpi-body">'
-      html += '<div>'
-      html += '<div class="mpi-top">'
-      html += '<span class="mpi-name">' + p.title + '</span>'
+      // Subkategorie-Header (nur wenn Titel vorhanden)
+      if (group.title) {
+        html += '<div class="mp-subcat-header">'
 
-      if (p.badges && p.badges.length > 0) {
-        html += '<div class="mpi-badges">'
-        p.badges.forEach(function(b) {
-          html += '<span class="mpi-badge" style="background:' + b.color + '18;color:' + b.color + ';border:1px solid ' + b.color + '44">' + b.label + '</span>'
-        })
+        if (group.imgUrl) {
+          html += '<img class="mp-subcat-img" src="' + group.imgUrl + '" alt="' + group.title + '" loading="lazy" />'
+        } else if (group.emoji) {
+          html += '<span class="mp-subcat-emoji">' + group.emoji + '</span>'
+        }
+
+        html += '<div class="mp-subcat-text">'
+        html += '<span class="mp-subcat-title">' + group.title + '</span>'
+        if (group.description) {
+          html += '<span class="mp-subcat-desc">' + group.description + '</span>'
+        }
+        html += '</div>'
         html += '</div>'
       }
-      html += '</div>'
 
-      if (p.description) {
-        html += '<p class="mpi-desc">' + p.description + '</p>'
-      }
-      html += '</div>'
+      // Produktliste der Gruppe
+      html += '<ul class="mp-list">'
+      group.products.forEach(function(p) {
+        html += '<li><div class="mp-item">'
 
-      html += '<div class="mpi-footer">'
-      html += '<span class="mpi-price">' + p.price + '</span>'
-      html += '</div>'
-      html += '</div>'
+        html += '<div class="mpi-img-wrap">'
+        if (p.imgUrl) {
+          html += '<img class="mpi-img" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy"'
+               + ' data-lightbox="' + p.imgUrlFull + '" data-alt="' + p.title + '" />'
+        } else {
+          html += '<div class="mpi-placeholder">' + (p.emoji || cat.emoji || '🍽️') + '</div>'
+        }
+        html += '</div>'
 
-      html += '</div>'
-      html += '</li>'
+        html += '<div class="mpi-body"><div>'
+        html += '<div class="mpi-top">'
+        html += '<span class="mpi-name">' + p.title + '</span>'
+        if (p.badges && p.badges.length > 0) {
+          html += '<div class="mpi-badges">'
+          p.badges.forEach(function(b) {
+            html += '<span class="mpi-badge" style="background:' + b.color + '18;color:' + b.color + ';border:1px solid ' + b.color + '44">' + b.label + '</span>'
+          })
+          html += '</div>'
+        }
+        html += '</div>'
+        if (p.description) {
+          html += '<p class="mpi-desc">' + p.description + '</p>'
+        }
+        html += '</div>'
+        html += '<div class="mpi-footer"><span class="mpi-price">' + p.price + '</span></div>'
+        html += '</div>'
+        html += '</div></li>'
+      })
+      html += '</ul>'
+
+      // Trennlinie zwischen Gruppen (nicht nach der letzten)
+      html += '<div class="mp-divider"></div>'
     })
-    html += '</ul>'
+
+    // Letzte Trennlinie entfernen
+    html = html.replace(/<div class="mp-divider"><\/div>$/, '')
+
     return html
   }
 
@@ -202,15 +278,12 @@ const popupData = items.map(cat => ({
     iconEl.textContent  = cat.emoji || '🍽️'
     titleEl.textContent = cat.title
 
-    // Cache nutzen — HTML nur beim ersten Öffnen bauen
     if (!htmlCache[categoryId]) {
       htmlCache[categoryId] = buildProductHTML(cat)
     }
     bodyEl.innerHTML = htmlCache[categoryId]
 
     backdrop.setAttribute('aria-hidden', 'false')
-
-    // iOS-Fix: nur body sperren, nicht documentElement
     document.body.style.overflow = 'hidden'
     bodyEl.scrollTop = 0
 
@@ -241,7 +314,7 @@ const popupData = items.map(cat => ({
     if (e.key === 'Escape') closeModal()
   })
 
-  // ── Lightbox ────────────────────────────────────────────────────
+  // ── Lightbox ─────────────────────────────────────────────────
   const lightbox      = document.getElementById('lightbox')
   const lightboxImg   = document.getElementById('lightbox-img')
   const lightboxClose = document.getElementById('lightbox-close')
@@ -252,7 +325,6 @@ const popupData = items.map(cat => ({
     lightbox.classList.add('open')
     lightbox.setAttribute('aria-hidden', 'false')
   }
-
   function closeLightbox() {
     lightbox.classList.remove('open')
     lightbox.setAttribute('aria-hidden', 'true')
@@ -277,415 +349,214 @@ const popupData = items.map(cat => ({
 
 <style>
 /* ───── Section ───── */
-.angebot {
-  padding: 6rem 0 8rem;
-  background: var(--sand-light);
-}
-.section-head {
-  text-align: center;
-  margin-bottom: 4rem;
-}
+.angebot { padding: 6rem 0 8rem; background: var(--sand-light); }
+.section-head { text-align: center; margin-bottom: 4rem; }
 .section-label {
   display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--wave);
-  margin-bottom: 1rem;
+  font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--wave); margin-bottom: 1rem;
 }
 .section-head h2 {
-  font-size: clamp(2.2rem, 5vw, 3.5rem);
-  font-weight: 900;
-  color: var(--ocean-deep);
-  line-height: 1.1;
-  margin-bottom: 1rem;
+  font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 900;
+  color: var(--ocean-deep); line-height: 1.1; margin-bottom: 1rem;
 }
-.section-sub {
-  color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1.7;
-}
+.section-sub { color: var(--text-muted); font-size: 1rem; line-height: 1.7; }
 
 /* ───── Menu Grid ───── */
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 1.5rem;
-}
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1.5rem; }
 .menu-card {
-  background: #fff;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.07);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-  cursor: pointer;
-  text-align: left;
-  padding: 0;
-  width: 100%;
-  font-family: inherit;
+  background: #fff; border-radius: 20px; overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.07); box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  cursor: pointer; text-align: left; padding: 0; width: 100%; font-family: inherit;
   transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease;
-  display: flex;
-  flex-direction: column;
-}
-.menu-card:hover {
-  transform: translateY(-8px) scale(1.01);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.13);
-}
-.menu-card:hover .card-img { transform: scale(1.06); }
-.menu-card:hover .card-cta {
-  color: var(--accent, #E85D3A);
-  gap: 0.6rem;
-}
-.card-visual {
-  position: relative;
-  height: 190px;
-  background: linear-gradient(135deg, #f0ebe3 0%, #e8e0d4 100%);
-  overflow: hidden;
-}
-.card-img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.5s ease;
-}
-.card-emoji {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 4.5rem;
-}
-.card-tag {
-  position: absolute;
-  top: 0.75rem; left: 0.75rem;
-  font-size: 0.65rem; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 0.08em;
-  color: #fff;
-  padding: 0.25rem 0.65rem;
-  border-radius: 100px;
-}
-.card-inner {
-  padding: 1.4rem 1.6rem 1.6rem;
   display: flex; flex-direction: column;
-  gap: 0.4rem; flex: 1;
 }
-.card-title {
-  font-size: 1.25rem; font-weight: 800;
-  color: var(--ocean-deep); line-height: 1.2;
+.menu-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 20px 50px rgba(0,0,0,0.13); }
+.menu-card:hover .card-img { transform: scale(1.06); }
+.menu-card:hover .card-cta { color: var(--accent, #E85D3A); gap: 0.6rem; }
+.card-visual {
+  position: relative; height: 190px;
+  background: linear-gradient(135deg, #f0ebe3 0%, #e8e0d4 100%); overflow: hidden;
 }
-.card-desc {
-  font-size: 0.87rem; color: var(--text-muted);
-  line-height: 1.55; flex: 1;
+.card-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
+.card-emoji { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 4.5rem; }
+.card-tag {
+  position: absolute; top: 0.75rem; left: 0.75rem;
+  font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #fff; padding: 0.25rem 0.65rem; border-radius: 100px;
 }
-.card-cta {
-  display: inline-flex; align-items: center;
-  gap: 0.4rem; font-size: 0.82rem; font-weight: 700;
-  color: var(--wave); margin-top: 0.6rem;
-  transition: color 0.2s, gap 0.2s;
-}
+.card-inner { padding: 1.4rem 1.6rem 1.6rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
+.card-title { font-size: 1.25rem; font-weight: 800; color: var(--ocean-deep); line-height: 1.2; }
+.card-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
+.card-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 700; color: var(--wave); margin-top: 0.6rem; transition: color 0.2s, gap 0.2s; }
 
 /* ───── Modal Backdrop ───── */
 .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(8, 20, 30, 0.72);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+  position: fixed; inset: 0; background: rgba(8,20,30,0.72);
+  z-index: 1000; display: flex; align-items: flex-end; justify-content: center;
+  padding: 0; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
 }
-@media (min-width: 640px) {
-  .modal-backdrop {
-    align-items: center;
-    padding: 1.5rem;
-  }
-}
-.modal-backdrop.open {
-  opacity: 1;
-  pointer-events: auto;
-}
+@media (min-width: 640px) { .modal-backdrop { align-items: center; padding: 1.5rem; } }
+.modal-backdrop.open { opacity: 1; pointer-events: auto; }
 
 /* ───── Modal Box ───── */
 .modal {
-  background: #ffffff;
-  width: 100%;
-  max-width: 600px;
-  max-height: 75vh;
-  border-radius: 28px 28px 0 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: translateY(48px);
-  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.25s ease;
-  opacity: 0;
-  will-change: transform, opacity;
-  box-shadow: 0 -4px 60px rgba(0,0,0,0.2);
+  background: #ffffff; width: 100%; max-width: 600px; max-height: 75vh;
+  border-radius: 28px 28px 0 0; display: flex; flex-direction: column;
+  overflow: hidden; transform: translateY(48px);
+  transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.25s ease;
+  opacity: 0; will-change: transform, opacity; box-shadow: 0 -4px 60px rgba(0,0,0,0.2);
 }
 @media (min-width: 640px) {
-  .modal {
-    max-height: 88vh;
-    border-radius: 24px;
-    transform: none;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.3);
-  }
+  .modal { max-height: 88vh; border-radius: 24px; transform: none; box-shadow: 0 40px 100px rgba(0,0,0,0.3); }
 }
-.modal-backdrop.open .modal {
-  transform: translateY(0);
-  opacity: 1;
-}
+.modal-backdrop.open .modal { transform: translateY(0); opacity: 1; }
 
 /* ───── Modal Header ───── */
 .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 22px 18px;
-  border-bottom: 1px solid #f0ebe3;
-  background: #ffffff;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 22px 18px; border-bottom: 1px solid #f0ebe3;
+  background: #ffffff; flex-shrink: 0;
 }
-.modal-header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.modal-header-left { display: flex; align-items: center; gap: 12px; }
 .mh-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
-  background: #FFF4ED;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 13px; background: #FFF4ED;
+  display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
 }
-.mh-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #E85D3A;
-  margin-bottom: 2px;
-}
+.mh-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #E85D3A; margin-bottom: 2px; }
 .mh-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--ocean-deep, #002434);
-  line-height: 1.15;
-  margin: 0;
-  text-transform: none;
-  letter-spacing: normal;
+  font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700;
+  color: var(--ocean-deep, #002434); line-height: 1.15; margin: 0;
+  text-transform: none; letter-spacing: normal;
 }
 .modal-close {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1px solid #eee;
-  background: #fafafa;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  flex-shrink: 0;
+  width: 38px; height: 38px; border-radius: 50%; border: 1px solid #eee;
+  background: #fafafa; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: #888; flex-shrink: 0;
   transition: background 0.2s, color 0.2s, transform 0.2s;
 }
-.modal-close:hover {
-  background: #f0ebe3;
-  color: var(--ocean-deep, #002434);
-  transform: rotate(90deg);
-}
+.modal-close:hover { background: #f0ebe3; color: var(--ocean-deep, #002434); transform: rotate(90deg); }
 
 /* ───── Modal Body ───── */
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 18px 24px;
-  background: #ffffff;
-}
+.modal-body { flex: 1; overflow-y: auto; padding: 16px 18px 24px; background: #ffffff; }
 .modal-body::-webkit-scrollbar { width: 4px; }
 .modal-body::-webkit-scrollbar-track { background: transparent; }
 .modal-body::-webkit-scrollbar-thumb { background: #e0d9cf; border-radius: 10px; }
 
-</style>
-
-<style is:global>
-/* ───── Produktliste (is:global — wird per innerHTML eingefügt) ───── */
-.mp-empty {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  padding: 2rem 0;
-  text-align: center;
-}
-
-.mp-list {
-  list-style: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.mp-list li {
-  list-style: none !important;
-  padding-left: 0 !important;
-  margin-left: 0 !important;
-}
-
-.mp-item {
-  display: flex;
-  align-items: stretch;
-  background: #faf8f5;
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid #f0ebe3;
-  transition: box-shadow 0.2s, transform 0.2s;
-}
-.mp-item:hover {
-  box-shadow: 0 8px 28px rgba(0, 36, 52, 0.09);
-  transform: translateY(-2px);
-}
-
-.mpi-img-wrap {
-  width: 96px;
-  min-width: 96px;
-  flex-shrink: 0;
-  background: #f0ebe3;
-  overflow: hidden;
-  display: flex;
-  align-items: stretch;
-}
-.mpi-img {
-  width: 100%;
-  object-fit: cover;
-  display: block;
-  cursor: zoom-in;
-}
-.mpi-placeholder {
-  width: 100%;
-  min-height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-}
-
-.mpi-body {
-  flex: 1;
-  min-width: 0;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 4px;
-}
-.mpi-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-.mpi-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--ocean-deep, #002434);
-  line-height: 1.3;
-}
-.mpi-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  flex-shrink: 0;
-}
-.mpi-badge {
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  padding: 2px 7px;
-  border-radius: 100px;
-  white-space: nowrap;
-}
-.mpi-desc {
-  font-size: 0.78rem;
-  color: var(--text-muted, #8a7f74);
-  line-height: 1.5;
-  flex: 1;
-}
-.mpi-footer {
-  display: flex;
-  align-items: center;
-  margin-top: 8px;
-}
-.mpi-price {
-  font-weight: 700;
-  font-size: 0.97rem;
-  color: #E85D3A;
-  letter-spacing: -0.01em;
-}
-
-/* ───── Mobile ───── */
 @media (max-width: 480px) {
   .modal-header { padding: 16px 16px 14px; }
   .modal-body { padding: 12px 12px 20px; }
-  .mpi-img-wrap { width: 80px; min-width: 80px; }
   .mh-icon { width: 40px; height: 40px; font-size: 18px; }
   .mh-title { font-size: 1.15rem; }
 }
 
 /* ───── Lightbox ───── */
 .lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.92);
-  z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1100;
+  display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
 }
-.lightbox.open {
-  opacity: 1;
-  pointer-events: auto;
-}
+.lightbox.open { opacity: 1; pointer-events: auto; }
 .lightbox-img {
-  max-width: 100%;
-  max-height: 85vh;
-  border-radius: 16px;
-  object-fit: contain;
-  transform: scale(0.92);
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  max-width: 100%; max-height: 85vh; border-radius: 16px; object-fit: contain;
+  transform: scale(0.92); transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
 }
-.lightbox.open .lightbox-img {
-  transform: scale(1);
-}
+.lightbox.open .lightbox-img { transform: scale(1); }
 .lightbox-close {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: absolute; top: 1.25rem; right: 1.25rem;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1);
+  color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: background 0.2s;
 }
-.lightbox-close:hover {
-  background: rgba(255,255,255,0.2);
+.lightbox-close:hover { background: rgba(255,255,255,0.2); }
+</style>
+
+<style is:global>
+/* ───── Produktliste (is:global — wird per innerHTML eingefügt) ───── */
+.mp-empty { color: var(--text-muted); font-size: 0.95rem; padding: 2rem 0; text-align: center; }
+
+/* Subkategorie-Header */
+.mp-subcat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 4px 8px;
+  margin-bottom: 4px;
+}
+.mp-subcat-img {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #f0ebe3;
+}
+.mp-subcat-emoji {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+.mp-subcat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.mp-subcat-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ocean-deep, #0D2233);
+  line-height: 1.2;
+}
+.mp-subcat-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted, #888);
+  line-height: 1.4;
+}
+
+/* Trennlinie zwischen Gruppen */
+.mp-divider {
+  height: 1px;
+  background: #f0ebe3;
+  margin: 12px 0;
+}
+
+.mp-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 0 4px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mp-list li {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+.mp-item {
+  display: flex; align-items: stretch;
+  background: #faf8f5; border-radius: 16px;
+  overflow: hidden; border: 1px solid #f0ebe3;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.mp-item:hover { box-shadow: 0 8px 28px rgba(0,36,52,0.09); transform: translateY(-2px); }
+
+.mpi-img-wrap { width: 96px; min-width: 96px; flex-shrink: 0; background: #f0ebe3; overflow: hidden; display: flex; align-items: stretch; }
+.mpi-img { width: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.mpi-placeholder { width: 100%; min-height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+.mpi-body { flex: 1; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
+.mpi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.mpi-name { font-weight: 600; font-size: 0.9rem; color: var(--ocean-deep, #002434); line-height: 1.3; }
+.mpi-badges { display: flex; flex-wrap: wrap; gap: 4px; flex-shrink: 0; }
+.mpi-badge { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
+.mpi-desc { font-size: 0.78rem; color: var(--text-muted, #8a7f74); line-height: 1.5; flex: 1; }
+.mpi-footer { display: flex; align-items: center; margin-top: 8px; }
+.mpi-price { font-weight: 700; font-size: 0.97rem; color: #E85D3A; letter-spacing: -0.01em; }
+
+@media (max-width: 480px) {
+  .mpi-img-wrap { width: 80px; min-width: 80px; }
 }
 </style>

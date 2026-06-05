@@ -3,12 +3,18 @@ import { getSiteSettings } from '../lib/sanity'
 import type { SiteSettings } from '../lib/sanity'
 import { LINKS, CONTACT, SITE } from '../lib/config'
 
+// Sanity-Links überschreiben config.ts-Fallbacks
+
 let settings: SiteSettings | null = null
 try {
   settings = await getSiteSettings()
 } catch (e) {
   console.warn('[Kontakt] Sanity nicht erreichbar, Fallback-Daten werden verwendet.', e)
 }
+
+// Sanity siteSettings.links hat Vorrang vor config.ts
+const links = { ...LINKS, ...settings?.links }
+const legal = { ...{ owner: CONTACT.owner, address: CONTACT.address, siteName: SITE.name, tagline: SITE.tagline }, ...settings?.legal }
 
 const address = settings?.address ?? {
   name: 'Campingplatz Sütel',
@@ -100,15 +106,15 @@ const seasonNote = settings?.seasonNote
         class="footer-logo-img"
       />
     </div>
-    <p class="footer-tagline">{SITE.tagline}</p>
+    <p class="footer-tagline">{legal.tagline}</p>
     <div class="footer-links">
       <a href="#angebot">Speisekarte</a>
       <a href="#ueber-uns">Über uns</a>
-      <a href={LINKS.order} target="_blank" rel="noopener">Online bestellen</a>
+      <a href={links.order} target="_blank" rel="noopener">Online bestellen</a>
       <a href="#kontakt">Kontakt</a>
     </div>
     <div class="footer-legal">
-      <p>© {new Date().getFullYear()} {SITE.name} — Inhaber {CONTACT.owner}, {CONTACT.address}</p>
+      <p>© {new Date().getFullYear()} {legal.siteName} — Inhaber {legal.owner}, {legal.address}</p>
       <div class="footer-legal-links">
         <a href="#">Impressum</a>
         <a href="#">Datenschutz</a>

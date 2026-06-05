@@ -2,27 +2,22 @@ import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 
-// ── Trage hier deine Sanity-Projekt-ID ein ──────────────────────
-// Gleiche Werte wie in sanity/sanity.config.ts
-const PROJECT_ID = '6a4o5kn7'   // z.B. 'ab12cd34'
+const PROJECT_ID = '6a4o5kn7'
 const DATASET    = 'production'
-// ────────────────────────────────────────────────────────────────
 
 export const sanityClient = createClient({
   projectId: PROJECT_ID,
   dataset: DATASET,
   apiVersion: '2024-01-01',
-  useCdn: true,         // CDN für schnelle Ladezeiten im Build
+  useCdn: true,
 })
 
-// Bild-URL-Builder
 const builder = imageUrlBuilder(sanityClient)
-
 export function urlFor(source: SanityImageSource) {
   return builder.image(source)
 }
 
-// ── TypeScript-Typen ────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────
 
 export interface MenuCategory {
   _id: string
@@ -35,6 +30,31 @@ export interface MenuCategory {
     color?: string
     customColor?: string
   }
+  order: number
+  active: boolean
+}
+
+export interface MenuSubCategory {
+  _id: string
+  title: string
+  description?: string
+  image?: SanityImageSource
+  emoji?: string
+  categoryId: string
+  order: number
+  active: boolean
+}
+
+export interface MenuItem {
+  _id: string
+  title: string
+  categoryId: string
+  subCategoryId?: string        // optional — bestehende Produkte haben keinen Wert
+  price: number
+  description?: string
+  image?: SanityImageSource
+  emoji?: string
+  badges?: { label: string; color: string }[]
   order: number
   active: boolean
 }
@@ -60,49 +80,44 @@ export interface SiteSettings {
   }
   openingHours: OpeningHoursEntry[]
   seasonNote?: string
+  // NEU: Links und Legal aus Sanity
+  links?: {
+    order?: string
+    voucher?: string
+    spotify?: string
+    whatsapp?: string
+  }
+  legal?: {
+    owner?: string
+    address?: string
+    siteName?: string
+    tagline?: string
+  }
 }
 
-// ── GROQ Queries ────────────────────────────────────────────────
+// ── Queries ──────────────────────────────────────────────────────
 
-/** Alle aktiven Speisekarten-Kategorien, sortiert nach `order` */
 export async function getMenuCategories(): Promise<MenuCategory[]> {
   return sanityClient.fetch(
     `*[_type == "menuCategory" && active == true] | order(order asc) {
+      _id, title, description, image, emoji, badge, order, active
+    }`
+  )
+}
+
+export async function getMenuSubCategories(): Promise<MenuSubCategory[]> {
+  return sanityClient.fetch(
+    `*[_type == "menuSubCategory" && active == true] | order(order asc) {
       _id,
       title,
       description,
       image,
       emoji,
-      badge,
+      "categoryId": category._ref,
       order,
       active
     }`
   )
-}
-
-/** Seiteneinstellungen (Singleton) */
-export async function getSiteSettings(): Promise<SiteSettings | null> {
-  return sanityClient.fetch(
-    `*[_type == "siteSettings" && _id == "siteSettings"][0] {
-      address,
-      contact,
-      openingHours,
-      seasonNote
-    }`
-  )
-}
-
-export interface MenuItem {
-  _id: string
-  title: string
-  categoryId: string
-  price: number
-  description?: string
-  image?: SanityImageSource
-  emoji?: string
-  badges?: { label: string; color: string }[]
-  order: number
-  active: boolean
 }
 
 export async function getMenuItems(): Promise<MenuItem[]> {
@@ -111,6 +126,7 @@ export async function getMenuItems(): Promise<MenuItem[]> {
       _id,
       title,
       "categoryId": category._ref,
+      "subCategoryId": subCategory._ref,   // null wenn nicht gesetzt — kein Fehler
       price,
       description,
       image,
@@ -118,6 +134,19 @@ export async function getMenuItems(): Promise<MenuItem[]> {
       badges,
       order,
       active
+    }`
+  )
+}
+
+export async function getSiteSettings(): Promise<SiteSettings | null> {
+  return sanityClient.fetch(
+    `*[_type == "siteSettings" && _id == "siteSettings"][0] {
+      address,
+      contact,
+      openingHours,
+      seasonNote,
+      links,
+      legal
     }`
   )
 }
