@@ -132,13 +132,68 @@ const popupData = items.map(cat => ({
 </div>
 
 <script define:vars={{ popupData }}>
-  const backdrop = document.getElementById('modal-backdrop')
-  const closeBtn = document.getElementById('modal-close')
-  const iconEl   = document.getElementById('mh-icon')
-  const titleEl  = document.getElementById('mh-title')
-  const bodyEl   = document.getElementById('modal-body')
+  const backdrop  = document.getElementById('modal-backdrop')
+  const closeBtn  = document.getElementById('modal-close')
+  const iconEl    = document.getElementById('mh-icon')
+  const titleEl   = document.getElementById('mh-title')
+  const bodyEl    = document.getElementById('modal-body')
 
   const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
+
+  // ── Cache: HTML pro Kategorie nur einmal bauen ──────────────────
+  const htmlCache = {}
+
+  function buildProductHTML(cat) {
+    if (cat.products.length === 0) {
+      return '<p class="mp-empty">Noch keine Produkte hinterlegt.</p>'
+    }
+
+    let html = '<ul class="mp-list">'
+    cat.products.forEach(function(p) {
+      html += '<li>'
+      html += '<div class="mp-item">'
+
+      // Bild oder Emoji
+      html += '<div class="mpi-img-wrap">'
+      if (p.imgUrl) {
+        html += '<img class="mpi-img" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy"'
+             +  ' data-lightbox="' + p.imgUrlFull + '" data-alt="' + p.title + '" />'
+      } else {
+        html += '<div class="mpi-placeholder">' + (p.emoji || cat.emoji || '🍽️') + '</div>'
+      }
+      html += '</div>'
+
+      // Text
+      html += '<div class="mpi-body">'
+      html += '<div>'
+      html += '<div class="mpi-top">'
+      html += '<span class="mpi-name">' + p.title + '</span>'
+
+      if (p.badges && p.badges.length > 0) {
+        html += '<div class="mpi-badges">'
+        p.badges.forEach(function(b) {
+          html += '<span class="mpi-badge" style="background:' + b.color + '18;color:' + b.color + ';border:1px solid ' + b.color + '44">' + b.label + '</span>'
+        })
+        html += '</div>'
+      }
+      html += '</div>'
+
+      if (p.description) {
+        html += '<p class="mpi-desc">' + p.description + '</p>'
+      }
+      html += '</div>'
+
+      html += '<div class="mpi-footer">'
+      html += '<span class="mpi-price">' + p.price + '</span>'
+      html += '</div>'
+      html += '</div>'
+
+      html += '</div>'
+      html += '</li>'
+    })
+    html += '</ul>'
+    return html
+  }
 
   function openModal(categoryId) {
     const cat = dataMap[categoryId]
@@ -147,65 +202,18 @@ const popupData = items.map(cat => ({
     iconEl.textContent  = cat.emoji || '🍽️'
     titleEl.textContent = cat.title
 
-    if (cat.products.length === 0) {
-      bodyEl.innerHTML = '<p style="color:#888;font-size:0.95rem;padding:2rem 0;text-align:center;font-family:DM Sans,sans-serif;">Noch keine Produkte hinterlegt.</p>'
-    } else {
-      var sLIST  = 'list-style:none!important;padding:0!important;margin:0!important;display:flex;flex-direction:column;gap:10px;'
-      var sITEM  = 'list-style:none!important;display:flex!important;flex-direction:row!important;align-items:stretch;background:#faf8f5;border-radius:16px;overflow:hidden;border:1px solid #f0ebe3;'
-      var sIMGW  = 'width:96px;min-width:96px;flex-shrink:0;background:#f0ebe3;overflow:hidden;display:flex;align-items:stretch;'
-      var sIMG   = 'width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;'
-      var sPH    = 'width:100%;min-height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;'
-      var sBODY  = 'flex:1;min-width:0;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:4px;'
-      var sTOP   = 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px;'
-      var sNAME  = 'font-family:DM Sans,sans-serif;font-weight:600;font-size:0.9rem;color:#0D2233;line-height:1.3;'
-      var sBADGS = 'display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;'
-      var sBADG  = 'font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;padding:2px 7px;border-radius:100px;white-space:nowrap;'
-      var sDESC  = 'font-family:DM Sans,sans-serif;font-size:0.78rem;color:#888;line-height:1.5;flex:1;margin:0;'
-      var sFOOT  = 'display:flex;align-items:center;margin-top:8px;'
-      var sPRICE = 'font-family:DM Sans,sans-serif;font-weight:700;font-size:0.97rem;color:#E85D3A;letter-spacing:-0.01em;'
-
-      let html = '<ul style="' + sLIST + '">'
-      cat.products.forEach(function(p) {
-        html += '<li style="' + sITEM + '">'
-        html += '<div style="' + sIMGW + '">'
-        if (p.imgUrl) {
-          html += '<img style="' + sIMG + '" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy" data-lightbox="' + p.imgUrlFull + '" data-alt="' + p.title + '" />'
-        } else {
-          html += '<div style="' + sPH + '">' + (p.emoji || cat.emoji || '\uD83C\uDF7D\uFE0F') + '</div>'
-        }
-        html += '</div>'
-        html += '<div style="' + sBODY + '">'
-        html += '<div>'
-        html += '<div style="' + sTOP + '">'
-        html += '<span style="' + sNAME + '">' + p.title + '</span>'
-        if (p.badges && p.badges.length > 0) {
-          html += '<div style="' + sBADGS + '">'
-          p.badges.forEach(function(b) {
-            html += '<span style="' + sBADG + 'background:' + b.color + '18;color:' + b.color + ';border:1px solid ' + b.color + '44">' + b.label + '</span>'
-          })
-          html += '</div>'
-        }
-        html += '</div>'
-        if (p.description) {
-          html += '<p style="' + sDESC + '">' + p.description + '</p>'
-        }
-        html += '</div>'
-        html += '<div style="' + sFOOT + '">'
-        html += '<span style="' + sPRICE + '">' + p.price + '</span>'
-        html += '</div>'
-        html += '</div>'
-        html += '</li>'
-      })
-      html += '</ul>'
-      bodyEl.innerHTML = html
+    // Cache nutzen — HTML nur beim ersten Öffnen bauen
+    if (!htmlCache[categoryId]) {
+      htmlCache[categoryId] = buildProductHTML(cat)
     }
+    bodyEl.innerHTML = htmlCache[categoryId]
 
     backdrop.setAttribute('aria-hidden', 'false')
-    document.documentElement.style.overflow = 'hidden'
+
+    // iOS-Fix: nur body sperren, nicht documentElement
     document.body.style.overflow = 'hidden'
     bodyEl.scrollTop = 0
 
-    // Zwei rAF-Ticks: Browser rendert erst Startposition, dann triggert die Transition
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         backdrop.classList.add('open')
@@ -216,7 +224,6 @@ const popupData = items.map(cat => ({
   function closeModal() {
     backdrop.classList.remove('open')
     backdrop.setAttribute('aria-hidden', 'true')
-    document.documentElement.style.overflow = ''
     document.body.style.overflow = ''
   }
 
@@ -234,10 +241,10 @@ const popupData = items.map(cat => ({
     if (e.key === 'Escape') closeModal()
   })
 
-  // Lightbox
-  var lightbox     = document.getElementById('lightbox')
-  var lightboxImg  = document.getElementById('lightbox-img')
-  var lightboxClose = document.getElementById('lightbox-close')
+  // ── Lightbox ────────────────────────────────────────────────────
+  const lightbox      = document.getElementById('lightbox')
+  const lightboxImg   = document.getElementById('lightbox-img')
+  const lightboxClose = document.getElementById('lightbox-close')
 
   function openLightbox(src, alt) {
     lightboxImg.src = src
@@ -249,14 +256,10 @@ const popupData = items.map(cat => ({
   function closeLightbox() {
     lightbox.classList.remove('open')
     lightbox.setAttribute('aria-hidden', 'true')
-    setTimeout(function() {
-      lightboxImg.src = ''
-      lightboxImg.alt = ''
-    }, 250)
   }
 
   bodyEl.addEventListener('click', function(e) {
-    var img = e.target.closest('[data-lightbox]')
+    const img = e.target.closest('[data-lightbox]')
     if (img) {
       e.stopPropagation()
       openLightbox(img.getAttribute('data-lightbox'), img.getAttribute('data-alt'))
@@ -407,7 +410,7 @@ const popupData = items.map(cat => ({
 
 /* ───── Modal Box ───── */
 .modal {
-  background: #ffffff !important;
+  background: #ffffff;
   width: 100%;
   max-width: 600px;
   max-height: 75vh;
@@ -441,7 +444,7 @@ const popupData = items.map(cat => ({
   justify-content: space-between;
   padding: 20px 22px 18px;
   border-bottom: 1px solid #f0ebe3;
-  background: #ffffff !important;
+  background: #ffffff;
   flex-shrink: 0;
 }
 .modal-header-left {
@@ -509,6 +512,7 @@ const popupData = items.map(cat => ({
 .modal-body::-webkit-scrollbar-track { background: transparent; }
 .modal-body::-webkit-scrollbar-thumb { background: #e0d9cf; border-radius: 10px; }
 
+/* ───── Produktliste ───── */
 .mp-empty {
   color: var(--text-muted);
   font-size: 0.95rem;
@@ -516,7 +520,6 @@ const popupData = items.map(cat => ({
   text-align: center;
 }
 
-/* ───── Produktliste ───── */
 .mp-list {
   list-style: none !important;
   padding: 0 !important;
@@ -546,7 +549,6 @@ const popupData = items.map(cat => ({
   transform: translateY(-2px);
 }
 
-/* Bild */
 .mpi-img-wrap {
   width: 96px;
   min-width: 96px;
@@ -560,6 +562,7 @@ const popupData = items.map(cat => ({
   width: 100%;
   object-fit: cover;
   display: block;
+  cursor: zoom-in;
 }
 .mpi-placeholder {
   width: 100%;
@@ -570,7 +573,6 @@ const popupData = items.map(cat => ({
   font-size: 2.2rem;
 }
 
-/* Text */
 .mpi-body {
   flex: 1;
   min-width: 0;
