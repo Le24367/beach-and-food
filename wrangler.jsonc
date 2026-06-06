@@ -1,8 +1,13 @@
 {
+  "name": "beach-and-food",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
   "kv_namespaces": [
     {
       "binding": "SESSION",
-      "title": "beach-and-food-session-v2"
+      "id": "1c7fbbbdc8658905d73ad91610af320c" 
     }
   ]
 }
