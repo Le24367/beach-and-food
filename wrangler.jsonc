@@ -1,0 +1,8 @@
+{
+  "kv_namespaces": [
+    {
+      "binding": "SESSION",
+      "title": "beach-and-food-session-v2"
+    }
+  ]
+}
