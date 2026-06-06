@@ -1,5 +1,6 @@
 ---
-import { LINKS } from '../lib/config'
+import { getLinks } from '../lib/sanity'
+const links = await getLinks()
 ---
 <section class="bestellen" id="bestellen">
   <div class="container">
@@ -9,11 +10,11 @@ import { LINKS } from '../lib/config'
         <h2>Hunger? Spar dir die Wartezeit.</h2>
         <p>Bestelle bequem über dein Smartphone vor und hol dein Essen frisch am Truck ab.</p>
         <div class="bestellen-actions">
-          <a href={LINKS.order} target="_blank" rel="noopener" class="btn-primary">
+          <a href={links.order} target="_blank" rel="noopener" class="btn-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg>
             Jetzt online bestellen
           </a>
-          <a href={LINKS.voucher} target="_blank" rel="noopener" class="btn-gift">
+          <a href={links.voucher} target="_blank" rel="noopener" class="btn-gift">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
             Gutschein verschenken
           </a>
@@ -80,7 +81,7 @@ import { LINKS } from '../lib/config'
       <!-- Spotify Embed — Audio-Stream läuft direkt Spotify ↔ User, kein Vercel-Traffic -->
       <div class="spotify-embed-wrap">
         <iframe
-          src={`https://open.spotify.com/embed/playlist/${LINKS.spotify.split('/playlist/')[1]}?utm_source=generator&theme=0`}
+          src={`https://open.spotify.com/embed/playlist/${links.spotify.split('/playlist/')[1]}?utm_source=generator&theme=0`}
           width="100%"
           height="352"
           frameborder="0"
@@ -91,7 +92,7 @@ import { LINKS } from '../lib/config'
       </div>
       <!-- Externer Link als Fallback -->
       <a
-        href={LINKS.spotify}
+        href={links.spotify}
         target="_blank"
         rel="noopener"
         class="spotify-open-link"

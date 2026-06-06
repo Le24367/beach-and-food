@@ -150,3 +150,50 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
     }`
   )
 }
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+/**
+ * Gibt gemergte Links zurück: Sanity siteSettings.links überschreibt config.ts.
+ * Einmal aufrufen pro Build — alle Komponenten nutzen diesen Wert.
+ */
+export interface ResolvedLinks {
+  order: string
+  voucher: string
+  whatsapp: string
+  spotify: string
+  maps: string
+}
+
+export interface ResolvedLegal {
+  owner: string
+  address: string
+  siteName: string
+  tagline: string
+}
+
+export async function getLinks(): Promise<ResolvedLinks> {
+  const { LINKS } = await import('./config')
+  try {
+    const settings = await getSiteSettings()
+    return { ...LINKS, ...settings?.links }
+  } catch {
+    return { ...LINKS }
+  }
+}
+
+export async function getLegal(): Promise<ResolvedLegal> {
+  const { SITE, CONTACT } = await import('./config')
+  const fallback: ResolvedLegal = {
+    owner: CONTACT.owner,
+    address: CONTACT.address,
+    siteName: SITE.name,
+    tagline: SITE.tagline,
+  }
+  try {
+    const settings = await getSiteSettings()
+    return { ...fallback, ...settings?.legal }
+  } catch {
+    return fallback
+  }
+}

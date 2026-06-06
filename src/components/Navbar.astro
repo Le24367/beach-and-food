@@ -1,5 +1,6 @@
 ---
-import { LINKS } from '../lib/config'
+import { getLinks } from '../lib/sanity'
+const links = await getLinks()
 ---
 <nav class="navbar">
   <div class="container nav-inner">
@@ -15,9 +16,9 @@ import { LINKS } from '../lib/config'
       <li><a href="#vibes">Beach Vibes</a></li>
       <li><a href="#ueber-uns">Über uns</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
-      <li><a href={LINKS.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
+      <li><a href={links.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
     </ul>
-    <a href={LINKS.order} target="_blank" rel="noopener" class="nav-cta">Jetzt bestellen</a>
+    <a href={links.order} target="_blank" rel="noopener" class="nav-cta">Jetzt bestellen</a>
     <button class="burger" aria-label="Menü öffnen">
       <span></span><span></span><span></span>
     </button>
@@ -28,8 +29,8 @@ import { LINKS } from '../lib/config'
       <li><a href="#vibes">Beach Vibes</a></li>
       <li><a href="#ueber-uns">Über uns</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
-      <li><a href={LINKS.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
-      <li><a href={LINKS.order} target="_blank" rel="noopener" class="nav-cta-mobile">Jetzt bestellen</a></li>
+      <li><a href={links.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
+      <li><a href={links.order} target="_blank" rel="noopener" class="nav-cta-mobile">Jetzt bestellen</a></li>
     </ul>
   </div>
 </nav>
