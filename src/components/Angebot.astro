@@ -44,11 +44,8 @@ const popupData = items.map(cat => {
   const color = badgeColor(cat)
   const allItems = itemsForCategory(cat._id)
   const subs = subCatsForCategory(cat._id)
-
-  // Produkte ohne Subkategorie
   const uncategorized = allItems.filter(p => !p.subCategoryId)
 
-  // Gruppen: erst Subkategorien (sortiert), dann ggf. "Weitere" am Ende
   const groups = [
     ...subs.map(sub => ({
       id: sub._id,
@@ -62,11 +59,10 @@ const popupData = items.map(cat => {
         .filter(p => p.subCategoryId === sub._id)
         .map(p => mapProduct(p, cat)),
     })),
-    // Produkte ohne Subkategorie: nur anzeigen wenn vorhanden
     ...(uncategorized.length > 0
       ? [{
           id: '__uncategorized__',
-          title: subs.length > 0 ? 'Weitere' : null, // Kein Titel wenn es keine Subkats gibt
+          title: subs.length > 0 ? 'Weitere' : null,
           description: null,
           emoji: null,
           imgUrl: null,
@@ -83,7 +79,6 @@ const popupData = items.map(cat => {
     badgeLabel: cat.badge?.label ?? null,
     hasSubCategories: subs.length > 0,
     groups,
-    // Für die Karten-Anzeige: Gesamtanzahl Produkte
     totalProducts: allItems.length,
   }
 })
@@ -157,10 +152,10 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
 <!-- Modal -->
 <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
-  <div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mh-title">
     <div class="modal-header">
       <div class="modal-header-left">
-        <div class="mh-icon" id="mh-icon"></div>
+        <div class="mh-icon" id="mh-icon" aria-hidden="true"></div>
         <div class="mh-text">
           <div class="mh-label">Speisekarte</div>
           <h2 class="mh-title" id="mh-title"></h2>
@@ -192,96 +187,170 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   const iconEl    = document.getElementById('mh-icon')
   const titleEl   = document.getElementById('mh-title')
   const bodyEl    = document.getElementById('modal-body')
+  const lightbox      = document.getElementById('lightbox')
+  const lightboxImg   = document.getElementById('lightbox-img')
+  const lightboxClose = document.getElementById('lightbox-close')
 
   const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
-  const htmlCache = {}
+  // Cache speichert nun DOM-Nodes statt HTML-Strings
+  const nodeCache = {}
 
-  // ── Produkt-HTML ─────────────────────────────────────────────
-  function buildProductHTML(cat) {
-    if (!cat.groups || cat.groups.every(g => g.products.length === 0)) {
-      return '<p class="mp-empty">Noch keine Produkte hinterlegt.</p>'
+  // ── Hilfsfunktion: Text sicher als Node setzen ────────────────────
+  // Statt innerHTML = "..." wird der Text immer per textContent gesetzt.
+  // Das verhindert XSS: Browser interpretiert den Text nie als HTML.
+  function setText(el, text) {
+    el.textContent = text ?? ''
+  }
+
+  function createEl(tag, className) {
+    const el = document.createElement(tag)
+    if (className) el.className = className
+    return el
+  }
+
+  // ── Produkt-DOM aufbauen (kein innerHTML mit Nutzerdaten) ─────────
+  function buildProductDOM(cat) {
+    const fragment = document.createDocumentFragment()
+
+    if (!cat.groups || cat.groups.every(function(g) { return g.products.length === 0 })) {
+      const empty = createEl('p', 'mp-empty')
+      setText(empty, 'Noch keine Produkte hinterlegt.')
+      fragment.appendChild(empty)
+      return fragment
     }
-
-    let html = ''
 
     cat.groups.forEach(function(group) {
       if (group.products.length === 0) return
 
-      // Subkategorie-Header (nur wenn Titel vorhanden)
+      // Subkategorie-Header
       if (group.title) {
-        html += '<div class="mp-subcat-header">'
+        const header = createEl('div', 'mp-subcat-header')
 
         if (group.imgUrl) {
-          html += '<img class="mp-subcat-img" src="' + group.imgUrl + '" alt="' + group.title + '" loading="lazy" />'
+          const img = createEl('img', 'mp-subcat-img')
+          img.src = group.imgUrl
+          img.alt = group.title  // Kein XSS-Risiko bei src/alt-Attributen via DOM
+          img.loading = 'lazy'
+          header.appendChild(img)
         } else if (group.emoji) {
-          html += '<span class="mp-subcat-emoji">' + group.emoji + '</span>'
+          const span = createEl('span', 'mp-subcat-emoji')
+          setText(span, group.emoji)
+          header.appendChild(span)
         }
 
-        html += '<div class="mp-subcat-text">'
-        html += '<span class="mp-subcat-title">' + group.title + '</span>'
+        const textWrap = createEl('div', 'mp-subcat-text')
+        const titleSpan = createEl('span', 'mp-subcat-title')
+        setText(titleSpan, group.title)
+        textWrap.appendChild(titleSpan)
+
         if (group.description) {
-          html += '<span class="mp-subcat-desc">' + group.description + '</span>'
+          const desc = createEl('span', 'mp-subcat-desc')
+          setText(desc, group.description)
+          textWrap.appendChild(desc)
         }
-        html += '</div>'
-        html += '</div>'
+
+        header.appendChild(textWrap)
+        fragment.appendChild(header)
       }
 
-      // Produktliste der Gruppe
-      html += '<ul class="mp-list">'
+      // Produktliste
+      const ul = createEl('ul', 'mp-list')
+
       group.products.forEach(function(p) {
-        html += '<li><div class="mp-item">'
+        const li = document.createElement('li')
+        const item = createEl('div', 'mp-item')
 
-        html += '<div class="mpi-img-wrap">'
+        // Bild-Bereich
+        const imgWrap = createEl('div', 'mpi-img-wrap')
         if (p.imgUrl) {
-          html += '<img class="mpi-img" src="' + p.imgUrl + '" alt="' + p.title + '" loading="lazy"'
-               + ' data-lightbox="' + p.imgUrlFull + '" data-alt="' + p.title + '" />'
+          const img = createEl('img', 'mpi-img')
+          img.src = p.imgUrl
+          img.alt = p.title
+          img.loading = 'lazy'
+          // data-* Attribute: sicher, da sie nie als HTML geparst werden
+          img.dataset.lightbox = p.imgUrlFull
+          img.dataset.alt = p.title
+          imgWrap.appendChild(img)
         } else {
-          html += '<div class="mpi-placeholder">' + (p.emoji || cat.emoji || '🍽️') + '</div>'
+          const placeholder = createEl('div', 'mpi-placeholder')
+          setText(placeholder, p.emoji || cat.emoji || '🍽️')
+          imgWrap.appendChild(placeholder)
         }
-        html += '</div>'
+        item.appendChild(imgWrap)
 
-        html += '<div class="mpi-body"><div>'
-        html += '<div class="mpi-top">'
-        html += '<span class="mpi-name">' + p.title + '</span>'
+        // Text-Bereich
+        const body = createEl('div', 'mpi-body')
+        const inner = createEl('div', '')
+
+        const top = createEl('div', 'mpi-top')
+        const name = createEl('span', 'mpi-name')
+        setText(name, p.title)
+        top.appendChild(name)
+
         if (p.badges && p.badges.length > 0) {
-          html += '<div class="mpi-badges">'
+          const badgesWrap = createEl('div', 'mpi-badges')
           p.badges.forEach(function(b) {
-            html += '<span class="mpi-badge" style="background:' + b.color + '18;color:' + b.color + ';border:1px solid ' + b.color + '44">' + b.label + '</span>'
+            const badge = createEl('span', 'mpi-badge')
+            setText(badge, b.label)
+            // Farb-Styles: sicher, da style.xxx nie Code ausführt
+            badge.style.background = b.color + '18'
+            badge.style.color = b.color
+            badge.style.border = '1px solid ' + b.color + '44'
+            badgesWrap.appendChild(badge)
           })
-          html += '</div>'
+          top.appendChild(badgesWrap)
         }
-        html += '</div>'
-        if (p.description) {
-          html += '<p class="mpi-desc">' + p.description + '</p>'
-        }
-        html += '</div>'
-        html += '<div class="mpi-footer"><span class="mpi-price">' + p.price + '</span></div>'
-        html += '</div>'
-        html += '</div></li>'
-      })
-      html += '</ul>'
 
-      // Trennlinie zwischen Gruppen (nicht nach der letzten)
-      html += '<div class="mp-divider"></div>'
+        inner.appendChild(top)
+
+        if (p.description) {
+          const desc = createEl('p', 'mpi-desc')
+          setText(desc, p.description)
+          inner.appendChild(desc)
+        }
+
+        body.appendChild(inner)
+
+        const footer = createEl('div', 'mpi-footer')
+        const price = createEl('span', 'mpi-price')
+        setText(price, p.price)
+        footer.appendChild(price)
+        body.appendChild(footer)
+
+        item.appendChild(body)
+        li.appendChild(item)
+        ul.appendChild(li)
+      })
+
+      fragment.appendChild(ul)
+
+      // Trennlinie (zwischen Gruppen)
+      fragment.appendChild(createEl('div', 'mp-divider'))
     })
 
     // Letzte Trennlinie entfernen
-    html = html.replace(/<div class="mp-divider"><\/div>$/, '')
+    const lastChild = fragment.lastChild
+    if (lastChild && lastChild.className === 'mp-divider') {
+      fragment.removeChild(lastChild)
+    }
 
-    return html
+    return fragment
   }
 
+  // ── Modal ─────────────────────────────────────────────────────────
   function openModal(categoryId) {
     const cat = dataMap[categoryId]
     if (!cat) return
 
-    iconEl.textContent  = cat.emoji || '🍽️'
-    titleEl.textContent = cat.title
+    setText(iconEl, cat.emoji || '🍽️')
+    setText(titleEl, cat.title)
 
-    if (!htmlCache[categoryId]) {
-      htmlCache[categoryId] = buildProductHTML(cat)
+    bodyEl.innerHTML = ''
+    if (!nodeCache[categoryId]) {
+      nodeCache[categoryId] = buildProductDOM(cat)
     }
-    bodyEl.innerHTML = htmlCache[categoryId]
+    // cloneNode(true) damit der Cache-Node wiederverwendbar bleibt
+    bodyEl.appendChild(nodeCache[categoryId].cloneNode(true))
 
     backdrop.setAttribute('aria-hidden', 'false')
     document.body.style.overflow = 'hidden'
@@ -290,6 +359,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         backdrop.classList.add('open')
+        // Focus-Management: Fokus auf Schließen-Button setzen
+        closeBtn.focus()
       })
     })
   }
@@ -310,20 +381,14 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   backdrop.addEventListener('click', function(e) {
     if (e.target === backdrop) closeModal()
   })
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal()
-  })
 
-  // ── Lightbox ─────────────────────────────────────────────────
-  const lightbox      = document.getElementById('lightbox')
-  const lightboxImg   = document.getElementById('lightbox-img')
-  const lightboxClose = document.getElementById('lightbox-close')
-
+  // ── Lightbox ─────────────────────────────────────────────────────
   function openLightbox(src, alt) {
     lightboxImg.src = src
     lightboxImg.alt = alt
     lightbox.classList.add('open')
     lightbox.setAttribute('aria-hidden', 'false')
+    lightboxClose.focus()
   }
   function closeLightbox() {
     lightbox.classList.remove('open')
@@ -342,8 +407,16 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   lightbox.addEventListener('click', function(e) {
     if (e.target === lightbox) closeLightbox()
   })
+
+  // ── Gemeinsamer Escape-Handler (FIX: vorher zwei getrennte Listener) ──
+  // Prüft Reihenfolge: Lightbox zuerst, dann Modal.
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeLightbox()
+    if (e.key !== 'Escape') return
+    if (lightbox.classList.contains('open')) {
+      closeLightbox()
+    } else if (backdrop.classList.contains('open')) {
+      closeModal()
+    }
   })
 </script>
 
@@ -474,74 +547,24 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 </style>
 
 <style is:global>
-/* ───── Produktliste (is:global — wird per innerHTML eingefügt) ───── */
+/* ───── Produktliste (is:global — wird per DOM-API eingefügt) ───── */
 .mp-empty { color: var(--text-muted); font-size: 0.95rem; padding: 2rem 0; text-align: center; }
 
-/* Subkategorie-Header */
 .mp-subcat-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 4px 8px;
-  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 4px 8px; margin-bottom: 4px;
 }
-.mp-subcat-img {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid #f0ebe3;
-}
-.mp-subcat-emoji {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-  width: 36px;
-  text-align: center;
-}
-.mp-subcat-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.mp-subcat-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--ocean-deep, #0D2233);
-  line-height: 1.2;
-}
-.mp-subcat-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted, #888);
-  line-height: 1.4;
-}
+.mp-subcat-img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; flex-shrink: 0; border: 1px solid #f0ebe3; }
+.mp-subcat-emoji { font-size: 1.5rem; flex-shrink: 0; width: 36px; text-align: center; }
+.mp-subcat-text { display: flex; flex-direction: column; gap: 1px; }
+.mp-subcat-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; color: var(--ocean-deep, #0D2233); line-height: 1.2; }
+.mp-subcat-desc { font-size: 0.75rem; color: var(--text-muted, #888); line-height: 1.4; }
 
-/* Trennlinie zwischen Gruppen */
-.mp-divider {
-  height: 1px;
-  background: #f0ebe3;
-  margin: 12px 0;
-}
+.mp-divider { height: 1px; background: #f0ebe3; margin: 12px 0; }
 
-.mp-list {
-  list-style: none !important;
-  padding: 0 !important;
-  margin: 0 0 4px !important;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.mp-list li {
-  list-style: none !important;
-  padding-left: 0 !important;
-  margin-left: 0 !important;
-}
-.mp-item {
-  display: flex; align-items: stretch;
-  background: #faf8f5; border-radius: 16px;
-  overflow: hidden; border: 1px solid #f0ebe3;
-  transition: box-shadow 0.2s, transform 0.2s;
-}
+.mp-list { list-style: none !important; padding: 0 !important; margin: 0 0 4px !important; display: flex; flex-direction: column; gap: 10px; }
+.mp-list li { list-style: none !important; padding-left: 0 !important; margin-left: 0 !important; }
+.mp-item { display: flex; align-items: stretch; background: #faf8f5; border-radius: 16px; overflow: hidden; border: 1px solid #f0ebe3; transition: box-shadow 0.2s, transform 0.2s; }
 .mp-item:hover { box-shadow: 0 8px 28px rgba(0,36,52,0.09); transform: translateY(-2px); }
 
 .mpi-img-wrap { width: 96px; min-width: 96px; flex-shrink: 0; background: #f0ebe3; overflow: hidden; display: flex; align-items: stretch; }

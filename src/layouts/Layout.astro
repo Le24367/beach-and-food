@@ -5,8 +5,15 @@ import '../styles/global.css'
 
 export interface Props {
   title?: string;
+  description?: string;
 }
-const { title = 'Beach and Food – Foodtruck 2.0 am Sütel-Strand' } = Astro.props;
+const {
+  title = 'Beach and Food – Foodtruck 2.0 am Sütel-Strand',
+  description = 'Fischbrötchen, Currywurst, Pommes und kalte Drinks – direkt am Sütel-Strand auf dem Campingplatz Sütel. Bei exakt 167°C, täglich frisch.'
+} = Astro.props;
+
+const canonicalUrl = 'https://beachandfood.de';
+const ogImage = 'https://beachandfood.de/og-image.jpg';
 ---
 <!DOCTYPE html>
 <html lang="de">
@@ -14,31 +21,34 @@ const { title = 'Beach and Food – Foodtruck 2.0 am Sütel-Strand' } = Astro.pr
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <!-- Preconnect zu Google Fonts — verhindert Render-Blocking -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={ogImage} />
+  <meta property="og:locale" content="de_DE" />
+  <meta property="og:site_name" content="Beach and Food" />
 
-  <!-- Preload der beiden genutzten Schriften -->
-  <link
-    rel="preload"
-    as="style"
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
-  />
-  <link
-    rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
-    media="print"
-    onload="this.media='all'"
-  />
-  <!-- Fallback für Browser ohne JS -->
-  <noscript>
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
-    />
-  </noscript>
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={ogImage} />
+
+  <!--
+    KEIN Google Fonts mehr – Fonts werden lokal aus node_modules geladen.
+    DSGVO-konform: keine Verbindung zu externen Servern beim Seitenaufruf.
+
+    Setup (einmalig im Terminal):
+      npm install @fontsource/dm-sans @fontsource/playfair-display
+
+    Die @import-Regeln stehen in global.css.
+  -->
 </head>
 <body>
   <slot />

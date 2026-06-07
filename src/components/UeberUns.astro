@@ -12,10 +12,13 @@ const images = Object.keys(imageModules).map((path) => {
   return { src: `/images/ueberuns/${filename}`, alt };
 });
 
-// Fallback: kein Logo mehr — leerer Fallback verhindert den 404
 const slides = images.length > 0 ? images : [
   { src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food' }
 ];
+
+// YouTube Thumbnail-URL – kein externer Request bis zum Klick.
+// hqdefault = 480×360, mqdefault = 320×180, maxresdefault = 1280×720
+const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 ---
 <section class="ueber-uns" id="ueber-uns">
   <div class="uu-card">
@@ -52,13 +55,7 @@ const slides = images.length > 0 ? images : [
 
       <div class="uu-image reveal" style="transition-delay:0.15s">
         <div class="carousel" id="uu-carousel">
-
-          <!-- aria-live: Screen-Reader kündigt Slide-Wechsel an -->
-          <div
-            class="carousel-track"
-            aria-live="polite"
-            aria-atomic="true"
-          >
+          <div class="carousel-track" aria-live="polite" aria-atomic="true">
             {slides.map((slide, i) => (
               <div
                 class={`carousel-slide${i === 0 ? ' active' : ''}`}
@@ -93,15 +90,42 @@ const slides = images.length > 0 ? images : [
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/><polygon fill="white" points="9.75,15.5 15.5,12 9.75,8.5"/></svg>
         Schau mal rein — unser Truck in Aktion
       </div>
-      <div class="video-wrapper">
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${YT_ID}?rel=0&modestbranding=1&color=white`}
-          title="Beach and Food – Foodtruck am Sütel-Strand"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen
+
+      <!--
+        DSGVO-konformes YouTube-Facade-Pattern:
+        - Beim Laden der Seite wird NUR das Vorschaubild (von i.ytimg.com) geladen.
+        - Das iframe zu youtube-nocookie.com wird erst beim Klick auf Play injiziert.
+        - Bis dahin: keine Verbindung zu YouTube, kein Fingerprinting, keine Cookies.
+        - i.ytimg.com ist YouTube's Thumbnail-CDN – dafür braucht es keine Einwilligung,
+          da kein Tracking stattfindet (reiner Bild-Request ohne Cookies).
+      -->
+      <div
+        class="yt-facade video-wrapper"
+        data-videoid={YT_ID}
+        role="button"
+        tabindex="0"
+        aria-label="Video abspielen: Beach and Food – Foodtruck am Sütel-Strand"
+      >
+        <img
+          src={ytThumbnail}
+          alt="Beach and Food – Foodtruck am Sütel-Strand – Video abspielen"
           loading="lazy"
-        ></iframe>
+          class="yt-thumbnail"
+        />
+        <button class="yt-play-btn" aria-label="Video abspielen" tabindex="-1">
+          <!-- Offizielles YouTube Play-Button SVG -->
+          <svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true">
+            <path
+              d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
+              fill="#f00"
+            />
+            <path d="M45 24 27 14v20" fill="#fff"/>
+          </svg>
+        </button>
+        <div class="yt-consent-note">
+          Mit Klick auf Play wird eine Verbindung zu YouTube hergestellt.
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Datenschutz</a>
+        </div>
       </div>
     </div>
 
@@ -281,6 +305,8 @@ const slides = images.length > 0 ? images : [
   background: var(--sun);
   transform: scale(1.3);
 }
+
+/* ── YouTube Facade ── */
 .uu-video { margin-bottom: 5rem; }
 .video-label {
   display: inline-flex;
@@ -301,7 +327,9 @@ const slides = images.length > 0 ? images : [
   overflow: hidden;
   background: #000;
   box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  cursor: pointer;
 }
+/* Das iframe wird per JS eingefügt und übernimmt diese Styles */
 .video-wrapper iframe {
   position: absolute;
   inset: 0;
@@ -309,6 +337,53 @@ const slides = images.length > 0 ? images : [
   height: 100%;
   border: none;
 }
+.yt-thumbnail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s;
+}
+.yt-facade:hover .yt-thumbnail {
+  opacity: 0.85;
+}
+.yt-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  /* Hover-Skalierung für besseres Feedback */
+  transition: transform 0.2s;
+  /* Schatten damit der Button auf hellen Thumbnails sichtbar ist */
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+.yt-facade:hover .yt-play-btn {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+.yt-consent-note {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.65);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.72rem;
+  padding: 0.5rem 1rem;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+.yt-consent-note a {
+  color: rgba(255,255,255,0.9);
+  text-decoration: underline;
+  margin-left: 0.3rem;
+}
+
 .uu-badges {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -348,6 +423,41 @@ const slides = images.length > 0 ? images : [
 </style>
 
 <script>
+  // ── YouTube Facade ───────────────────────────────────────────────
+  // Das iframe wird erst beim Klick erzeugt → kein YouTube-Kontakt beim Laden.
+  function initYtFacade(facade: HTMLElement) {
+    const activate = () => {
+      const videoId = facade.dataset.videoid
+      if (!videoId) return
+
+      const iframe = document.createElement('iframe')
+      iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&color=white`
+      iframe.title = 'Beach and Food – Foodtruck am Sütel-Strand'
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+      iframe.allowFullscreen = true
+      iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;'
+
+      // Facade-Inhalte entfernen, iframe einfügen
+      facade.innerHTML = ''
+      facade.appendChild(iframe)
+      // Nicht mehr als Button behandeln
+      facade.removeAttribute('role')
+      facade.removeAttribute('tabindex')
+      facade.style.cursor = 'default'
+    }
+
+    facade.addEventListener('click', activate)
+    facade.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        activate()
+      }
+    })
+  }
+
+  document.querySelectorAll<HTMLElement>('.yt-facade').forEach(initYtFacade)
+
+  // ── Carousel (unverändert) ───────────────────────────────────────
   function initCarousel(carouselEl: Element) {
     const slides = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'))
     const dotsContainer = carouselEl.querySelector<HTMLElement>('.carousel-dots')
@@ -359,7 +469,6 @@ const slides = images.length > 0 ? images : [
     let autoTimer: ReturnType<typeof setInterval> | null = null
     const total = slides.length
 
-    // ── Dots dynamisch erzeugen ──────────────────────────────────
     if (dotsContainer) {
       dotsContainer.innerHTML = ''
       slides.forEach((_, i) => {
@@ -373,7 +482,6 @@ const slides = images.length > 0 ? images : [
       })
     }
 
-    // Alle Slides initial positionieren
     slides.forEach((slide, i) => {
       slide.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)'
     })
@@ -389,43 +497,25 @@ const slides = images.length > 0 ? images : [
     function goTo(index: number, reverse = false) {
       if (animating || index === current) return
       animating = true
-
       const next = (index + total) % total
       const direction = reverse ? -1 : 1
-
-      // Nächstes Slide auf einkommende Seite setzen (ohne Transition)
       slides[next].style.transition = 'none'
       slides[next].style.transform = `translateX(${direction * 100}%)`
-
-      // Reflow erzwingen
       slides[next].getBoundingClientRect()
-
-      // Beide Slides animieren
       slides[next].style.transition = ''
       slides[current].style.transition = ''
       slides[next].style.transform = 'translateX(0)'
       slides[current].style.transform = `translateX(${-direction * 100}%)`
-
-      // Dots aktualisieren
       dotsContainer?.querySelectorAll('.carousel-dot')[current]?.classList.remove('active')
       dotsContainer?.querySelectorAll('.carousel-dot')[next]?.classList.add('active')
-
-      // Aria aktualisieren
       updateAria(current, next)
-
       const prevIndex = current
-
-      // ── Race-Condition-Fix: Timeout als Fallback ─────────────
-      // Falls transitionend nicht feuert (Tab im Hintergrund,
-      // display:none, reduzierte Animationen), wird animating
-      // nach 600ms automatisch freigegeben
       const fallbackTimer = setTimeout(() => {
         slides[prevIndex].classList.remove('active')
         slides[next].classList.add('active')
         current = next
         animating = false
       }, 600)
-
       slides[next].addEventListener('transitionend', () => {
         clearTimeout(fallbackTimer)
         slides[prevIndex].classList.remove('active')
@@ -435,7 +525,6 @@ const slides = images.length > 0 ? images : [
       }, { once: true })
     }
 
-    // ── Autoplay nur wenn sichtbar (IntersectionObserver) ────────
     function startAuto() {
       if (total <= 1) return
       autoTimer = setInterval(() => goTo((current + 1) % total), 4000)
@@ -448,30 +537,17 @@ const slides = images.length > 0 ? images : [
     const visibilityObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            startAuto()
-          } else {
-            stopAuto()
-          }
+          if (entry.isIntersecting) startAuto()
+          else stopAuto()
         })
       },
       { threshold: 0.2 }
     )
     visibilityObserver.observe(carouselEl)
 
-    // ── Pfeil-Buttons ────────────────────────────────────────────
-    prevBtn?.addEventListener('click', () => {
-      stopAuto()
-      goTo((current - 1 + total) % total, true)
-      startAuto()
-    })
-    nextBtn?.addEventListener('click', () => {
-      stopAuto()
-      goTo((current + 1) % total)
-      startAuto()
-    })
+    prevBtn?.addEventListener('click', () => { stopAuto(); goTo((current - 1 + total) % total, true); startAuto() })
+    nextBtn?.addEventListener('click', () => { stopAuto(); goTo((current + 1) % total); startAuto() })
 
-    // ── Touch / Swipe ────────────────────────────────────────────
     let touchStartX = 0
     carouselEl.addEventListener('touchstart', (e: Event) => {
       touchStartX = (e as TouchEvent).changedTouches[0].clientX
@@ -480,14 +556,11 @@ const slides = images.length > 0 ? images : [
       const diff = touchStartX - (e as TouchEvent).changedTouches[0].clientX
       if (Math.abs(diff) > 40) {
         stopAuto()
-        diff > 0
-          ? goTo((current + 1) % total)
-          : goTo((current - 1 + total) % total, true)
+        diff > 0 ? goTo((current + 1) % total) : goTo((current - 1 + total) % total, true)
         startAuto()
       }
     }, { passive: true })
 
-    // ── Pause bei Hover (bessere UX) ─────────────────────────────
     carouselEl.addEventListener('mouseenter', stopAuto)
     carouselEl.addEventListener('mouseleave', startAuto)
   }

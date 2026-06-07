@@ -1,4 +1,19 @@
-/* Fonts werden über Layout.astro per <link> geladen (kein @import mehr) */
+/*
+  LOKALE FONTS – DSGVO-konform, kein Google-Fonts-Request.
+
+  Voraussetzung (einmalig):
+    npm install @fontsource/dm-sans @fontsource/playfair-display
+
+  Nur die tatsächlich genutzten Weights werden importiert → kleineres Bundle.
+
+  DM Sans weights im Projekt: 400 (normal), 500 (medium), 600 (semibold)
+  Playfair Display weights im Projekt: 700 (bold), 900 (black → fällt auf 700 zurück)
+*/
+@import '@fontsource/dm-sans/400.css';
+@import '@fontsource/dm-sans/500.css';
+@import '@fontsource/dm-sans/600.css';
+@import '@fontsource/playfair-display/700.css';
+/* Playfair hat kein 900-Weight in fontsource – 700 wird für font-weight:900 verwendet */
 
 :root {
   --sand: #F5E6C8;

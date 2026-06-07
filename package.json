@@ -9,6 +9,8 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@fontsource/dm-sans": "^5.0.0",
+    "@fontsource/playfair-display": "^5.0.0",
     "@sanity/client": "^6.0.0",
     "@sanity/image-url": "^1.0.0",
     "@vercel/analytics": "^2.0.1",
