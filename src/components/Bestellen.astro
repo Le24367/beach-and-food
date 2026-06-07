@@ -2,9 +2,18 @@
 import { getLinks } from '../lib/sanity'
 const links = await getLinks()
 
-const TRACK_ID = '7x87bSfQ3eFLSp6UN4by6X'
-const TRACK_URL = `https://open.spotify.com/track/${TRACK_ID}`
-const EMBED_URL = `https://open.spotify.com/embed/track/${TRACK_ID}?utm_source=generator&theme=0`
+// URL kommt aus Sanity → Einstellungen → Links → Spotify URL
+// Funktioniert mit Track- UND Playlist-URLs
+const spotifyUrl = links.spotify ?? ''
+
+// Typ (track/playlist) und ID aus der URL extrahieren
+// Unterstützt auch intl-URLs wie open.spotify.com/intl-de/track/...
+const spotifyMatch = spotifyUrl.match(/spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album)\/([A-Za-z0-9]+)/)
+const spotifyType  = spotifyMatch?.[1] ?? 'track'
+const spotifyId    = spotifyMatch?.[2] ?? ''
+
+const TRACK_URL = spotifyId ? `https://open.spotify.com/${spotifyType}/${spotifyId}` : '#'
+const EMBED_URL = spotifyId ? `https://open.spotify.com/embed/${spotifyType}/${spotifyId}?utm_source=generator&theme=0` : ''
 
 // oEmbed-Daten beim Build von Spotify holen (serverseitig — kein Browser-Request)
 // Das liefert: title, thumbnail_url, thumbnail_width, thumbnail_height
