@@ -1,199 +1,150 @@
+/**
+ * sanity.ts
+ *
+ * ZWEI CLIENTS — wichtig für Sicherheit:
+ *
+ * 1. serverClient  → hat den SANITY_TOKEN, darf NIEMALS in einem <script>-Tag
+ *                    oder client-seitigen Import verwendet werden.
+ *                    Nur in .astro-Frontmatter (zwischen den --- Zeilen).
+ *
+ * 2. publicClient  → kein Token, darf im Browser verwendet werden.
+ *                    Kann nur öffentlich freigegebene Daten lesen.
+ *
+ * Faustregel: Siehst du "import { serverClient }" in einem <script>-Tag?
+ *             → Sofort auf publicClient umstellen oder den Fetch ins Frontmatter verschieben.
+ */
+
 import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 
-const PROJECT_ID = '6a4o5kn7'
-const DATASET    = 'production'
-
-export const sanityClient = createClient({
-  projectId: PROJECT_ID,
-  dataset: DATASET,
+// ─────────────────────────────────────────────────────────────────────────────
+// Server-Client (mit Token) — NUR in .astro-Frontmatter verwenden
+// ─────────────────────────────────────────────────────────────────────────────
+export const serverClient = createClient({
+  projectId: import.meta.env.SANITY_PROJECT_ID,
+  dataset:   import.meta.env.SANITY_DATASET ?? 'production',
   apiVersion: '2024-01-01',
-  useCdn: true,
+  token:     import.meta.env.SANITY_TOKEN,   // Nicht PUBLIC_ → bleibt serverseitig
+  useCdn:    false,                           // false bei Schreib-Operationen / Token-Nutzung
 })
 
-const builder = imageUrlBuilder(sanityClient)
+// ─────────────────────────────────────────────────────────────────────────────
+// Public-Client (ohne Token) — darf im Browser und im Frontmatter verwendet werden
+// ─────────────────────────────────────────────────────────────────────────────
+export const publicClient = createClient({
+  projectId: import.meta.env.PUBLIC_SANITY_PROJECT_ID,   // PUBLIC_ → im Browser verfügbar
+  dataset:   import.meta.env.PUBLIC_SANITY_DATASET ?? 'production',
+  apiVersion: '2024-01-01',
+  // Kein Token!
+  useCdn:    true,
+})
+
+// Rückwärtskompatibilität: bestehende Imports von "sanityClient" funktionieren weiter.
+// Alle Fetches dieser App brauchen keinen Token → publicClient reicht.
+export const sanityClient = publicClient
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Image URL Builder
+// ─────────────────────────────────────────────────────────────────────────────
+const builder = imageUrlBuilder(publicClient)
+
 export function urlFor(source: SanityImageSource) {
   return builder.image(source)
 }
 
-// ── Types ────────────────────────────────────────────────────────
-
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 export interface MenuCategory {
-  _id: string
-  title: string
+  _id:         string
+  title:       string
   description: string
-  image?: SanityImageSource
-  emoji?: string
+  emoji?:      string
+  image?:      SanityImageSource
   badge?: {
-    label?: string
-    color?: string
+    label:       string
+    color:       string
     customColor?: string
   }
-  order: number
+  order:  number
   active: boolean
 }
 
 export interface MenuSubCategory {
-  _id: string
-  title: string
+  _id:         string
+  title:       string
   description?: string
-  image?: SanityImageSource
-  emoji?: string
-  categoryId: string
-  order: number
-  active: boolean
+  emoji?:      string
+  image?:      SanityImageSource
+  categoryId:  string
+  order?:      number
 }
 
 export interface MenuItem {
-  _id: string
-  title: string
-  categoryId: string
-  subCategoryId?: string        // optional — bestehende Produkte haben keinen Wert
-  price: number
-  description?: string
-  image?: SanityImageSource
-  emoji?: string
-  badges?: { label: string; color: string }[]
-  order: number
-  active: boolean
+  _id:           string
+  title:         string
+  price?:        number
+  description?:  string
+  emoji?:        string
+  image?:        SanityImageSource
+  categoryId:    string
+  subCategoryId?: string
+  badges?: Array<{ label: string; color: string }>
+  available:     boolean
 }
 
-export interface OpeningHoursEntry {
-  _key: string
-  days: string
-  hours: string
-  closed: boolean
+export interface SiteLinks {
+  order:   string
+  voucher: string
+  spotify: string
+  maps:    string
+  phone:   string
 }
 
-export interface SiteSettings {
-  address: {
-    name: string
-    street: string
-    zip: string
-    mapsUrl: string
-  }
-  contact: {
-    email: string
-    whatsapp: string
-    whatsappDisplay: string
-  }
-  openingHours: OpeningHoursEntry[]
-  seasonNote?: string
-  // NEU: Links und Legal aus Sanity
-  links?: {
-    order?: string
-    voucher?: string
-    spotify?: string
-    whatsapp?: string
-  }
-  legal?: {
-    owner?: string
-    address?: string
-    siteName?: string
-    tagline?: string
-  }
-}
-
-// ── Queries ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Queries — alle Fetches laufen im Frontmatter (serverseitig / Build-Zeit)
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function getMenuCategories(): Promise<MenuCategory[]> {
-  return sanityClient.fetch(
+  return publicClient.fetch<MenuCategory[]>(
     `*[_type == "menuCategory" && active == true] | order(order asc) {
-      _id, title, description, image, emoji, badge, order, active
-    }`
-  )
-}
-
-export async function getMenuSubCategories(): Promise<MenuSubCategory[]> {
-  return sanityClient.fetch(
-    `*[_type == "menuSubCategory" && active == true] | order(order asc) {
-      _id,
-      title,
-      description,
-      image,
-      emoji,
-      "categoryId": category._ref,
-      order,
-      active
+      _id, title, description, emoji, image, badge, order, active
     }`
   )
 }
 
 export async function getMenuItems(): Promise<MenuItem[]> {
-  return sanityClient.fetch(
-    `*[_type == "menuItem" && active == true] | order(order asc) {
-      _id,
-      title,
-      "categoryId": category._ref,
-      "subCategoryId": subCategory._ref,   // null wenn nicht gesetzt — kein Fehler
-      price,
-      description,
-      image,
-      emoji,
-      badges,
-      order,
-      active
+  return publicClient.fetch<MenuItem[]>(
+    `*[_type == "menuItem" && available == true] | order(order asc) {
+      _id, title, price, description, emoji, image,
+      "categoryId":    category->_id,
+      "subCategoryId": subCategory->_id,
+      badges, available
     }`
   )
 }
 
-export async function getSiteSettings(): Promise<SiteSettings | null> {
-  return sanityClient.fetch(
-    `*[_type == "siteSettings" && _id == "siteSettings"][0] {
-      address,
-      contact,
-      openingHours,
-      seasonNote,
-      links,
-      legal
+export async function getMenuSubCategories(): Promise<MenuSubCategory[]> {
+  return publicClient.fetch<MenuSubCategory[]>(
+    `*[_type == "menuSubCategory"] | order(order asc) {
+      _id, title, description, emoji, image,
+      "categoryId": category->_id,
+      order
     }`
   )
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
-
-/**
- * Gibt gemergte Links zurück: Sanity siteSettings.links überschreibt config.ts.
- * Einmal aufrufen pro Build — alle Komponenten nutzen diesen Wert.
- */
-export interface ResolvedLinks {
-  order: string
-  voucher: string
-  whatsapp: string
-  spotify: string
-  maps: string
-}
-
-export interface ResolvedLegal {
-  owner: string
-  address: string
-  siteName: string
-  tagline: string
-}
-
-export async function getLinks(): Promise<ResolvedLinks> {
-  const { LINKS } = await import('./config')
-  try {
-    const settings = await getSiteSettings()
-    return { ...LINKS, ...settings?.links }
-  } catch {
-    return { ...LINKS }
-  }
-}
-
-export async function getLegal(): Promise<ResolvedLegal> {
-  const { SITE, CONTACT } = await import('./config')
-  const fallback: ResolvedLegal = {
-    owner: CONTACT.owner,
-    address: CONTACT.address,
-    siteName: SITE.name,
-    tagline: SITE.tagline,
-  }
-  try {
-    const settings = await getSiteSettings()
-    return { ...fallback, ...settings?.legal }
-  } catch {
-    return fallback
+export async function getLinks(): Promise<SiteLinks> {
+  const data = await publicClient.fetch<SiteLinks | null>(
+    `*[_type == "siteSettings"][0] { order, voucher, spotify, maps, phone }`
+  )
+  // Fallback-Werte falls Sanity noch nicht konfiguriert ist
+  return {
+    order:   data?.order   ?? '#',
+    voucher: data?.voucher ?? '#',
+    spotify: data?.spotify ?? '#',
+    maps:    data?.maps    ?? '#',
+    phone:   data?.phone   ?? '#',
   }
 }
