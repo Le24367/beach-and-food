@@ -293,9 +293,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
     wrap.appendChild(img)
 
-    // Lazy-Loading via IntersectionObserver
-    // Wird ausgelöst wenn imgWrap in den sichtbaren Bereich des modal-body scrollt
-    lazyObserver.observe(wrap)
+    // KEIN observe() hier — der Node ist noch nicht im DOM.
+    // observe() wird in openModal() aufgerufen, nachdem cloneNode eingefügt wurde.
 
     return wrap
   }
@@ -315,8 +314,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       })
     },
     {
-      root: document.getElementById('modal-body'),   // scroll-Container
-      rootMargin: '200px 0px',                       // 200px Vorlauf
+      root: null,
+      rootMargin: '300px 0px',
       threshold: 0,
     }
   )
@@ -441,25 +440,26 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (!nodeCache[categoryId]) {
       nodeCache[categoryId] = buildProductDOM(cat)
     }
+    // cloneNode verliert Observer-Registrierungen — daher NACH dem Einfügen neu beobachten
     bodyEl.appendChild(nodeCache[categoryId].cloneNode(true))
+
+    // Observer sofort nach DOM-Einfügung starten (NICHT im rAF — sonst fehlt der Trigger
+    // für Bilder die bereits im sichtbaren Bereich liegen)
+    bodyEl.querySelectorAll('.mpi-img-wrap').forEach(function(wrap) {
+      const img = wrap.querySelector('.mpi-img[data-src]')
+      if (img && !img.getAttribute('src')) {
+        lazyObserver.observe(wrap)
+      }
+    })
 
     backdrop.setAttribute('aria-hidden', 'false')
     document.body.style.overflow = 'hidden'
     bodyEl.scrollTop = 0
 
-    // Observer nach dem Einfügen starten — jetzt ist modal-body der root
-    // Bilder die sofort sichtbar sind werden direkt geladen
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         backdrop.classList.add('open')
         closeBtn.focus()
-
-        // Observer-Root aktualisieren auf den sichtbaren modal-body
-        // (Nodes wurden via cloneNode eingefügt, neu beobachten)
-        bodyEl.querySelectorAll('.mpi-img-wrap').forEach(function(wrap) {
-          const img = wrap.querySelector('.mpi-img')
-          if (img && !img.src) lazyObserver.observe(wrap)
-        })
       })
     })
   }
