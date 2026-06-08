@@ -72,10 +72,10 @@ const popupData = items.map(cat => {
 
   const groups = [
     ...subs.map(sub => {
-      // Subkategorie-Bild: Thumb-Variante
+      // Subkategorie-Bild: exakt dieselben Parameter wie fetch-images.js thumbUrl()
       let subImgUrl: string | null = null
       if (sub.image) {
-        const sanityThumb = urlFor(sub.image).width(80).height(80).fit('crop').auto('format').url()
+        const sanityThumb = urlFor(sub.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
         subImgUrl = localOrRemote(sanityThumb, 'thumb')
       }
       return {
@@ -151,11 +151,10 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     <div class="menu-grid">
       {items.map((item, i) => {
         const color = badgeColor(item)
-        // Kategorie-Karten-Bild: Sanity-URL → lokaler Thumb
+        // Kategorie-Karten-Bild: exakt dieselben URL-Parameter wie fetch-images.js → trifft die Map
         let cardImgUrl: string | null = null
         if (item.image) {
-          const sanityUrl = urlFor(item.image).width(600).height(420).fit('crop').auto('format').url()
-          // Für Karten nehmen wir die Full-Variante (600px = Karte, passt gut zu full)
+          const sanityUrl = urlFor(item.image).width(1200).quality(85).auto('format').url()
           cardImgUrl = localOrRemote(sanityUrl, 'full')
         }
         const productCount = itemsForCategory(item._id).length
