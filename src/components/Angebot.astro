@@ -234,8 +234,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   const lightboxClose = document.getElementById('lightbox-close')
   const lightboxSpinner = document.getElementById('lightbox-spinner')
 
-  const dataMap   = Object.fromEntries(popupData.map(c => [c.id, c]))
-  const nodeCache = {}   // DOM-Node-Cache pro Kategorie
+  const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
 
   // ── DOM-Helfer ────────────────────────────────────────────────────
   function setText(el, text) {
@@ -290,6 +289,14 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     }, { once: true })
 
     wrap.appendChild(img)
+
+    // Falls Bild bereits im Browser-Cache: complete ist sofort true,
+    // load feuert dann nicht mehr → Klasse manuell setzen
+    if (img.complete && img.naturalWidth > 0) {
+      img.classList.add('mpi-img--loaded')
+      placeholder.classList.add('mpi-placeholder--hidden')
+    }
+
     return wrap
   }
 
@@ -410,11 +417,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     setText(titleEl, cat.title)
 
     bodyEl.innerHTML = ''
-    if (!nodeCache[categoryId]) {
-      nodeCache[categoryId] = buildProductDOM(cat)
-    }
-    // cloneNode verliert Observer-Registrierungen — daher NACH dem Einfügen neu beobachten
-    bodyEl.appendChild(nodeCache[categoryId].cloneNode(true))
+    bodyEl.appendChild(buildProductDOM(cat))
 
     backdrop.setAttribute('aria-hidden', 'false')
     document.body.style.overflow = 'hidden'
