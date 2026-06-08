@@ -120,11 +120,14 @@ async function main() {
     const tPath = join(IMG_DIR, tName)
     const fPath = join(IMG_DIR, fName)
 
-    // Map: Sanity-Thumb-URL → lokale Pfade (relativ zu public/)
-    imageMap[tUrl] = {
+    // Map: BEIDE URLs als Schlüssel eintragen
+    // → Komponente kann mit thumb- oder full-URL suchen und trifft immer
+    const entry = {
       thumb: `/product-images/${tName}`,
       full:  `/product-images/${fName}`,
     }
+    imageMap[tUrl] = entry
+    imageMap[fUrl] = entry
 
     queue.push({ url: tUrl, path: tPath, label: `thumb ${rec._id}` })
     queue.push({ url: fUrl, path: fPath, label: `full  ${rec._id}` })
