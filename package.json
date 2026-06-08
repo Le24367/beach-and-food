@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "fetch-images": "node scripts/fetch-images.js",
+    "build": "node scripts/fetch-images.js && astro build",
     "preview": "astro preview"
   },
   "dependencies": {

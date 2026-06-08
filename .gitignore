@@ -2,3 +2,5 @@ node_modules/
 dist/
 .env
 .astro/
+public/product-images/
+src/generated/image-map.json

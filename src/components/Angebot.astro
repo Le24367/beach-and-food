@@ -1,7 +1,24 @@
 ﻿---
 import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from '../lib/sanity'
 import type { MenuCategory, MenuItem, MenuSubCategory } from '../lib/sanity'
+import imageMapRaw from '../generated/image-map.json'
 
+// ── Bild-Map: Sanity-URL → lokale Pfade ──────────────────────────────────────
+// Wird von scripts/fetch-images.mjs beim Build befüllt.
+// Fallback: leeres Objekt → Sanity-URLs werden direkt verwendet (z.B. bei `astro dev`)
+const imageMap: Record<string, { thumb: string; full: string }> = imageMapRaw as any
+
+/**
+ * Gibt lokalen Pfad zurück wenn vorhanden, sonst Sanity-URL (dev-Fallback).
+ * mode: 'thumb' | 'full'
+ */
+function localOrRemote(sanityUrl: string, mode: 'thumb' | 'full'): string {
+  const entry = imageMap[sanityUrl]
+  if (!entry) return sanityUrl          // dev-Fallback: direkt von Sanity
+  return mode === 'thumb' ? entry.thumb : entry.full
+}
+
+// ── Sanity-Daten ──────────────────────────────────────────────────────────────
 let items: MenuCategory[] = []
 let menuItems: MenuItem[] = []
 let subCategories: MenuSubCategory[] = []
@@ -25,6 +42,7 @@ if (items.length === 0) {
   ] as MenuCategory[]
 }
 
+// ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 function badgeColor(item: MenuCategory): string {
   const badge = item.badge
   if (!badge) return '#E85D3A'
@@ -40,6 +58,12 @@ function subCatsForCategory(categoryId: string): MenuSubCategory[] {
   return subCategories.filter(s => s.categoryId === categoryId)
 }
 
+// ── popupData aufbauen ────────────────────────────────────────────────────────
+// Für jedes Produkt werden THREE URLs mitgegeben:
+//   imgThumb    → lokaler Thumb (200×200, q40)  – für die Kachel
+//   imgFull     → lokale Full-Auflösung (1200px) – für die Lightbox
+//   imgFallback → Sanity-URL als Notfall-Fallback (wird im Browser nie angefragt,
+//                 wenn fetch-images gelaufen ist)
 const popupData = items.map(cat => {
   const color = badgeColor(cat)
   const allItems = itemsForCategory(cat._id)
@@ -47,18 +71,24 @@ const popupData = items.map(cat => {
   const uncategorized = allItems.filter(p => !p.subCategoryId)
 
   const groups = [
-    ...subs.map(sub => ({
-      id: sub._id,
-      title: sub.title,
-      description: sub.description ?? null,
-      emoji: sub.emoji ?? null,
-      imgUrl: sub.image
-        ? urlFor(sub.image).width(80).height(80).fit('crop').auto('format').url()
-        : null,
-      products: allItems
-        .filter(p => p.subCategoryId === sub._id)
-        .map(p => mapProduct(p, cat)),
-    })),
+    ...subs.map(sub => {
+      // Subkategorie-Bild: Thumb-Variante
+      let subImgUrl: string | null = null
+      if (sub.image) {
+        const sanityThumb = urlFor(sub.image).width(80).height(80).fit('crop').auto('format').url()
+        subImgUrl = localOrRemote(sanityThumb, 'thumb')
+      }
+      return {
+        id: sub._id,
+        title: sub.title,
+        description: sub.description ?? null,
+        emoji: sub.emoji ?? null,
+        imgUrl: subImgUrl,
+        products: allItems
+          .filter(p => p.subCategoryId === sub._id)
+          .map(p => mapProduct(p, cat)),
+      }
+    }),
     ...(uncategorized.length > 0
       ? [{
           id: '__uncategorized__',
@@ -84,17 +114,23 @@ const popupData = items.map(cat => {
 })
 
 function mapProduct(p: MenuItem, cat: MenuCategory) {
+  // Sanity-URLs für beide Größen
+  const sanityThumbUrl = p.image
+    ? urlFor(p.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
+    : null
+  const sanityFullUrl = p.image
+    ? urlFor(p.image).width(1200).quality(85).auto('format').url()
+    : null
+
   return {
     id: p._id,
     title: p.title,
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
-    imgUrl: p.image
-      ? urlFor(p.image).width(320).height(320).fit('crop').auto('format').url()
-      : null,
-    imgUrlFull: p.image
-      ? urlFor(p.image).width(1200).auto('format').url()
-      : null,
+    // Thumb: lokal wenn fetch-images gelaufen, sonst Sanity-Fallback
+    imgThumb: sanityThumbUrl ? localOrRemote(sanityThumbUrl, 'thumb') : null,
+    // Full: für die Lightbox – ebenfalls lokal
+    imgFull: sanityFullUrl ? localOrRemote(sanityFullUrl, 'full') : null,
     emoji: p.emoji ?? null,
     badges: p.badges ?? [],
   }
@@ -115,9 +151,13 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     <div class="menu-grid">
       {items.map((item, i) => {
         const color = badgeColor(item)
-        const imgUrl = item.image
-          ? urlFor(item.image).width(600).height(420).fit('crop').auto('format').url()
-          : null
+        // Kategorie-Karten-Bild: Sanity-URL → lokaler Thumb
+        let cardImgUrl: string | null = null
+        if (item.image) {
+          const sanityUrl = urlFor(item.image).width(600).height(420).fit('crop').auto('format').url()
+          // Für Karten nehmen wir die Full-Variante (600px = Karte, passt gut zu full)
+          cardImgUrl = localOrRemote(sanityUrl, 'full')
+        }
         const productCount = itemsForCategory(item._id).length
         return (
           <button
@@ -127,8 +167,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
             aria-label={item.title}
           >
             <div class="card-visual">
-              {imgUrl
-                ? <img src={imgUrl} alt={item.title} loading="lazy" class="card-img" />
+              {cardImgUrl
+                ? <img src={cardImgUrl} alt={item.title} loading="lazy" class="card-img" />
                 : <div class="card-emoji">{item.emoji ?? '🍽️'}</div>
               }
               {item.badge?.label && (
@@ -178,37 +218,110 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   </button>
+  <!-- Spinner: sichtbar während das Full-Bild lädt -->
+  <div class="lightbox-spinner" id="lightbox-spinner" aria-hidden="true"></div>
   <img class="lightbox-img" id="lightbox-img" src="" alt="" />
 </div>
 
 <script define:vars={{ popupData }}>
-  const backdrop  = document.getElementById('modal-backdrop')
-  const closeBtn  = document.getElementById('modal-close')
-  const iconEl    = document.getElementById('mh-icon')
-  const titleEl   = document.getElementById('mh-title')
-  const bodyEl    = document.getElementById('modal-body')
+  const backdrop      = document.getElementById('modal-backdrop')
+  const closeBtn      = document.getElementById('modal-close')
+  const iconEl        = document.getElementById('mh-icon')
+  const titleEl       = document.getElementById('mh-title')
+  const bodyEl        = document.getElementById('modal-body')
   const lightbox      = document.getElementById('lightbox')
   const lightboxImg   = document.getElementById('lightbox-img')
   const lightboxClose = document.getElementById('lightbox-close')
+  const lightboxSpinner = document.getElementById('lightbox-spinner')
 
-  const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
-  // Cache speichert nun DOM-Nodes statt HTML-Strings
-  const nodeCache = {}
+  const dataMap   = Object.fromEntries(popupData.map(c => [c.id, c]))
+  const nodeCache = {}   // DOM-Node-Cache pro Kategorie
 
-  // ── Hilfsfunktion: Text sicher als Node setzen ────────────────────
-  // Statt innerHTML = "..." wird der Text immer per textContent gesetzt.
-  // Das verhindert XSS: Browser interpretiert den Text nie als HTML.
+  // ── DOM-Helfer ────────────────────────────────────────────────────
   function setText(el, text) {
     el.textContent = text ?? ''
   }
-
   function createEl(tag, className) {
     const el = document.createElement(tag)
     if (className) el.className = className
     return el
   }
 
-  // ── Produkt-DOM aufbauen (kein innerHTML mit Nutzerdaten) ─────────
+  // ── Produktbild mit 3-Stufen-Loading ─────────────────────────────
+  //
+  // Aufbau des imgWrap:
+  //
+  //   [mpi-img-wrap]
+  //     ├── [mpi-placeholder]   Emoji — sofort sichtbar, kein Netz nötig
+  //     └── [mpi-img]           Thumbnail — wird per IntersectionObserver lazy geladen
+  //                             cursor:zoom-in, data-full für Lightbox
+  //
+  // Ablauf:
+  //   1. Placeholder (Emoji) ist sofort da
+  //   2. Wenn imgWrap in den Viewport scrollt → thumb.src wird gesetzt → Browser lädt
+  //   3. Sobald thumb geladen: sanftes Einblenden, Placeholder bleibt dahinter (kein Layout-Sprung)
+  //   4. Klick auf Bild → Lightbox zeigt full-URL (lädt erst jetzt)
+
+  function buildImgWrap(p, catEmoji) {
+    const wrap = createEl('div', 'mpi-img-wrap')
+
+    // Stufe 1: Emoji-Placeholder (immer vorhanden)
+    const placeholder = createEl('div', 'mpi-placeholder')
+    setText(placeholder, p.emoji || catEmoji || '🍽️')
+    wrap.appendChild(placeholder)
+
+    if (!p.imgThumb) return wrap  // Kein Bild in Sanity → nur Emoji
+
+    // Stufe 2: Thumbnail-Element (src noch leer)
+    const img = createEl('img', 'mpi-img mpi-img--loading')
+    img.alt = p.title
+    img.dataset.src  = p.imgThumb   // wird von Observer gesetzt
+    img.dataset.full = p.imgFull    // wird von Lightbox gelesen
+    img.dataset.alt  = p.title
+
+    // Wenn Bild geladen: fade-in, Placeholder verblassen
+    img.addEventListener('load', function onLoad() {
+      img.classList.remove('mpi-img--loading')
+      img.classList.add('mpi-img--loaded')
+      placeholder.classList.add('mpi-placeholder--hidden')
+    }, { once: true })
+
+    // Fehler: Bild bleibt unsichtbar, Emoji bleibt sichtbar
+    img.addEventListener('error', function onErr() {
+      img.remove()
+    }, { once: true })
+
+    wrap.appendChild(img)
+
+    // Lazy-Loading via IntersectionObserver
+    // Wird ausgelöst wenn imgWrap in den sichtbaren Bereich des modal-body scrollt
+    lazyObserver.observe(wrap)
+
+    return wrap
+  }
+
+  // ── IntersectionObserver für Thumbnails ───────────────────────────
+  // rootMargin '200px' → Bilder 200px VOR dem Viewport vorabladen
+  const lazyObserver = new IntersectionObserver(
+    function(entries) {
+      entries.forEach(function(entry) {
+        if (!entry.isIntersecting) return
+        const wrap = entry.target
+        const img = wrap.querySelector('.mpi-img')
+        if (img && img.dataset.src && !img.src) {
+          img.src = img.dataset.src
+        }
+        lazyObserver.unobserve(wrap)   // einmal laden reicht
+      })
+    },
+    {
+      root: document.getElementById('modal-body'),   // scroll-Container
+      rootMargin: '200px 0px',                       // 200px Vorlauf
+      threshold: 0,
+    }
+  )
+
+  // ── Produkt-DOM aufbauen ──────────────────────────────────────────
   function buildProductDOM(cat) {
     const fragment = document.createDocumentFragment()
 
@@ -228,8 +341,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
         if (group.imgUrl) {
           const img = createEl('img', 'mp-subcat-img')
-          img.src = group.imgUrl
-          img.alt = group.title  // Kein XSS-Risiko bei src/alt-Attributen via DOM
+          img.src     = group.imgUrl
+          img.alt     = group.title
           img.loading = 'lazy'
           header.appendChild(img)
         } else if (group.emoji) {
@@ -238,7 +351,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
           header.appendChild(span)
         }
 
-        const textWrap = createEl('div', 'mp-subcat-text')
+        const textWrap  = createEl('div', 'mp-subcat-text')
         const titleSpan = createEl('span', 'mp-subcat-title')
         setText(titleSpan, group.title)
         textWrap.appendChild(titleSpan)
@@ -257,33 +370,17 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       const ul = createEl('ul', 'mp-list')
 
       group.products.forEach(function(p) {
-        const li = document.createElement('li')
+        const li   = document.createElement('li')
         const item = createEl('div', 'mp-item')
 
-        // Bild-Bereich
-        const imgWrap = createEl('div', 'mpi-img-wrap')
-        if (p.imgUrl) {
-          const img = createEl('img', 'mpi-img')
-          img.src = p.imgUrl
-          img.alt = p.title
-          img.loading = 'lazy'
-          // data-* Attribute: sicher, da sie nie als HTML geparst werden
-          img.dataset.lightbox = p.imgUrlFull
-          img.dataset.alt = p.title
-          imgWrap.appendChild(img)
-        } else {
-          const placeholder = createEl('div', 'mpi-placeholder')
-          setText(placeholder, p.emoji || cat.emoji || '🍽️')
-          imgWrap.appendChild(placeholder)
-        }
-        item.appendChild(imgWrap)
+        // Bild (3-Stufen)
+        item.appendChild(buildImgWrap(p, cat.emoji))
 
-        // Text-Bereich
-        const body = createEl('div', 'mpi-body')
+        // Text
+        const body  = createEl('div', 'mpi-body')
         const inner = createEl('div', '')
-
-        const top = createEl('div', 'mpi-top')
-        const name = createEl('span', 'mpi-name')
+        const top   = createEl('div', 'mpi-top')
+        const name  = createEl('span', 'mpi-name')
         setText(name, p.title)
         top.appendChild(name)
 
@@ -292,10 +389,9 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
           p.badges.forEach(function(b) {
             const badge = createEl('span', 'mpi-badge')
             setText(badge, b.label)
-            // Farb-Styles: sicher, da style.xxx nie Code ausführt
             badge.style.background = b.color + '18'
-            badge.style.color = b.color
-            badge.style.border = '1px solid ' + b.color + '44'
+            badge.style.color      = b.color
+            badge.style.border     = '1px solid ' + b.color + '44'
             badgesWrap.appendChild(badge)
           })
           top.appendChild(badgesWrap)
@@ -312,7 +408,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         body.appendChild(inner)
 
         const footer = createEl('div', 'mpi-footer')
-        const price = createEl('span', 'mpi-price')
+        const price  = createEl('span', 'mpi-price')
         setText(price, p.price)
         footer.appendChild(price)
         body.appendChild(footer)
@@ -323,16 +419,12 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       })
 
       fragment.appendChild(ul)
-
-      // Trennlinie (zwischen Gruppen)
       fragment.appendChild(createEl('div', 'mp-divider'))
     })
 
     // Letzte Trennlinie entfernen
-    const lastChild = fragment.lastChild
-    if (lastChild && lastChild.className === 'mp-divider') {
-      fragment.removeChild(lastChild)
-    }
+    const last = fragment.lastChild
+    if (last && last.className === 'mp-divider') fragment.removeChild(last)
 
     return fragment
   }
@@ -349,18 +441,25 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (!nodeCache[categoryId]) {
       nodeCache[categoryId] = buildProductDOM(cat)
     }
-    // cloneNode(true) damit der Cache-Node wiederverwendbar bleibt
     bodyEl.appendChild(nodeCache[categoryId].cloneNode(true))
 
     backdrop.setAttribute('aria-hidden', 'false')
     document.body.style.overflow = 'hidden'
     bodyEl.scrollTop = 0
 
+    // Observer nach dem Einfügen starten — jetzt ist modal-body der root
+    // Bilder die sofort sichtbar sind werden direkt geladen
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
         backdrop.classList.add('open')
-        // Focus-Management: Fokus auf Schließen-Button setzen
         closeBtn.focus()
+
+        // Observer-Root aktualisieren auf den sichtbaren modal-body
+        // (Nodes wurden via cloneNode eingefügt, neu beobachten)
+        bodyEl.querySelectorAll('.mpi-img-wrap').forEach(function(wrap) {
+          const img = wrap.querySelector('.mpi-img')
+          if (img && !img.src) lazyObserver.observe(wrap)
+        })
       })
     })
   }
@@ -382,25 +481,47 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (e.target === backdrop) closeModal()
   })
 
-  // ── Lightbox ─────────────────────────────────────────────────────
-  function openLightbox(src, alt) {
-    lightboxImg.src = src
-    lightboxImg.alt = alt
+  // ── Lightbox (Stufe 3: Full-Bild) ────────────────────────────────
+  // Erst bei Klick auf Thumbnail wird das Full-Bild geladen.
+  function openLightbox(fullSrc, alt) {
+    // Spinner anzeigen, altes Bild verstecken
+    lightboxImg.classList.remove('lb-loaded')
+    lightboxSpinner.classList.add('lb-spinning')
+
     lightbox.classList.add('open')
     lightbox.setAttribute('aria-hidden', 'false')
     lightboxClose.focus()
+
+    // Full-Bild laden
+    lightboxImg.alt = alt
+    lightboxImg.src = fullSrc
+
+    lightboxImg.onload = function() {
+      lightboxSpinner.classList.remove('lb-spinning')
+      lightboxImg.classList.add('lb-loaded')
+    }
+    lightboxImg.onerror = function() {
+      lightboxSpinner.classList.remove('lb-spinning')
+      lightboxImg.classList.add('lb-loaded')  // Bild trotzdem zeigen (Fehler-Icon)
+    }
   }
+
   function closeLightbox() {
     lightbox.classList.remove('open')
     lightbox.setAttribute('aria-hidden', 'true')
+    lightboxImg.src = ''
+    lightboxImg.classList.remove('lb-loaded')
+    lightboxSpinner.classList.remove('lb-spinning')
   }
 
+  // Klick auf Thumbnail → data-full auslesen
   bodyEl.addEventListener('click', function(e) {
-    const img = e.target.closest('[data-lightbox]')
-    if (img) {
-      e.stopPropagation()
-      openLightbox(img.getAttribute('data-lightbox'), img.getAttribute('data-alt'))
-    }
+    const img = e.target.closest('.mpi-img')
+    if (!img) return
+    e.stopPropagation()
+    const full = img.dataset.full
+    const alt  = img.dataset.alt
+    if (full) openLightbox(full, alt)
   })
 
   lightboxClose.addEventListener('click', closeLightbox)
@@ -408,8 +529,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (e.target === lightbox) closeLightbox()
   })
 
-  // ── Gemeinsamer Escape-Handler (FIX: vorher zwei getrennte Listener) ──
-  // Prüft Reihenfolge: Lightbox zuerst, dann Modal.
+  // ── Escape ────────────────────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return
     if (lightbox.classList.contains('open')) {
@@ -531,11 +651,36 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
 }
 .lightbox.open { opacity: 1; pointer-events: auto; }
+
+/* Full-Bild startet unsichtbar, blendet erst ein wenn geladen */
 .lightbox-img {
   max-width: 100%; max-height: 85vh; border-radius: 16px; object-fit: contain;
-  transform: scale(0.92); transition: transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+  transform: scale(0.94);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.3s ease;
 }
-.lightbox.open .lightbox-img { transform: scale(1); }
+.lightbox-img.lb-loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Lade-Spinner */
+.lightbox-spinner {
+  display: none;
+  position: absolute;
+  width: 40px; height: 40px;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+}
+.lightbox-spinner.lb-spinning {
+  display: block;
+  animation: lb-spin 0.75s linear infinite;
+}
+@keyframes lb-spin {
+  to { transform: rotate(360deg); }
+}
+
 .lightbox-close {
   position: absolute; top: 1.25rem; right: 1.25rem;
   width: 40px; height: 40px; border-radius: 50%;
@@ -567,9 +712,46 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .mp-item { display: flex; align-items: stretch; background: #faf8f5; border-radius: 16px; overflow: hidden; border: 1px solid #f0ebe3; transition: box-shadow 0.2s, transform 0.2s; }
 .mp-item:hover { box-shadow: 0 8px 28px rgba(0,36,52,0.09); transform: translateY(-2px); }
 
-.mpi-img-wrap { width: 96px; min-width: 96px; flex-shrink: 0; background: #f0ebe3; overflow: hidden; display: flex; align-items: stretch; }
-.mpi-img { width: 100%; object-fit: cover; display: block; cursor: zoom-in; }
-.mpi-placeholder { width: 100%; min-height: 90px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+/* ── Bild-Bereich: Emoji + Thumbnail übereinander ── */
+.mpi-img-wrap {
+  width: 96px; min-width: 96px; flex-shrink: 0;
+  background: #f0ebe3; overflow: hidden;
+  display: flex; align-items: stretch;
+  position: relative;   /* Stapel-Kontext für Emoji + Bild */
+}
+
+/* Emoji-Placeholder: immer im Hintergrund */
+.mpi-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  transition: opacity 0.4s ease;
+  z-index: 1;
+}
+/* Wenn Bild geladen: Emoji sanft ausblenden */
+.mpi-placeholder--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Thumbnail: startet unsichtbar über dem Emoji */
+.mpi-img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: zoom-in;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+/* Wenn geladen: einblenden */
+.mpi-img--loaded {
+  opacity: 1;
+}
+
 .mpi-body { flex: 1; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
 .mpi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
 .mpi-name { font-weight: 600; font-size: 0.9rem; color: var(--ocean-deep, #002434); line-height: 1.3; }
