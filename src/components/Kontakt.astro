@@ -2,7 +2,6 @@
 import { getSiteSettings } from '../lib/sanity'
 import type { SiteSettings } from '../lib/sanity'
 import { LINKS, CONTACT, SITE } from '../lib/config'
-import { LOGO_SRC } from '../lib/logo'
 
 let settings: SiteSettings | null = null
 try {
@@ -99,7 +98,7 @@ const seasonNote = settings?.seasonNote
   <div class="container footer-inner">
     <div class="footer-logo">
       <img
-        src={LOGO_SRC}
+        src="/logo/logo.jpeg"
         alt="Beach and Food"
         class="footer-logo-img"
       />
