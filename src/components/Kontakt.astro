@@ -212,55 +212,34 @@ const seasonNote = settings?.seasonNote
 <link
   rel="stylesheet"
   href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
   crossorigin=""
 />
+<!-- Leaflet JS — klassisches UMD-Bundle, kein ESM-Import nötig -->
+<script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-<script>
-  import L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js'
+<script is:inline>
+  (function () {
+    var LAT = 54.33611
+    var LNG = 11.07103
 
-  const LAT = 54.33611
-  const LNG = 11.07103
+    var map = L.map('leaflet-map', {
+      center: [LAT, LNG],
+      zoom: 15,
+      scrollWheelZoom: false,
+      zoomControl: true,
+    })
 
-  const map = L.map('leaflet-map', {
-    center: [LAT, LNG],
-    zoom: 15,
-    scrollWheelZoom: false,
-    zoomControl: true,
-  })
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(map)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
-  }).addTo(map)
+    var icon = L.divIcon({
+      html: '<div style="background:#1A3A4A;color:#F4A820;font-size:11px;font-weight:700;font-family:sans-serif;padding:6px 10px;border-radius:8px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;">📍 Beach and Food<div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #1A3A4A;"></div></div>',
+      className: '',
+      iconAnchor: [60, 40],
+    })
 
-  const icon = L.divIcon({
-    html: `<div style="
-      background: #1A3A4A;
-      color: #F4A820;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: sans-serif;
-      padding: 6px 10px;
-      border-radius: 8px;
-      white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      position: relative;
-    ">
-      📍 Beach and Food
-      <div style="
-        position: absolute;
-        bottom: -6px; left: 50%;
-        transform: translateX(-50%);
-        width: 0; height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 6px solid #1A3A4A;
-      "></div>
-    </div>`,
-    className: '',
-    iconAnchor: [60, 40],
-  })
-
-  L.marker([LAT, LNG], { icon }).addTo(map)
+    L.marker([LAT, LNG], { icon: icon }).addTo(map)
+  })()
 </script>
