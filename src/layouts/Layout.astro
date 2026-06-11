@@ -14,6 +14,36 @@ const {
 
 const canonicalUrl = 'https://beachandfood.de';
 const ogImage = 'https://beachandfood.de/og-image.jpg';
+
+// JSON-LD: LocalBusiness + FoodEstablishment
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": ["FoodEstablishment", "LocalBusiness"],
+  "name": "Beach and Food",
+  "description": description,
+  "url": canonicalUrl,
+  "logo": `${canonicalUrl}/logo/logo.jpeg`,
+  "image": ogImage,
+  "telephone": "+4915164652760",
+  "email": "info@beachandfood.de",
+  "priceRange": "€",
+  "servesCuisine": ["Fischbrötchen", "Currywurst", "Fast Food"],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Sütel Strand",
+    "addressLocality": "Neukirchen",
+    "postalCode": "23779",
+    "addressCountry": "DE"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 54.337045,
+    "longitude": 11.071475
+  },
+  "sameAs": [
+    "https://www.instagram.com/beachandfood"
+  ]
+};
 ---
 <!DOCTYPE html>
 <html lang="de">
@@ -24,6 +54,9 @@ const ogImage = 'https://beachandfood.de/og-image.jpg';
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- LCP Preload: Logo wird als erstes sichtbares Bild vorgeladen -->
+  <link rel="preload" as="image" href="/logo/logo.jpeg" fetchpriority="high" />
 
   <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website" />
@@ -40,15 +73,8 @@ const ogImage = 'https://beachandfood.de/og-image.jpg';
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImage} />
 
-  <!--
-    KEIN Google Fonts mehr – Fonts werden lokal aus node_modules geladen.
-    DSGVO-konform: keine Verbindung zu externen Servern beim Seitenaufruf.
-
-    Setup (einmalig im Terminal):
-      npm install @fontsource/dm-sans @fontsource/playfair-display
-
-    Die @import-Regeln stehen in global.css.
-  -->
+  <!-- JSON-LD Strukturierte Daten -->
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 </head>
 <body>
   <slot />
