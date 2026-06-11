@@ -10,6 +10,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.0.0",
     "@fontsource/dm-sans": "^5.0.0",
     "@fontsource/playfair-display": "^5.0.0",
     "@sanity/client": "^6.0.0",

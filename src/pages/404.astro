@@ -1,0 +1,76 @@
+---
+import Layout from '../layouts/Layout.astro'
+---
+<Layout title="Seite nicht gefunden – Beach and Food" description="Diese Seite existiert leider nicht.">
+  <main class="not-found">
+    <div class="nf-inner">
+      <div class="nf-emoji">🌊</div>
+      <h1>404</h1>
+      <p class="nf-title">Diese Seite ist abgetrieben.</p>
+      <p class="nf-sub">Die Seite, die du suchst, existiert leider nicht — vielleicht wurde sie verschoben oder gelöscht.</p>
+      <a href="/" class="nf-btn">Zurück zur Startseite</a>
+    </div>
+  </main>
+</Layout>
+
+<style>
+.not-found {
+  min-height: 100vh;
+  background: var(--ocean-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+.nf-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.nf-emoji {
+  font-size: 4rem;
+  animation: sway 3s ease-in-out infinite;
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(-8deg); }
+  50%       { transform: rotate(8deg); }
+}
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(5rem, 20vw, 10rem);
+  font-weight: 900;
+  color: var(--sun);
+  line-height: 1;
+  margin: 0;
+}
+.nf-title {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  font-weight: 700;
+  color: var(--foam);
+}
+.nf-sub {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.5);
+  max-width: 420px;
+  line-height: 1.65;
+}
+.nf-btn {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--sun);
+  color: var(--ocean-deep);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.8rem;
+  border-radius: 100px;
+  transition: background 0.2s, transform 0.15s;
+}
+.nf-btn:hover {
+  background: var(--sun-bright);
+  transform: translateY(-2px);
+}
+</style>
