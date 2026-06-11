@@ -2,8 +2,7 @@
 import { getSiteSettings } from '../lib/sanity'
 import type { SiteSettings } from '../lib/sanity'
 import { LINKS, CONTACT, SITE } from '../lib/config'
-
-// Sanity-Links überschreiben config.ts-Fallbacks
+import { LOGO_SRC } from '../lib/logo'
 
 let settings: SiteSettings | null = null
 try {
@@ -12,7 +11,6 @@ try {
   console.warn('[Kontakt] Sanity nicht erreichbar, Fallback-Daten werden verwendet.', e)
 }
 
-// Sanity siteSettings.links hat Vorrang vor config.ts
 const links = { ...LINKS, ...settings?.links }
 const legal = { ...{ owner: CONTACT.owner, address: CONTACT.address, siteName: SITE.name, tagline: SITE.tagline }, ...settings?.legal }
 
@@ -101,7 +99,7 @@ const seasonNote = settings?.seasonNote
   <div class="container footer-inner">
     <div class="footer-logo">
       <img
-        src="https://le-cdn.website-editor.net/b027c68ee438471e875aabacd5abae82/dms3rep/multi/opt/Beach+-+Food+Final-1920w.jpg"
+        src={LOGO_SRC}
         alt="Beach and Food"
         class="footer-logo-img"
       />

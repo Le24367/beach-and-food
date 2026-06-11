@@ -1,12 +1,13 @@
 ---
 import { getLinks } from '../lib/sanity'
+import { LOGO_SRC }  from '../lib/logo'
 const links = await getLinks()
 ---
 <nav class="navbar">
   <div class="container nav-inner">
     <a href="/" class="logo">
       <img
-        src="https://le-cdn.website-editor.net/b027c68ee438471e875aabacd5abae82/dms3rep/multi/opt/Beach+-+Food+Final-1920w.jpg"
+        src={LOGO_SRC}
         alt="Beach and Food"
         class="logo-img"
       />
@@ -117,15 +118,12 @@ const links = await getLinks()
 }
 .mobile-menu li {
   border-bottom: 1px solid rgba(0,0,0,0.06);
-  /* Basis-State: unsichtbar und versetzt */
   transform: translateY(-8px);
   opacity: 0;
-  /* Transition läuft immer, Delay kommt per CSS-Klasse */
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
 .mobile-menu li:last-child { border-bottom: none; }
 
-/* Staggered Delays als CSS-Klassen — kein JS-Style-Patching mehr */
 .mobile-menu.open li:nth-child(1) { transition-delay: 0.05s; }
 .mobile-menu.open li:nth-child(2) { transition-delay: 0.10s; }
 .mobile-menu.open li:nth-child(3) { transition-delay: 0.15s; }
@@ -133,7 +131,6 @@ const links = await getLinks()
 .mobile-menu.open li:nth-child(5) { transition-delay: 0.25s; }
 .mobile-menu.open li:nth-child(6) { transition-delay: 0.30s; }
 
-/* Beim Schließen: kein Delay, sofort ausblenden */
 .mobile-menu:not(.open) li {
   transition-delay: 0s !important;
 }
@@ -178,8 +175,6 @@ const links = await getLinks()
   burger?.addEventListener('click', () => {
     burger.classList.toggle('open')
     mobileMenu?.classList.toggle('open')
-    // Kein manuelles li.style.transitionDelay mehr nötig —
-    // das erledigt jetzt .mobile-menu:not(.open) li { transition-delay: 0s }
   })
 
   mobileMenu?.querySelectorAll('a').forEach(a => {
