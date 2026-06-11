@@ -1,23 +1,22 @@
 ---
 const YT_ID = "QuSgl1-ZICE";
 
-const imageModules = import.meta.glob<{ default: ImageMetadata }>(
-  '/public/images/ueberuns/*.{jpg,jpeg,png,webp,avif,gif,JPG,JPEG,PNG,WEBP,AVIF,GIF}',
-  { eager: true }
-);
+// Galerie-Bilder aus dem Build-Script (Sanity → public/gallery-images/)
+// gallery-images.json wird von scripts/fetch-images.js erzeugt.
+// Fallback: leeres Array → Platzhalter-Folie greift weiter unten.
+let sanitySlides: { src: string; alt: string; caption: string | null }[] = [];
+try {
+  const raw = await import('../../src/generated/gallery-images.json', { assert: { type: 'json' } });
+  sanitySlides = (raw.default ?? []) as typeof sanitySlides;
+} catch {
+  // Datei existiert noch nicht (erster Build vor fetch-images) → ignorieren
+}
 
-const images = Object.keys(imageModules).map((path) => {
-  const filename = path.split('/').pop()!;
-  const alt = filename.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-  return { src: `/images/ueberuns/${filename}`, alt };
-});
+const slides =
+  sanitySlides.length > 0
+    ? sanitySlides
+    : [{ src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food', caption: null }];
 
-const slides = images.length > 0 ? images : [
-  { src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food' }
-];
-
-// YouTube Thumbnail-URL – kein externer Request bis zum Klick.
-// hqdefault = 480×360, mqdefault = 320×180, maxresdefault = 1280×720
 const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 ---
 <section class="ueber-uns" id="ueber-uns">
@@ -66,6 +65,9 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
                   alt={slide.alt}
                   loading={i === 0 ? 'eager' : 'lazy'}
                 />
+                {slide.caption && (
+                  <div class="carousel-caption">{slide.caption}</div>
+                )}
               </div>
             ))}
           </div>
@@ -91,14 +93,6 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
         Schau mal rein — unser Truck in Aktion
       </div>
 
-      <!--
-        DSGVO-konformes YouTube-Facade-Pattern:
-        - Beim Laden der Seite wird NUR das Vorschaubild (von i.ytimg.com) geladen.
-        - Das iframe zu youtube-nocookie.com wird erst beim Klick auf Play injiziert.
-        - Bis dahin: keine Verbindung zu YouTube, kein Fingerprinting, keine Cookies.
-        - i.ytimg.com ist YouTube's Thumbnail-CDN – dafür braucht es keine Einwilligung,
-          da kein Tracking stattfindet (reiner Bild-Request ohne Cookies).
-      -->
       <div
         class="yt-facade video-wrapper"
         data-videoid={YT_ID}
@@ -113,7 +107,6 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
           class="yt-thumbnail"
         />
         <button class="yt-play-btn" aria-label="Video abspielen" tabindex="-1">
-          <!-- Offizielles YouTube Play-Button SVG -->
           <svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true">
             <path
               d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
@@ -255,6 +248,17 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   object-fit: cover;
   display: block;
 }
+.carousel-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(13,34,51,0.85) 0%, transparent 100%);
+  color: rgba(255,255,255,0.9);
+  font-size: 0.85rem;
+  padding: 2rem 1.25rem 1rem;
+  pointer-events: none;
+}
 .carousel-btn {
   position: absolute;
   top: 50%;
@@ -329,7 +333,6 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   box-shadow: 0 30px 80px rgba(0,0,0,0.5);
   cursor: pointer;
 }
-/* Das iframe wird per JS eingefügt und übernimmt diese Styles */
 .video-wrapper iframe {
   position: absolute;
   inset: 0;
@@ -346,9 +349,7 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   display: block;
   transition: opacity 0.3s;
 }
-.yt-facade:hover .yt-thumbnail {
-  opacity: 0.85;
-}
+.yt-facade:hover .yt-thumbnail { opacity: 0.85; }
 .yt-play-btn {
   position: absolute;
   top: 50%;
@@ -358,9 +359,7 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   border: none;
   cursor: pointer;
   padding: 0;
-  /* Hover-Skalierung für besseres Feedback */
   transition: transform 0.2s;
-  /* Schatten damit der Button auf hellen Thumbnails sichtbar ist */
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
 }
 .yt-facade:hover .yt-play-btn {
@@ -424,7 +423,6 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 
 <script>
   // ── YouTube Facade ───────────────────────────────────────────────
-  // Das iframe wird erst beim Klick erzeugt → kein YouTube-Kontakt beim Laden.
   function initYtFacade(facade: HTMLElement) {
     const activate = () => {
       const videoId = facade.dataset.videoid
@@ -437,10 +435,8 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
       iframe.allowFullscreen = true
       iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;'
 
-      // Facade-Inhalte entfernen, iframe einfügen
       facade.innerHTML = ''
       facade.appendChild(iframe)
-      // Nicht mehr als Button behandeln
       facade.removeAttribute('role')
       facade.removeAttribute('tabindex')
       facade.style.cursor = 'default'
@@ -448,26 +444,23 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 
     facade.addEventListener('click', activate)
     facade.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        activate()
-      }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate() }
     })
   }
 
   document.querySelectorAll<HTMLElement>('.yt-facade').forEach(initYtFacade)
 
-  // ── Carousel (unverändert) ───────────────────────────────────────
+  // ── Carousel ─────────────────────────────────────────────────────
   function initCarousel(carouselEl: Element) {
-    const slides = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'))
+    const slides        = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'))
     const dotsContainer = carouselEl.querySelector<HTMLElement>('.carousel-dots')
-    const prevBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-prev')
-    const nextBtn = carouselEl.querySelector<HTMLButtonElement>('.carousel-next')
+    const prevBtn       = carouselEl.querySelector<HTMLButtonElement>('.carousel-prev')
+    const nextBtn       = carouselEl.querySelector<HTMLButtonElement>('.carousel-next')
 
-    let current = 0
+    let current   = 0
     let animating = false
     let autoTimer: ReturnType<typeof setInterval> | null = null
-    const total = slides.length
+    const total   = slides.length
 
     if (dotsContainer) {
       dotsContainer.innerHTML = ''
@@ -497,30 +490,30 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
     function goTo(index: number, reverse = false) {
       if (animating || index === current) return
       animating = true
-      const next = (index + total) % total
+      const next      = (index + total) % total
       const direction = reverse ? -1 : 1
       slides[next].style.transition = 'none'
-      slides[next].style.transform = `translateX(${direction * 100}%)`
+      slides[next].style.transform  = `translateX(${direction * 100}%)`
       slides[next].getBoundingClientRect()
-      slides[next].style.transition = ''
+      slides[next].style.transition  = ''
       slides[current].style.transition = ''
-      slides[next].style.transform = 'translateX(0)'
+      slides[next].style.transform    = 'translateX(0)'
       slides[current].style.transform = `translateX(${-direction * 100}%)`
       dotsContainer?.querySelectorAll('.carousel-dot')[current]?.classList.remove('active')
       dotsContainer?.querySelectorAll('.carousel-dot')[next]?.classList.add('active')
       updateAria(current, next)
-      const prevIndex = current
+      const prevIndex   = current
       const fallbackTimer = setTimeout(() => {
         slides[prevIndex].classList.remove('active')
         slides[next].classList.add('active')
-        current = next
+        current   = next
         animating = false
       }, 600)
       slides[next].addEventListener('transitionend', () => {
         clearTimeout(fallbackTimer)
         slides[prevIndex].classList.remove('active')
         slides[next].classList.add('active')
-        current = next
+        current   = next
         animating = false
       }, { once: true })
     }
@@ -535,12 +528,7 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
     }
 
     const visibilityObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) startAuto()
-          else stopAuto()
-        })
-      },
+      (entries) => entries.forEach(e => e.isIntersecting ? startAuto() : stopAuto()),
       { threshold: 0.2 }
     )
     visibilityObserver.observe(carouselEl)
