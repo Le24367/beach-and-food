@@ -172,7 +172,6 @@ const seasonNote = settings?.seasonNote
   background: none !important;
   border: none !important;
   box-shadow: none !important;
-  transform: translate(-50%, -100%) !important;
   margin: 0 !important;
 }
 
@@ -245,8 +244,8 @@ const seasonNote = settings?.seasonNote
     var icon = L.divIcon({
       html: '<div style="background:#1A3A4A;color:#F4A820;font-size:11px;font-weight:700;font-family:sans-serif;padding:6px 10px;border-radius:8px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;">📍 Beach and Food<div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #1A3A4A;"></div></div>',
       className: 'leaflet-pin-clean',
-      iconSize: null,
-      iconAnchor: null,
+      iconSize: [130, 40],
+      iconAnchor: [65, 40],
     })
 
     L.marker([LAT, LNG], { icon: icon }).addTo(map)
