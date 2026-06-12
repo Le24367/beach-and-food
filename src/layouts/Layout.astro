@@ -55,6 +55,27 @@ const jsonLd = {
   <link rel="canonical" href={canonicalUrl} />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
+  <!-- ── PWA ──────────────────────────────────────────────────────── -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Theme-Color: Adressleiste auf Android / Chrome färben -->
+  <meta name="theme-color" content="#1A3A4A" />
+
+  <!-- iOS / Safari: App-fähig machen -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Beach & Food" />
+
+  <!-- iOS App-Icons (Safari liest manifest.json nicht, braucht eigene Tags) -->
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
+
+  <!-- Microsoft Tiles (Windows / Edge) -->
+  <meta name="msapplication-TileColor" content="#0D2233" />
+  <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
+  <!-- ── Ende PWA ───────────────────────────────────────────────── -->
+
   <!-- LCP Preload: Logo wird als erstes sichtbares Bild vorgeladen -->
   <link rel="preload" as="image" href="/logo/logo.jpeg" fetchpriority="high" />
 
@@ -81,7 +102,7 @@ const jsonLd = {
   <Analytics />
   <SpeedInsights />
   <script>
-    // Scroll reveal
+    // ── Scroll reveal ────────────────────────────────────────────────
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
@@ -90,6 +111,22 @@ const jsonLd = {
       });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ── Service Worker registrieren ──────────────────────────────────
+    // Nur in Produktion und wenn der Browser SW unterstützt.
+    // Astro bündelt diesen Block bereits in das finale JS.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .then((reg) => {
+            console.log('[SW] registriert:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[SW] Registrierung fehlgeschlagen:', err);
+          });
+      });
+    }
   </script>
 </body>
 </html>
