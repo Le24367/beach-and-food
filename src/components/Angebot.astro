@@ -136,11 +136,13 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         const color = badgeColor(item)
         const isFirst = i === 0
 
-        // card-URL (800×420) als src, full als 1,5× srcset-Fallback
+        // card-URL (640×336) als src — exakt passend zur Anzeigegröße ~634px
+        // full (900px) als 1,4× Retina-Fallback im srcset
         let cardImgUrl: string | null = null
         let fullImgUrl: string | null = null
         if (item.image) {
-          const sanityCUrl = urlFor(item.image).width(800).height(420).fit('crop').quality(75).auto('format').url()
+          // Wir bauen dieselben URLs wie fetch-images.js (640×336 q72)
+          const sanityCUrl = urlFor(item.image).width(640).height(336).fit('crop').quality(72).auto('format').url()
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
           cardImgUrl = localOrRemote(sanityCUrl, 'card')
           fullImgUrl = localOrRemote(sanityFUrl, 'full')
@@ -159,11 +161,11 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
                 ? (
                   <img
                     src={cardImgUrl}
-                    srcset={fullImgUrl ? `${cardImgUrl} 800w, ${fullImgUrl} 900w` : undefined}
-                    sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 300px"
+                    srcset={fullImgUrl ? `${cardImgUrl} 640w, ${fullImgUrl} 900w` : undefined}
+                    sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 634px"
                     alt={item.title}
-                    width="800"
-                    height="420"
+                    width="640"
+                    height="336"
                     loading={isFirst ? 'eager' : 'lazy'}
                     decoding={isFirst ? 'sync' : 'async'}
                     class="card-img"

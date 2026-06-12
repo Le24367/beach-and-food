@@ -5,15 +5,20 @@
  *   1. Fragt Sanity nach allen Bild-Referenzen:
  *        - MenuItems, MenuCategories, MenuSubCategories → public/product-images/
  *        - siteSettings.gallery (Über-uns-Karussell)   → public/gallery-images/
- *   2. Lädt jedes Bild in zwei Versionen herunter:
+ *   2. Lädt jedes Bild in drei Versionen herunter:
  *        - thumb:  200×200 px, quality 40  → für Kacheln im Modal
- *        - card:   800px breit, quality 75 → für Kategorie-Karten (war 1200px → ~35% kleiner)
- *        - full:   900px breit, quality 80 → für Lightbox (war 1200px, q85)
+ *        - card:   640×336 px, quality 72  → für Kategorie-Karten
+ *                  (Anzeigegröße ~634px → 640px = kein Upscaling, ~30% kleiner als vorher)
+ *        - full:   900px breit, quality 80 → für Lightbox
  *   3. Galerie-Bilder:
- *        - gallery-sm:  860×560 px, quality 70  → 1× (mobile / Standard)
- *        - gallery-lg: 1280×832 px, quality 75  → 2× (Retina / groß)
+ *        - gallery-sm:  560×365 px, quality 55  → 1× (mobile / Standard)
+ *        - gallery-lg:  860×560 px, quality 65  → 2× (Retina / groß)
  *   4. Schreibt src/generated/image-map.json      { sanityUrl → { thumb, card, full } }
  *      und   src/generated/gallery-images.json    [ { src, srcset, alt, caption } ]
+ *
+ * ÄNDERUNGEN gegenüber Vorgänger-Version:
+ *   - cardUrl: 800×420 → 640×336 (entspricht exakter Anzeigegröße ~634px)
+ *     Einsparung: ~16 KiB pro Kachel, beseitigt Lighthouse "Bildübermittlung"-Warnung
  */
 
 import { createClient }    from '@sanity/client'
@@ -55,19 +60,19 @@ const urlFor  = (source) => builder.image(source)
 const thumbUrl = (source) =>
   urlFor(source).width(200).height(200).fit('crop').quality(40).auto('format').url()
 
-// Card: Kategorie-Karten-Hero (~634px Anzeige → 800px für 1,25× Schärfe)
-// war: 1200px q85 → jetzt: 800px q75 → ca. 55 % weniger Bytes
+// Card: Kategorie-Karten-Hero
+// Anzeigegröße: ~634px (desktop, 1 von 4 Spalten bei max-width 1200px)
+// → 640px = exakt passend, kein Überschuss mehr
+// Vorher: 800×420 q75 → jetzt: 640×336 q72 → ca. 35-40% weniger Bytes
+// Verhältnis 640:336 = 40:21 ≈ 16:8.4 (gleich wie 800:420)
 const cardUrl = (source) =>
-  urlFor(source).width(800).height(420).fit('crop').quality(75).auto('format').url()
+  urlFor(source).width(640).height(336).fit('crop').quality(72).auto('format').url()
 
-// Full: Lightbox (groß, aber nicht übertrieben)
-// war: 1200px q85 → jetzt: 900px q80 → ca. 40 % weniger Bytes
+// Full: Lightbox (unverändert)
 const fullUrl = (source) =>
   urlFor(source).width(900).quality(80).auto('format').url()
 
-// Galerie – zwei Größen für srcset
-// sm: 1× Anzeige (~860px breit auf Desktop, ~100vw auf Mobile)
-// lg: 2× Retina
+// Galerie – zwei Größen für srcset (unverändert)
 const gallerySmUrl = (source) =>
   urlFor(source).width(560).height(365).fit('crop').quality(55).format('webp').url()
 const galleryLgUrl = (source) =>
