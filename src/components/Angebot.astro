@@ -136,16 +136,26 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         const color = badgeColor(item)
         const isFirst = i === 0
 
-        // card-URL (640×336) als src — exakt passend zur Anzeigegröße ~634px
-        // full (900px) als 1,4× Retina-Fallback im srcset
+        // Lookup über die full-URL als stabilen Schlüssel.
+        // fetch-images.js registriert alle drei Varianten (thumb/card/full)
+        // unter demselben entry-Objekt → entry.card ist immer die 640×336-Datei,
+        // unabhängig davon welche URL als Map-Key übergeben wird.
         let cardImgUrl: string | null = null
         let fullImgUrl: string | null = null
         if (item.image) {
-          // Wir bauen dieselben URLs wie fetch-images.js (640×336 q72)
-          const sanityCUrl = urlFor(item.image).width(640).height(336).fit('crop').quality(72).auto('format').url()
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
-          cardImgUrl = localOrRemote(sanityCUrl, 'card')
-          fullImgUrl = localOrRemote(sanityFUrl, 'full')
+          const entry = imageMap[sanityFUrl]
+          if (entry) {
+            // Lokale Dateien vorhanden → immer lokale card-Datei (640×336) verwenden
+            cardImgUrl = entry.card
+            fullImgUrl = entry.full
+          } else {
+            // Kein Eintrag (erster Build vor fetch-images / Sanity offline)
+            // → direkte Sanity-CDN-URLs als Fallback
+            const sanityCUrl = urlFor(item.image).width(640).height(336).fit('crop').quality(72).auto('format').url()
+            cardImgUrl = sanityCUrl
+            fullImgUrl = sanityFUrl
+          }
         }
         const productCount = itemsForCategory(item._id).length
 
