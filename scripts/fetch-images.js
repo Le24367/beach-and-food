@@ -7,9 +7,13 @@
  *        - siteSettings.gallery (Über-uns-Karussell)   → public/gallery-images/
  *   2. Lädt jedes Bild in zwei Versionen herunter:
  *        - thumb:  200×200 px, quality 40  → für Kacheln im Modal
- *        - full:  1200px breit, quality 85 → für Karussell / Lightbox
- *   3. Schreibt src/generated/image-map.json      { sanityUrl → { thumb, full } }
- *      und   src/generated/gallery-images.json    [ { src, alt, caption } ]
+ *        - card:   800px breit, quality 75 → für Kategorie-Karten (war 1200px → ~35% kleiner)
+ *        - full:   900px breit, quality 80 → für Lightbox (war 1200px, q85)
+ *   3. Galerie-Bilder:
+ *        - gallery-sm:  860×560 px, quality 70  → 1× (mobile / Standard)
+ *        - gallery-lg: 1280×832 px, quality 75  → 2× (Retina / groß)
+ *   4. Schreibt src/generated/image-map.json      { sanityUrl → { thumb, card, full } }
+ *      und   src/generated/gallery-images.json    [ { src, srcset, alt, caption } ]
  */
 
 import { createClient }    from '@sanity/client'
@@ -46,10 +50,28 @@ const builder = imageUrlBuilder(client)
 const urlFor  = (source) => builder.image(source)
 
 // ── Bild-Versionen ────────────────────────────────────────────────────────────
+
+// Thumb: Kacheln im Modal (unverändert)
 const thumbUrl = (source) =>
   urlFor(source).width(200).height(200).fit('crop').quality(40).auto('format').url()
-const fullUrl  = (source) =>
-  urlFor(source).width(1200).quality(85).auto('format').url()
+
+// Card: Kategorie-Karten-Hero (~634px Anzeige → 800px für 1,25× Schärfe)
+// war: 1200px q85 → jetzt: 800px q75 → ca. 55 % weniger Bytes
+const cardUrl = (source) =>
+  urlFor(source).width(800).height(420).fit('crop').quality(75).auto('format').url()
+
+// Full: Lightbox (groß, aber nicht übertrieben)
+// war: 1200px q85 → jetzt: 900px q80 → ca. 40 % weniger Bytes
+const fullUrl = (source) =>
+  urlFor(source).width(900).quality(80).auto('format').url()
+
+// Galerie – zwei Größen für srcset
+// sm: 1× Anzeige (~860px breit auf Desktop, ~100vw auf Mobile)
+// lg: 2× Retina
+const gallerySmUrl = (source) =>
+  urlFor(source).width(860).height(560).fit('crop').quality(70).auto('format').url()
+const galleryLgUrl = (source) =>
+  urlFor(source).width(1280).height(832).fit('crop').quality(75).auto('format').url()
 
 // ── Dateiname aus URL-Hash ────────────────────────────────────────────────────
 function localName(sanityUrl, suffix) {
@@ -133,17 +155,26 @@ async function main() {
   const productQueue = []
 
   for (const rec of productRecords) {
-    const tUrl  = thumbUrl(rec.image)
-    const fUrl  = fullUrl(rec.image)
-    const tName = localName(tUrl, 'thumb')
-    const fName = localName(fUrl, 'full')
+    const tUrl    = thumbUrl(rec.image)
+    const cUrl    = cardUrl(rec.image)
+    const fUrl    = fullUrl(rec.image)
+    const tName   = localName(tUrl, 'thumb')
+    const cName   = localName(cUrl, 'card')
+    const fName   = localName(fUrl, 'full')
+
     const entry = {
       thumb: `/product-images/${tName}`,
+      card:  `/product-images/${cName}`,
       full:  `/product-images/${fName}`,
     }
+
+    // Map-Einträge für alle URL-Varianten → Angebot.astro findet sie
     imageMap[tUrl] = entry
+    imageMap[cUrl] = entry
     imageMap[fUrl] = entry
+
     productQueue.push({ url: tUrl, path: join(IMG_DIR, tName), label: `thumb ${rec._id}` })
+    productQueue.push({ url: cUrl, path: join(IMG_DIR, cName), label: `card  ${rec._id}` })
     productQueue.push({ url: fUrl, path: join(IMG_DIR, fName), label: `full  ${rec._id}` })
   }
 
@@ -170,12 +201,20 @@ async function main() {
 
   for (const entry of galleryEntries) {
     if (!entry.image) continue
-    const fUrl  = fullUrl(entry.image)
-    const fName = localName(fUrl, 'gallery')
-    galleryQueue.push({ url: fUrl, path: join(GALLERY_DIR, fName), label: `gallery` })
+
+    const smUrl  = gallerySmUrl(entry.image)
+    const lgUrl  = galleryLgUrl(entry.image)
+    const smName = localName(smUrl, 'gallery-sm')
+    const lgName = localName(lgUrl, 'gallery-lg')
+
+    galleryQueue.push({ url: smUrl, path: join(GALLERY_DIR, smName), label: `gallery-sm` })
+    galleryQueue.push({ url: lgUrl, path: join(GALLERY_DIR, lgName), label: `gallery-lg` })
+
     galleryOutput.push({
-      src:     `/gallery-images/${fName}`,
-      alt:     entry.alt     ?? '',
+      src:    `/gallery-images/${smName}`,
+      srcset: `/gallery-images/${smName} 860w, /gallery-images/${lgName} 1280w`,
+      sizes:  '(max-width: 900px) 100vw, 50vw',
+      alt:    entry.alt     ?? '',
       caption: entry.caption ?? null,
     })
   }

@@ -3,22 +3,16 @@ import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from '.
 import type { MenuCategory, MenuItem, MenuSubCategory } from '../lib/sanity'
 import imageMapRaw from '../generated/image-map.json'
 
-// ── Bild-Map: Sanity-URL → lokale Pfade ──────────────────────────────────────
-// Wird von scripts/fetch-images.mjs beim Build befüllt.
-// Fallback: leeres Objekt → Sanity-URLs werden direkt verwendet (z.B. bei `astro dev`)
-const imageMap: Record<string, { thumb: string; full: string }> = imageMapRaw as any
+const imageMap: Record<string, { thumb: string; card: string; full: string }> = imageMapRaw as any
 
-/**
- * Gibt lokalen Pfad zurück wenn vorhanden, sonst Sanity-URL (dev-Fallback).
- * mode: 'thumb' | 'full'
- */
-function localOrRemote(sanityUrl: string, mode: 'thumb' | 'full'): string {
+function localOrRemote(sanityUrl: string, mode: 'thumb' | 'card' | 'full'): string {
   const entry = imageMap[sanityUrl]
-  if (!entry) return sanityUrl          // dev-Fallback: direkt von Sanity
-  return mode === 'thumb' ? entry.thumb : entry.full
+  if (!entry) return sanityUrl
+  if (mode === 'thumb') return entry.thumb
+  if (mode === 'card')  return entry.card
+  return entry.full
 }
 
-// ── Sanity-Daten ──────────────────────────────────────────────────────────────
 let items: MenuCategory[] = []
 let menuItems: MenuItem[] = []
 let subCategories: MenuSubCategory[] = []
@@ -42,7 +36,6 @@ if (items.length === 0) {
   ] as MenuCategory[]
 }
 
-// ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 function badgeColor(item: MenuCategory): string {
   const badge = item.badge
   if (!badge) return '#E85D3A'
@@ -58,12 +51,6 @@ function subCatsForCategory(categoryId: string): MenuSubCategory[] {
   return subCategories.filter(s => s.categoryId === categoryId)
 }
 
-// ── popupData aufbauen ────────────────────────────────────────────────────────
-// Für jedes Produkt werden THREE URLs mitgegeben:
-//   imgThumb    → lokaler Thumb (200×200, q40)  – für die Kachel
-//   imgFull     → lokale Full-Auflösung (1200px) – für die Lightbox
-//   imgFallback → Sanity-URL als Notfall-Fallback (wird im Browser nie angefragt,
-//                 wenn fetch-images gelaufen ist)
 const popupData = items.map(cat => {
   const color = badgeColor(cat)
   const allItems = itemsForCategory(cat._id)
@@ -72,7 +59,6 @@ const popupData = items.map(cat => {
 
   const groups = [
     ...subs.map(sub => {
-      // Subkategorie-Bild: exakt dieselben Parameter wie fetch-images.js thumbUrl()
       let subImgUrl: string | null = null
       if (sub.image) {
         const sanityThumb = urlFor(sub.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
@@ -114,12 +100,11 @@ const popupData = items.map(cat => {
 })
 
 function mapProduct(p: MenuItem, cat: MenuCategory) {
-  // Sanity-URLs für beide Größen
   const sanityThumbUrl = p.image
     ? urlFor(p.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
     : null
   const sanityFullUrl = p.image
-    ? urlFor(p.image).width(1200).quality(85).auto('format').url()
+    ? urlFor(p.image).width(900).quality(80).auto('format').url()
     : null
 
   return {
@@ -127,10 +112,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     title: p.title,
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
-    // Thumb: lokal wenn fetch-images gelaufen, sonst Sanity-Fallback
     imgThumb: sanityThumbUrl ? localOrRemote(sanityThumbUrl, 'thumb') : null,
-    // Full: für die Lightbox – ebenfalls lokal
-    imgFull: sanityFullUrl ? localOrRemote(sanityFullUrl, 'full') : null,
+    imgFull:  sanityFullUrl  ? localOrRemote(sanityFullUrl,  'full')  : null,
     emoji: p.emoji ?? null,
     badges: p.badges ?? [],
   }
@@ -151,13 +134,19 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     <div class="menu-grid">
       {items.map((item, i) => {
         const color = badgeColor(item)
-        // Kategorie-Karten-Bild: exakt dieselben URL-Parameter wie fetch-images.js → trifft die Map
+        const isFirst = i === 0
+
+        // card-URL (800×420) als src, full als 1,5× srcset-Fallback
         let cardImgUrl: string | null = null
+        let fullImgUrl: string | null = null
         if (item.image) {
-          const sanityUrl = urlFor(item.image).width(1200).quality(85).auto('format').url()
-          cardImgUrl = localOrRemote(sanityUrl, 'full')
+          const sanityCUrl = urlFor(item.image).width(800).height(420).fit('crop').quality(75).auto('format').url()
+          const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
+          cardImgUrl = localOrRemote(sanityCUrl, 'card')
+          fullImgUrl = localOrRemote(sanityFUrl, 'full')
         }
         const productCount = itemsForCategory(item._id).length
+
         return (
           <button
             class="menu-card reveal"
@@ -167,7 +156,19 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
           >
             <div class="card-visual">
               {cardImgUrl
-                ? <img src={cardImgUrl} alt={item.title} loading="lazy" class="card-img" />
+                ? (
+                  <img
+                    src={cardImgUrl}
+                    srcset={fullImgUrl ? `${cardImgUrl} 800w, ${fullImgUrl} 900w` : undefined}
+                    sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 300px"
+                    alt={item.title}
+                    width="800"
+                    height="420"
+                    loading={isFirst ? 'eager' : 'lazy'}
+                    decoding={isFirst ? 'sync' : 'async'}
+                    class="card-img"
+                  />
+                )
                 : <div class="card-emoji">{item.emoji ?? '🍽️'}</div>
               }
               {item.badge?.label && (
@@ -217,7 +218,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   </button>
-  <!-- Spinner: sichtbar während das Full-Bild lädt -->
   <div class="lightbox-spinner" id="lightbox-spinner" aria-hidden="true"></div>
   <img class="lightbox-img" id="lightbox-img" src="" alt="" />
 </div>
@@ -235,34 +235,15 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
   const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
 
-  // ── DOM-Helfer ────────────────────────────────────────────────────
-  function setText(el, text) {
-    el.textContent = text ?? ''
-  }
+  function setText(el, text) { el.textContent = text ?? '' }
   function createEl(tag, className) {
     const el = document.createElement(tag)
     if (className) el.className = className
     return el
   }
 
-  // ── Produktbild mit 3-Stufen-Loading ─────────────────────────────
-  //
-  // Aufbau des imgWrap:
-  //
-  //   [mpi-img-wrap]
-  //     ├── [mpi-placeholder]   Emoji — sofort sichtbar, kein Netz nötig
-  //     └── [mpi-img]           Thumbnail — wird per IntersectionObserver lazy geladen
-  //                             cursor:zoom-in, data-full für Lightbox
-  //
-  // Ablauf:
-  //   1. Placeholder (Emoji) ist sofort da
-  //   2. Wenn imgWrap in den Viewport scrollt → thumb.src wird gesetzt → Browser lädt
-  //   3. Sobald thumb geladen: sanftes Einblenden, Placeholder bleibt dahinter (kein Layout-Sprung)
-  //   4. Klick auf Bild → Lightbox zeigt full-URL (lädt erst jetzt)
-
   function buildImgWrap(p, catEmoji) {
     const wrap = createEl('div', 'mpi-img-wrap')
-
     const emoji = p.emoji || catEmoji || '🍽️'
     const placeholder = createEl('div', 'mpi-placeholder')
     setText(placeholder, emoji)
@@ -270,11 +251,11 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
     if (!p.imgThumb) return wrap
 
-    // src direkt setzen — kein Observer, kein data-src
-    // Browser lädt das Bild sobald das Element im DOM landet
     const img = createEl('img', 'mpi-img')
     img.alt          = p.title
     img.src          = p.imgThumb
+    img.width        = 200
+    img.height       = 200
     img.dataset.full = p.imgFull
     img.dataset.alt  = p.title
 
@@ -283,14 +264,9 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       placeholder.classList.add('mpi-placeholder--hidden')
     }, { once: true })
 
-    img.addEventListener('error', function() {
-      img.remove()
-    }, { once: true })
-
+    img.addEventListener('error', function() { img.remove() }, { once: true })
     wrap.appendChild(img)
 
-    // Falls Bild bereits im Browser-Cache: complete ist sofort true,
-    // load feuert dann nicht mehr → Klasse manuell setzen
     if (img.complete && img.naturalWidth > 0) {
       img.classList.add('mpi-img--loaded')
       placeholder.classList.add('mpi-placeholder--hidden')
@@ -299,7 +275,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     return wrap
   }
 
-  // ── Produkt-DOM aufbauen ──────────────────────────────────────────
   function buildProductDOM(cat) {
     const fragment = document.createDocumentFragment()
 
@@ -313,7 +288,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     cat.groups.forEach(function(group) {
       if (group.products.length === 0) return
 
-      // Subkategorie-Header
       if (group.title) {
         const header = createEl('div', 'mp-subcat-header')
 
@@ -322,6 +296,8 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
           img.src     = group.imgUrl
           img.alt     = group.title
           img.loading = 'lazy'
+          img.width   = 36
+          img.height  = 36
           header.appendChild(img)
         } else if (group.emoji) {
           const span = createEl('span', 'mp-subcat-emoji')
@@ -344,17 +320,14 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         fragment.appendChild(header)
       }
 
-      // Produktliste
       const ul = createEl('ul', 'mp-list')
 
       group.products.forEach(function(p) {
         const li   = document.createElement('li')
         const item = createEl('div', 'mp-item')
 
-        // Bild (3-Stufen)
         item.appendChild(buildImgWrap(p, cat.emoji))
 
-        // Text
         const body  = createEl('div', 'mpi-body')
         const inner = createEl('div', '')
         const top   = createEl('div', 'mpi-top')
@@ -400,14 +373,12 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
       fragment.appendChild(createEl('div', 'mp-divider'))
     })
 
-    // Letzte Trennlinie entfernen
     const last = fragment.lastChild
     if (last && last.className === 'mp-divider') fragment.removeChild(last)
 
     return fragment
   }
 
-  // ── Modal ─────────────────────────────────────────────────────────
   function openModal(categoryId) {
     const cat = dataMap[categoryId]
     if (!cat) return
@@ -447,29 +418,16 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (e.target === backdrop) closeModal()
   })
 
-  // ── Lightbox (Stufe 3: Full-Bild) ────────────────────────────────
-  // Erst bei Klick auf Thumbnail wird das Full-Bild geladen.
   function openLightbox(fullSrc, alt) {
-    // Spinner anzeigen, altes Bild verstecken
     lightboxImg.classList.remove('lb-loaded')
     lightboxSpinner.classList.add('lb-spinning')
-
     lightbox.classList.add('open')
     lightbox.setAttribute('aria-hidden', 'false')
     lightboxClose.focus()
-
-    // Full-Bild laden
     lightboxImg.alt = alt
     lightboxImg.src = fullSrc
-
-    lightboxImg.onload = function() {
-      lightboxSpinner.classList.remove('lb-spinning')
-      lightboxImg.classList.add('lb-loaded')
-    }
-    lightboxImg.onerror = function() {
-      lightboxSpinner.classList.remove('lb-spinning')
-      lightboxImg.classList.add('lb-loaded')  // Bild trotzdem zeigen (Fehler-Icon)
-    }
+    lightboxImg.onload  = function() { lightboxSpinner.classList.remove('lb-spinning'); lightboxImg.classList.add('lb-loaded') }
+    lightboxImg.onerror = function() { lightboxSpinner.classList.remove('lb-spinning'); lightboxImg.classList.add('lb-loaded') }
   }
 
   function closeLightbox() {
@@ -480,7 +438,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     lightboxSpinner.classList.remove('lb-spinning')
   }
 
-  // Klick auf Thumbnail → data-full auslesen
   bodyEl.addEventListener('click', function(e) {
     const img = e.target.closest('.mpi-img')
     if (!img) return
@@ -495,7 +452,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (e.target === lightbox) closeLightbox()
   })
 
-  // ── Escape ────────────────────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return
     if (lightbox.classList.contains('open')) {
@@ -507,7 +463,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 </script>
 
 <style>
-/* ───── Section ───── */
 .angebot { padding: 6rem 0 8rem; background: var(--sand-light); }
 .section-head { text-align: center; margin-bottom: 4rem; }
 .section-label {
@@ -522,7 +477,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 }
 .section-sub { color: var(--text-muted); font-size: 1rem; line-height: 1.7; }
 
-/* ───── Menu Grid ───── */
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1.5rem; }
 .menu-card {
   background: #fff; border-radius: 20px; overflow: hidden;
@@ -550,7 +504,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .card-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
 .card-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 700; color: var(--wave); margin-top: 0.6rem; transition: color 0.2s, gap 0.2s; }
 
-/* ───── Modal Backdrop ───── */
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(8,20,30,0.72);
   z-index: 1000; display: flex; align-items: flex-end; justify-content: center;
@@ -559,7 +512,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 @media (min-width: 640px) { .modal-backdrop { align-items: center; padding: 1.5rem; } }
 .modal-backdrop.open { opacity: 1; pointer-events: auto; }
 
-/* ───── Modal Box ───── */
 .modal {
   background: #ffffff; width: 100%; max-width: 600px; max-height: 85vh;
   border-radius: 28px 28px 0 0; display: flex; flex-direction: column;
@@ -570,12 +522,9 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 @media (min-width: 640px) {
   .modal { max-height: 88vh; border-radius: 24px; transform: none; box-shadow: 0 40px 100px rgba(0,0,0,0.3); }
 }
-@media (max-width: 480px) {
-  .modal { max-height: 90vh; }
-}
+@media (max-width: 480px) { .modal { max-height: 90vh; } }
 .modal-backdrop.open .modal { transform: translateY(0); opacity: 1; }
 
-/* ───── Modal Header ───── */
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 22px 18px; border-bottom: 1px solid #f0ebe3;
@@ -600,7 +549,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 }
 .modal-close:hover { background: #f0ebe3; color: var(--ocean-deep, #002434); transform: rotate(90deg); }
 
-/* ───── Modal Body ───── */
 .modal-body { flex: 1; overflow-y: auto; padding: 16px 18px 24px; background: #ffffff; }
 .modal-body::-webkit-scrollbar { width: 4px; }
 .modal-body::-webkit-scrollbar-track { background: transparent; }
@@ -613,43 +561,26 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   .mh-title { font-size: 1.15rem; }
 }
 
-/* ───── Lightbox ───── */
 .lightbox {
   position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1100;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem;
   opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
 }
 .lightbox.open { opacity: 1; pointer-events: auto; }
-
-/* Full-Bild startet unsichtbar, blendet erst ein wenn geladen */
 .lightbox-img {
   max-width: 100%; max-height: 85vh; border-radius: 16px; object-fit: contain;
-  transform: scale(0.94);
-  opacity: 0;
+  transform: scale(0.94); opacity: 0;
   transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), opacity 0.3s ease;
 }
-.lightbox-img.lb-loaded {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Lade-Spinner */
+.lightbox-img.lb-loaded { opacity: 1; transform: scale(1); }
 .lightbox-spinner {
-  display: none;
-  position: absolute;
+  display: none; position: absolute;
   width: 40px; height: 40px;
   border: 3px solid rgba(255,255,255,0.2);
-  border-top-color: #fff;
-  border-radius: 50%;
+  border-top-color: #fff; border-radius: 50%;
 }
-.lightbox-spinner.lb-spinning {
-  display: block;
-  animation: lb-spin 0.75s linear infinite;
-}
-@keyframes lb-spin {
-  to { transform: rotate(360deg); }
-}
-
+.lightbox-spinner.lb-spinning { display: block; animation: lb-spin 0.75s linear infinite; }
+@keyframes lb-spin { to { transform: rotate(360deg); } }
 .lightbox-close {
   position: absolute; top: 1.25rem; right: 1.25rem;
   width: 40px; height: 40px; border-radius: 50%;
@@ -661,66 +592,23 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 </style>
 
 <style is:global>
-/* ───── Produktliste (is:global — wird per DOM-API eingefügt) ───── */
 .mp-empty { color: var(--text-muted); font-size: 0.95rem; padding: 2rem 0; text-align: center; }
-
-.mp-subcat-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 14px 4px 8px; margin-bottom: 4px;
-}
+.mp-subcat-header { display: flex; align-items: center; gap: 10px; padding: 14px 4px 8px; margin-bottom: 4px; }
 .mp-subcat-img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; flex-shrink: 0; border: 1px solid #f0ebe3; }
 .mp-subcat-emoji { font-size: 1.5rem; flex-shrink: 0; width: 36px; text-align: center; }
 .mp-subcat-text { display: flex; flex-direction: column; gap: 1px; }
 .mp-subcat-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; color: var(--ocean-deep, #0D2233); line-height: 1.2; }
 .mp-subcat-desc { font-size: 0.75rem; color: var(--text-muted, #888); line-height: 1.4; }
-
 .mp-divider { height: 1px; background: #f0ebe3; margin: 12px 0; }
-
 .mp-list { list-style: none !important; padding: 0 !important; margin: 0 0 4px !important; display: flex; flex-direction: column; gap: 10px; }
 .mp-list li { list-style: none !important; padding-left: 0 !important; margin-left: 0 !important; }
 .mp-item { display: flex; align-items: stretch; background: #faf8f5; border-radius: 16px; overflow: hidden; border: 1px solid #f0ebe3; transition: box-shadow 0.2s, transform 0.2s; }
 .mp-item:hover { box-shadow: 0 8px 28px rgba(0,36,52,0.09); transform: translateY(-2px); }
-
-/* ── Bild-Bereich: Emoji + Thumbnail übereinander ── */
-.mpi-img-wrap {
-  width: 96px; min-width: 96px; flex-shrink: 0;
-  background: #f0ebe3; overflow: hidden;
-  display: flex; align-items: stretch;
-  position: relative;   /* Stapel-Kontext für Emoji + Bild */
-}
-
-/* Emoji-Placeholder: immer im Hintergrund */
-.mpi-placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2.2rem;
-  transition: opacity 0.4s ease;
-  z-index: 1;
-}
-/* Wenn Bild geladen: Emoji sanft ausblenden */
-.mpi-placeholder--hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Thumbnail: startet unsichtbar über dem Emoji */
-.mpi-img {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-  cursor: zoom-in;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-/* Wenn geladen: einblenden */
-.mpi-img--loaded {
-  opacity: 1;
-}
-
+.mpi-img-wrap { width: 96px; min-width: 96px; flex-shrink: 0; background: #f0ebe3; overflow: hidden; display: flex; align-items: stretch; position: relative; }
+.mpi-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; transition: opacity 0.4s ease; z-index: 1; }
+.mpi-placeholder--hidden { opacity: 0; pointer-events: none; }
+.mpi-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; z-index: 2; opacity: 0; transition: opacity 0.4s ease; }
+.mpi-img--loaded { opacity: 1; }
 .mpi-body { flex: 1; min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
 .mpi-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
 .mpi-name { font-weight: 600; font-size: 0.9rem; color: var(--ocean-deep, #002434); line-height: 1.3; }
@@ -729,8 +617,5 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .mpi-desc { font-size: 0.78rem; color: var(--text-muted, #8a7f74); line-height: 1.5; flex: 1; }
 .mpi-footer { display: flex; align-items: center; margin-top: 8px; }
 .mpi-price { font-weight: 700; font-size: 0.97rem; color: #E85D3A; letter-spacing: -0.01em; }
-
-@media (max-width: 480px) {
-  .mpi-img-wrap { width: 80px; min-width: 80px; }
-}
+@media (max-width: 480px) { .mpi-img-wrap { width: 80px; min-width: 80px; } }
 </style>

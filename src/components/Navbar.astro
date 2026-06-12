@@ -9,6 +9,8 @@ const links = await getLinks()
         src="/logo/logo.jpeg"
         alt="Beach and Food"
         class="logo-img"
+        width="448"
+        height="115"
       />
     </a>
     <ul class="nav-links">
@@ -53,6 +55,9 @@ const links = await getLinks()
   padding-bottom: 1rem;
 }
 .logo { display: flex; align-items: center; flex-shrink: 0; }
+/* width/height im HTML sind die nativen Pixel des Originals (448×115).
+   CSS skaliert auf die tatsächliche Anzeigegröße – aspect-ratio bleibt erhalten,
+   und der Browser reserviert sofort den richtigen Platz → kein CLS. */
 .logo-img { height: 44px; width: auto; object-fit: contain; display: block; }
 .nav-links {
   display: flex;
@@ -183,7 +188,6 @@ const links = await getLinks()
     }
   })
 
-  // ── Aktiver Abschnitt beim Scrollen ──────────────────────────────
   const sections = ['angebot', 'vibes', 'ueber-uns', 'kontakt']
   const navLinks = document.querySelectorAll('.nav-links a[href^="#"]')
 

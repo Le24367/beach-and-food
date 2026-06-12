@@ -1,18 +1,24 @@
 ---
 const YT_ID = "QuSgl1-ZICE";
 
-// Galerie-Bilder aus dem Build-Script (Sanity → public/gallery-images/)
-// gallery-images.json wird von scripts/fetch-images.js erzeugt.
-// Fallback: leeres Array → Platzhalter-Folie greift weiter unten.
-let sanitySlides: { src: string; alt: string; caption: string | null }[] = [];
+// Galerie-Bilder: jetzt mit srcset (sm + lg) für responsive Bildgrößen
+interface GallerySlide {
+  src: string
+  srcset?: string
+  sizes?: string
+  alt: string
+  caption: string | null
+}
+
+let sanitySlides: GallerySlide[] = [];
 try {
   const raw = await import('../../src/generated/gallery-images.json', { assert: { type: 'json' } });
-  sanitySlides = (raw.default ?? []) as typeof sanitySlides;
+  sanitySlides = (raw.default ?? []) as GallerySlide[];
 } catch {
   // Datei existiert noch nicht (erster Build vor fetch-images) → ignorieren
 }
 
-const slides =
+const slides: GallerySlide[] =
   sanitySlides.length > 0
     ? sanitySlides
     : [{ src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food', caption: null }];
@@ -62,8 +68,13 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
               >
                 <img
                   src={slide.src}
+                  srcset={slide.srcset}
+                  sizes={slide.sizes ?? '(max-width: 900px) 100vw, 50vw'}
                   alt={slide.alt}
+                  width="860"
+                  height="560"
                   loading={i === 0 ? 'eager' : 'lazy'}
+                  decoding={i === 0 ? 'sync' : 'async'}
                 />
                 {slide.caption && (
                   <div class="carousel-caption">{slide.caption}</div>
@@ -104,14 +115,13 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
           src={ytThumbnail}
           alt="Beach and Food – Foodtruck am Sütel-Strand – Video abspielen"
           loading="lazy"
+          width="1280"
+          height="720"
           class="yt-thumbnail"
         />
         <button class="yt-play-btn" aria-label="Video abspielen" tabindex="-1">
           <svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true">
-            <path
-              d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z"
-              fill="#f00"
-            />
+            <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"/>
             <path d="M45 24 27 14v20" fill="#fff"/>
           </svg>
         </button>
@@ -310,7 +320,6 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   transform: scale(1.3);
 }
 
-/* ── YouTube Facade ── */
 .uu-video { margin-bottom: 5rem; }
 .video-label {
   display: inline-flex;
@@ -362,9 +371,7 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   transition: transform 0.2s;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
 }
-.yt-facade:hover .yt-play-btn {
-  transform: translate(-50%, -50%) scale(1.1);
-}
+.yt-facade:hover .yt-play-btn { transform: translate(-50%, -50%) scale(1.1); }
 .yt-consent-note {
   position: absolute;
   bottom: 0;
@@ -377,11 +384,7 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   text-align: center;
   backdrop-filter: blur(4px);
 }
-.yt-consent-note a {
-  color: rgba(255,255,255,0.9);
-  text-decoration: underline;
-  margin-left: 0.3rem;
-}
+.yt-consent-note a { color: rgba(255,255,255,0.9); text-decoration: underline; margin-left: 0.3rem; }
 
 .uu-badges {
   display: grid;
@@ -395,18 +398,8 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
   padding: 2rem;
   transition: background 0.25s, transform 0.25s;
 }
-.badge-card:hover {
-  background: rgba(255,255,255,0.1);
-  transform: translateY(-3px);
-}
-.bc-number {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.4rem;
-  font-weight: 900;
-  color: var(--coral);
-  line-height: 1.1;
-  margin-bottom: 0.3rem;
-}
+.badge-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
+.bc-number { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 900; color: var(--coral); line-height: 1.1; margin-bottom: 0.3rem; }
 .bc-icon { font-size: 2rem; margin-bottom: 0.3rem; }
 .bc-label { font-size: 0.9rem; font-weight: 600; color: var(--foam); margin-bottom: 0.2rem; }
 .bc-sub { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
@@ -422,26 +415,22 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 </style>
 
 <script>
-  // ── YouTube Facade ───────────────────────────────────────────────
   function initYtFacade(facade: HTMLElement) {
     const activate = () => {
       const videoId = facade.dataset.videoid
       if (!videoId) return
-
       const iframe = document.createElement('iframe')
       iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&color=white`
       iframe.title = 'Beach and Food – Foodtruck am Sütel-Strand'
       iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
       iframe.allowFullscreen = true
       iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;'
-
       facade.innerHTML = ''
       facade.appendChild(iframe)
       facade.removeAttribute('role')
       facade.removeAttribute('tabindex')
       facade.style.cursor = 'default'
     }
-
     facade.addEventListener('click', activate)
     facade.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate() }
@@ -450,7 +439,6 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 
   document.querySelectorAll<HTMLElement>('.yt-facade').forEach(initYtFacade)
 
-  // ── Carousel ─────────────────────────────────────────────────────
   function initCarousel(carouselEl: Element) {
     const slides        = Array.from(carouselEl.querySelectorAll<HTMLElement>('.carousel-slide'))
     const dotsContainer = carouselEl.querySelector<HTMLElement>('.carousel-dots')
@@ -502,7 +490,7 @@ const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
       dotsContainer?.querySelectorAll('.carousel-dot')[current]?.classList.remove('active')
       dotsContainer?.querySelectorAll('.carousel-dot')[next]?.classList.add('active')
       updateAria(current, next)
-      const prevIndex   = current
+      const prevIndex = current
       const fallbackTimer = setTimeout(() => {
         slides[prevIndex].classList.remove('active')
         slides[next].classList.add('active')

@@ -82,7 +82,12 @@ const seasonNote = settings?.seasonNote
 
       <div class="k-map reveal" style="transition-delay:0.2s">
         <div class="map-wrap">
-          <div id="leaflet-map"></div>
+          <!--
+            Leaflet-Platzhalter: zeigt einen statischen Hinweis,
+            bis der IntersectionObserver feuert und die Map lädt.
+            → Leaflet CSS + JS werden erst dann per Script-Tag injiziert.
+          -->
+          <div id="leaflet-map" aria-label="Karte wird geladen …"></div>
           <a href={address.mapsUrl} target="_blank" rel="noopener" class="map-btn">
             In Google Maps öffnen
           </a>
@@ -99,6 +104,9 @@ const seasonNote = settings?.seasonNote
         src="/logo/logo.jpeg"
         alt="Beach and Food"
         class="footer-logo-img"
+        width="448"
+        height="115"
+        loading="lazy"
       />
     </div>
     <p class="footer-tagline">{legal.tagline}</p>
@@ -155,6 +163,8 @@ const seasonNote = settings?.seasonNote
   height: 340px;
   width: 100%;
   z-index: 1;
+  /* Platzhalter-Hintergrund bis Leaflet geladen ist */
+  background: #e8e0d4;
 }
 .map-btn {
   display: block;
@@ -186,6 +196,7 @@ const seasonNote = settings?.seasonNote
   align-items: center;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
+/* width/height im HTML = native Größe des Logos → Browser reserviert Platz, kein CLS */
 .footer-logo-img { height: 52px; width: auto; object-fit: contain; display: block; }
 .footer-tagline { color: var(--coral); opacity: 0.85; font-size: 0.9rem; font-style: italic; }
 .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
@@ -215,19 +226,36 @@ const seasonNote = settings?.seasonNote
 }
 </style>
 
-<!-- Leaflet CSS -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  crossorigin=""
-/>
-<!-- Leaflet JS — klassisches UMD-Bundle, kein ESM-Import nötig -->
-<script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
+<!--
+  Leaflet CSS + JS werden erst geladen, wenn #leaflet-map sichtbar wird.
+  Das entfernt ~46 KiB (CSS + JS) aus dem kritischen Pfad komplett.
+  Statt unpkg verwenden wir jsDelivr als zuverlässigeres CDN mit längerem Cache.
+-->
 <script is:inline>
-  (function () {
-    var LAT = 54.337045
-    var LNG = 11.071475
+(function () {
+  var LAT = 54.337045
+  var LNG = 11.071475
+  var initialized = false
+
+  function loadLeaflet(callback) {
+    // CSS
+    var link = document.createElement('link')
+    link.rel  = 'stylesheet'
+    link.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css'
+    link.crossOrigin = ''
+    document.head.appendChild(link)
+
+    // JS
+    var script = document.createElement('script')
+    script.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js'
+    script.crossOrigin = ''
+    script.onload = callback
+    document.head.appendChild(script)
+  }
+
+  function initMap() {
+    if (initialized || typeof L === 'undefined') return
+    initialized = true
 
     var map = L.map('leaflet-map', {
       center: [LAT, LNG],
@@ -249,5 +277,25 @@ const seasonNote = settings?.seasonNote
     })
 
     L.marker([LAT, LNG], { icon: icon }).addTo(map)
-  })()
+  }
+
+  // IntersectionObserver: Leaflet erst laden wenn die Map-Section sichtbar wird
+  var mapEl = document.getElementById('leaflet-map')
+  if (!mapEl) return
+
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          observer.disconnect()
+          loadLeaflet(initMap)
+        }
+      })
+    }, { rootMargin: '200px' }) // 200px vor dem Viewport vorausladen
+    observer.observe(mapEl)
+  } else {
+    // Fallback für sehr alte Browser: sofort laden
+    loadLeaflet(initMap)
+  }
+})()
 </script>
