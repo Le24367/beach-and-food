@@ -67,6 +67,7 @@ const links = await getLinks()
   transition: color 0.2s;
 }
 .nav-links a:hover { color: var(--sun-bright); }
+.nav-links a.active { color: var(--sun-bright); font-weight: 700; }
 .nav-cta {
   background: var(--sun);
   color: var(--ocean-deep);
@@ -180,5 +181,29 @@ const links = await getLinks()
       mobileMenu?.classList.remove('open')
       burger?.classList.remove('open')
     }
+  })
+
+  // ── Aktiver Abschnitt beim Scrollen ──────────────────────────────
+  const sections = ['angebot', 'vibes', 'ueber-uns', 'kontakt']
+  const navLinks = document.querySelectorAll('.nav-links a[href^="#"]')
+
+  const setActive = (id: string) => {
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === `#${id}`)
+    })
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) setActive(entry.target.id)
+    })
+  }, {
+    rootMargin: '-40% 0px -55% 0px',
+    threshold: 0,
+  })
+
+  sections.forEach(id => {
+    const el = document.getElementById(id)
+    if (el) observer.observe(el)
   })
 </script>
