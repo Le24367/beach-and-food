@@ -69,9 +69,9 @@ const fullUrl = (source) =>
 // sm: 1× Anzeige (~860px breit auf Desktop, ~100vw auf Mobile)
 // lg: 2× Retina
 const gallerySmUrl = (source) =>
-  urlFor(source).width(860).height(560).fit('crop').quality(70).auto('format').url()
+  urlFor(source).width(560).height(365).fit('crop').quality(55).format('webp').url()
 const galleryLgUrl = (source) =>
-  urlFor(source).width(1280).height(832).fit('crop').quality(75).auto('format').url()
+  urlFor(source).width(860).height(560).fit('crop').quality(65).format('webp').url()
 
 // ── Dateiname aus URL-Hash ────────────────────────────────────────────────────
 function localName(sanityUrl, suffix) {
@@ -212,8 +212,8 @@ async function main() {
 
     galleryOutput.push({
       src:    `/gallery-images/${smName}`,
-      srcset: `/gallery-images/${smName} 860w, /gallery-images/${lgName} 1280w`,
-      sizes:  '(max-width: 900px) 100vw, 50vw',
+      srcset: `/gallery-images/${smName} 560w, /gallery-images/${lgName} 860w`,
+      sizes:  '(max-width: 480px) 100vw, (max-width: 900px) 100vw, 50vw',
       alt:    entry.alt     ?? '',
       caption: entry.caption ?? null,
     })

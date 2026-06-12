@@ -5,13 +5,21 @@ const links = await getLinks()
 <nav class="navbar">
   <div class="container nav-inner">
     <a href="/" class="logo">
-      <img
-        src="/logo/logo.jpeg"
-        alt="Beach and Food"
-        class="logo-img"
-        width="448"
-        height="115"
-      />
+      <picture>
+        <source
+          type="image/webp"
+          srcset="/logo/logo-300w.webp 300w, /logo/logo-600w.webp 600w"
+          sizes="(max-width: 1024px) 300px, 300px"
+        />
+        <img
+          src="/logo/logo.jpeg"
+          alt="Beach and Food"
+          class="logo-img"
+          width="300"
+          height="77"
+          fetchpriority="high"
+        />
+      </picture>
     </a>
     <ul class="nav-links">
       <li><a href="#angebot">Speisekarte</a></li>

@@ -100,14 +100,21 @@ const seasonNote = settings?.seasonNote
 <footer class="footer">
   <div class="container footer-inner">
     <div class="footer-logo">
-      <img
-        src="/logo/logo.jpeg"
-        alt="Beach and Food"
-        class="footer-logo-img"
-        width="448"
-        height="115"
-        loading="lazy"
-      />
+      <picture>
+        <source
+          type="image/webp"
+          srcset="/logo/logo-footer-200w.webp 200w, /logo/logo-footer-400w.webp 400w"
+          sizes="200px"
+        />
+        <img
+          src="/logo/logo.jpeg"
+          alt="Beach and Food"
+          class="footer-logo-img"
+          width="200"
+          height="51"
+          loading="lazy"
+        />
+      </picture>
     </div>
     <p class="footer-tagline">{legal.tagline}</p>
     <div class="footer-links">

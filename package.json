@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "fetch-images": "node scripts/fetch-images.js",
-    "build": "node scripts/fetch-images.js && astro build",
+    "build": "node scripts/fetch-images.js && astro build && node scripts/inject-font-preloads.js",
     "preview": "astro preview"
   },
   "dependencies": {
