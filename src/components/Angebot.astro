@@ -136,22 +136,15 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         const color = badgeColor(item)
         const isFirst = i === 0
 
-        // Lookup über die full-URL als stabilen Schlüssel.
-        // fetch-images.js registriert alle drei Varianten (thumb/card/full)
-        // unter demselben entry-Objekt → entry.card ist immer die 640×336-Datei,
-        // unabhängig davon welche URL als Map-Key übergeben wird.
         let cardImgUrl: string | null = null
         let fullImgUrl: string | null = null
         if (item.image) {
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
           const entry = imageMap[sanityFUrl]
           if (entry) {
-            // Lokale Dateien vorhanden → immer lokale card-Datei (640×336) verwenden
             cardImgUrl = entry.card
             fullImgUrl = entry.full
           } else {
-            // Kein Eintrag (erster Build vor fetch-images / Sanity offline)
-            // → direkte Sanity-CDN-URLs als Fallback
             const sanityCUrl = urlFor(item.image).width(640).height(336).fit('crop').quality(72).auto('format').url()
             cardImgUrl = sanityCUrl
             fullImgUrl = sanityFUrl
@@ -202,8 +195,21 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   </div>
 </section>
 
+<!--
+  ARIA-FIX: Modal und Lightbox verwenden KEIN aria-hidden="true" im HTML mehr.
+  Stattdessen: hidden-Attribut (entfernt aus DOM-Reihenfolge + unsichtbar)
+  kombiniert mit inert (verhindert Fokus/Interaktion wenn geschlossen).
+
+  Warum: aria-hidden="true" auf einem Container mit fokussierbaren Kindelementen
+  (Buttons) ist ein WCAG-Fehler — Screenreader überspringen den Container,
+  aber Keyboard-Nutzer können die Buttons trotzdem erreichen.
+
+  Mit hidden + inert: geschlossene Dialoge sind vollständig aus dem
+  Accessibility-Tree und Tab-Reihenfolge entfernt.
+-->
+
 <!-- Modal -->
-<div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
+<div class="modal-backdrop" id="modal-backdrop" hidden inert>
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mh-title">
     <div class="modal-header">
       <div class="modal-header-left">
@@ -214,7 +220,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         </div>
       </div>
       <button class="modal-close" id="modal-close" aria-label="Schliessen">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
@@ -224,9 +230,9 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox" id="lightbox" aria-hidden="true">
+<div class="lightbox" id="lightbox" hidden inert>
   <button class="lightbox-close" id="lightbox-close" aria-label="Schliessen">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   </button>
@@ -235,15 +241,18 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 </div>
 
 <script define:vars={{ popupData }}>
-  const backdrop      = document.getElementById('modal-backdrop')
-  const closeBtn      = document.getElementById('modal-close')
-  const iconEl        = document.getElementById('mh-icon')
-  const titleEl       = document.getElementById('mh-title')
-  const bodyEl        = document.getElementById('modal-body')
-  const lightbox      = document.getElementById('lightbox')
-  const lightboxImg   = document.getElementById('lightbox-img')
-  const lightboxClose = document.getElementById('lightbox-close')
+  const backdrop        = document.getElementById('modal-backdrop')
+  const closeBtn        = document.getElementById('modal-close')
+  const iconEl          = document.getElementById('mh-icon')
+  const titleEl         = document.getElementById('mh-title')
+  const bodyEl          = document.getElementById('modal-body')
+  const lightbox        = document.getElementById('lightbox')
+  const lightboxImg     = document.getElementById('lightbox-img')
+  const lightboxClose   = document.getElementById('lightbox-close')
   const lightboxSpinner = document.getElementById('lightbox-spinner')
+
+  // Letzter Fokus-Ursprung — nach Schließen zurücksetzen
+  let lastFocusedEl = null
 
   const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
 
@@ -395,13 +404,17 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     const cat = dataMap[categoryId]
     if (!cat) return
 
+    lastFocusedEl = document.activeElement
+
     setText(iconEl, cat.emoji || '🍽️')
     setText(titleEl, cat.title)
 
     bodyEl.innerHTML = ''
     bodyEl.appendChild(buildProductDOM(cat))
 
-    backdrop.setAttribute('aria-hidden', 'false')
+    // hidden + inert entfernen → Modal ist jetzt im DOM und fokussierbar
+    backdrop.removeAttribute('hidden')
+    backdrop.removeAttribute('inert')
     document.body.style.overflow = 'hidden'
     bodyEl.scrollTop = 0
 
@@ -415,8 +428,15 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
   function closeModal() {
     backdrop.classList.remove('open')
-    backdrop.setAttribute('aria-hidden', 'true')
     document.body.style.overflow = ''
+
+    // Nach Transition: hidden + inert wieder setzen
+    backdrop.addEventListener('transitionend', function handler() {
+      backdrop.setAttribute('hidden', '')
+      backdrop.setAttribute('inert', '')
+      backdrop.removeEventListener('transitionend', handler)
+      if (lastFocusedEl) lastFocusedEl.focus()
+    }, { once: true })
   }
 
   document.querySelectorAll('[data-category-id]').forEach(function(btn) {
@@ -431,10 +451,15 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   })
 
   function openLightbox(fullSrc, alt) {
+    lastFocusedEl = document.activeElement
+
     lightboxImg.classList.remove('lb-loaded')
     lightboxSpinner.classList.add('lb-spinning')
+
+    // hidden + inert entfernen
+    lightbox.removeAttribute('hidden')
+    lightbox.removeAttribute('inert')
     lightbox.classList.add('open')
-    lightbox.setAttribute('aria-hidden', 'false')
     lightboxClose.focus()
     lightboxImg.alt = alt
     lightboxImg.src = fullSrc
@@ -444,10 +469,16 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 
   function closeLightbox() {
     lightbox.classList.remove('open')
-    lightbox.setAttribute('aria-hidden', 'true')
     lightboxImg.src = ''
     lightboxImg.classList.remove('lb-loaded')
     lightboxSpinner.classList.remove('lb-spinning')
+
+    lightbox.addEventListener('transitionend', function handler() {
+      lightbox.setAttribute('hidden', '')
+      lightbox.setAttribute('inert', '')
+      lightbox.removeEventListener('transitionend', handler)
+      if (lastFocusedEl) lastFocusedEl.focus()
+    }, { once: true })
   }
 
   bodyEl.addEventListener('click', function(e) {
@@ -516,6 +547,11 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .card-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
 .card-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 700; color: var(--wave); margin-top: 0.6rem; transition: color 0.2s, gap 0.2s; }
 
+/*
+  Modal-Backdrop: hidden-Attribut setzt display:none per UA-Stylesheet.
+  Die open-Klasse überschreibt das via display:flex — das ist korrekt,
+  weil wir hidden per JS entfernen BEVOR open gesetzt wird.
+*/
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(8,20,30,0.72);
   z-index: 1000; display: flex; align-items: flex-end; justify-content: center;
@@ -573,6 +609,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   .mh-title { font-size: 1.15rem; }
 }
 
+/* Lightbox: gleiche hidden/inert-Logik wie Modal */
 .lightbox {
   position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1100;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem;

@@ -40,7 +40,7 @@ const seasonNote = settings?.seasonNote
 
         <div class="k-details">
           <div class="k-item">
-            <div class="k-icon">📍</div>
+            <div class="k-icon" aria-hidden="true">📍</div>
             <div>
               <div class="k-label">Adresse</div>
               <div class="k-val">
@@ -51,7 +51,7 @@ const seasonNote = settings?.seasonNote
             </div>
           </div>
           <div class="k-item">
-            <div class="k-icon">🕐</div>
+            <div class="k-icon" aria-hidden="true">🕐</div>
             <div>
               <div class="k-label">Öffnungszeiten</div>
               <div class="k-val">
@@ -68,7 +68,7 @@ const seasonNote = settings?.seasonNote
             </div>
           </div>
           <div class="k-item">
-            <div class="k-icon">✉️</div>
+            <div class="k-icon" aria-hidden="true">✉️</div>
             <div>
               <div class="k-label">Kontakt</div>
               <div class="k-val">
@@ -83,11 +83,15 @@ const seasonNote = settings?.seasonNote
       <div class="k-map reveal" style="transition-delay:0.2s">
         <div class="map-wrap">
           <!--
-            Leaflet-Platzhalter: zeigt einen statischen Hinweis,
-            bis der IntersectionObserver feuert und die Map lädt.
-            → Leaflet CSS + JS werden erst dann per Script-Tag injiziert.
+            ARIA-FIX: aria-label ist auf einem <div> ohne Rolle nicht erlaubt.
+            role="region" + aria-label macht den Container zu einer benannten
+            Landmark-Region — korrekt und WCAG-konform.
           -->
-          <div id="leaflet-map" aria-label="Karte wird geladen …"></div>
+          <div
+            id="leaflet-map"
+            role="region"
+            aria-label="Standortkarte Beach and Food"
+          ></div>
           <a href={address.mapsUrl} target="_blank" rel="noopener" class="map-btn">
             In Google Maps öffnen
           </a>
@@ -170,7 +174,6 @@ const seasonNote = settings?.seasonNote
   height: 340px;
   width: 100%;
   z-index: 1;
-  /* Platzhalter-Hintergrund bis Leaflet geladen ist */
   background: #e8e0d4;
 }
 .map-btn {
@@ -203,12 +206,29 @@ const seasonNote = settings?.seasonNote
   align-items: center;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
-/* width/height im HTML = native Größe des Logos → Browser reserviert Platz, kein CLS */
 .footer-logo-img { height: 52px; width: auto; object-fit: contain; display: block; }
-.footer-tagline { color: var(--coral); opacity: 0.85; font-size: 0.9rem; font-style: italic; }
+
+/*
+  KONTRAST-FIX:
+  Vorher: color: var(--coral) opacity: 0.85  → #E85D3A bei ~85% = zu wenig Kontrast auf #0D2233
+  Nachher: volle Farbe ohne opacity, leicht aufgehellt → Ratio ~4.6:1 (WCAG AA ✓)
+*/
+.footer-tagline {
+  color: #f07a5a;  /* coral aufgehellt: war #E85D3A * 0.85 opacity → jetzt solide #f07a5a */
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
 .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
-.footer-links a { color: rgba(255,255,255,0.55); font-size: 0.85rem; font-weight: 500; transition: color 0.2s; }
+
+/*
+  KONTRAST-FIX footer-links:
+  Vorher: rgba(255,255,255,0.55) → Kontrastverhältnis ~5.2:1 (knapp, je nach Hintergrund)
+  Nachher: rgba(255,255,255,0.75) → sicher über 4.5:1
+*/
+.footer-links a { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 500; transition: color 0.2s; }
 .footer-links a:hover { color: var(--coral); }
+
 .footer-legal {
   width: 100%;
   padding-top: 1.5rem;
@@ -219,10 +239,17 @@ const seasonNote = settings?.seasonNote
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.footer-legal p { font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+
+/*
+  KONTRAST-FIX footer-legal:
+  Vorher: rgba(255,255,255,0.3) → Kontrastverhältnis ~2.7:1 (WCAG-Fehler, unter 4.5:1)
+  Nachher: rgba(255,255,255,0.55) → ~5.2:1 (WCAG AA ✓)
+  Kleine Texte (< 18px normal / < 14px bold) brauchen mindestens 4.5:1
+*/
+.footer-legal p { font-size: 0.75rem; color: rgba(255,255,255,0.55); }
 .footer-legal-links { display: flex; gap: 1.2rem; }
-.footer-legal-links a { font-size: 0.75rem; color: rgba(255,255,255,0.3); transition: color 0.2s; }
-.footer-legal-links a:hover { color: rgba(255,255,255,0.6); }
+.footer-legal-links a { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: color 0.2s; }
+.footer-legal-links a:hover { color: rgba(255,255,255,0.85); }
 
 @media (max-width: 900px) {
   .kontakt-grid { grid-template-columns: 1fr; }
@@ -233,11 +260,6 @@ const seasonNote = settings?.seasonNote
 }
 </style>
 
-<!--
-  Leaflet CSS + JS werden erst geladen, wenn #leaflet-map sichtbar wird.
-  Das entfernt ~46 KiB (CSS + JS) aus dem kritischen Pfad komplett.
-  Statt unpkg verwenden wir jsDelivr als zuverlässigeres CDN mit längerem Cache.
--->
 <script is:inline>
 (function () {
   var LAT = 54.337045
@@ -245,14 +267,12 @@ const seasonNote = settings?.seasonNote
   var initialized = false
 
   function loadLeaflet(callback) {
-    // CSS
     var link = document.createElement('link')
     link.rel  = 'stylesheet'
     link.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css'
     link.crossOrigin = ''
     document.head.appendChild(link)
 
-    // JS
     var script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js'
     script.crossOrigin = ''
@@ -286,7 +306,6 @@ const seasonNote = settings?.seasonNote
     L.marker([LAT, LNG], { icon: icon }).addTo(map)
   }
 
-  // IntersectionObserver: Leaflet erst laden wenn die Map-Section sichtbar wird
   var mapEl = document.getElementById('leaflet-map')
   if (!mapEl) return
 
@@ -298,10 +317,9 @@ const seasonNote = settings?.seasonNote
           loadLeaflet(initMap)
         }
       })
-    }, { rootMargin: '200px' }) // 200px vor dem Viewport vorausladen
+    }, { rootMargin: '200px' })
     observer.observe(mapEl)
   } else {
-    // Fallback für sehr alte Browser: sofort laden
     loadLeaflet(initMap)
   }
 })()
