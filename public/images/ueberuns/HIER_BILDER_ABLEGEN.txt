@@ -1,7 +1,0 @@
-Lege hier deine Fotos ab (jpg, jpeg, png, webp, avif, gif).
-Das Karussell baut sich beim nächsten Build automatisch daraus zusammen.
-Dateinamen werden als Alt-Text verwendet (Bindestriche/Unterstriche → Leerzeichen).
-
-Beispiel:
-  foodtruck-strand.jpg   → Alt: "foodtruck strand"
-  innenbereich.webp      → Alt: "innenbereich"
