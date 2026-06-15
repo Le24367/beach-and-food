@@ -165,12 +165,13 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
                   <img
                     src={cardImgUrl}
                     srcset={fullImgUrl ? `${cardImgUrl} 640w, ${fullImgUrl} 900w` : undefined}
-                    sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 634px"
+                    sizes="(max-width: 640px) 100vw, (max-width: 900px) 50vw, 634px"
                     alt={item.title}
                     width="640"
                     height="336"
                     loading={isFirst ? 'eager' : 'lazy'}
                     decoding={isFirst ? 'sync' : 'async'}
+                    fetchpriority={isFirst ? 'high' : undefined}
                     class="card-img"
                   />
                 )
@@ -199,13 +200,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   ARIA-FIX: Modal und Lightbox verwenden KEIN aria-hidden="true" im HTML mehr.
   Stattdessen: hidden-Attribut (entfernt aus DOM-Reihenfolge + unsichtbar)
   kombiniert mit inert (verhindert Fokus/Interaktion wenn geschlossen).
-
-  Warum: aria-hidden="true" auf einem Container mit fokussierbaren Kindelementen
-  (Buttons) ist ein WCAG-Fehler — Screenreader überspringen den Container,
-  aber Keyboard-Nutzer können die Buttons trotzdem erreichen.
-
-  Mit hidden + inert: geschlossene Dialoge sind vollständig aus dem
-  Accessibility-Tree und Tab-Reihenfolge entfernt.
 -->
 
 <!-- Modal -->
@@ -251,7 +245,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   const lightboxClose   = document.getElementById('lightbox-close')
   const lightboxSpinner = document.getElementById('lightbox-spinner')
 
-  // Letzter Fokus-Ursprung — nach Schließen zurücksetzen
   let lastFocusedEl = null
 
   const dataMap = Object.fromEntries(popupData.map(c => [c.id, c]))
@@ -412,7 +405,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     bodyEl.innerHTML = ''
     bodyEl.appendChild(buildProductDOM(cat))
 
-    // hidden + inert entfernen → Modal ist jetzt im DOM und fokussierbar
     backdrop.removeAttribute('hidden')
     backdrop.removeAttribute('inert')
     document.body.style.overflow = 'hidden'
@@ -430,7 +422,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     backdrop.classList.remove('open')
     document.body.style.overflow = ''
 
-    // Nach Transition: hidden + inert wieder setzen
     backdrop.addEventListener('transitionend', function handler() {
       backdrop.setAttribute('hidden', '')
       backdrop.setAttribute('inert', '')
@@ -456,7 +447,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     lightboxImg.classList.remove('lb-loaded')
     lightboxSpinner.classList.add('lb-spinning')
 
-    // hidden + inert entfernen
     lightbox.removeAttribute('hidden')
     lightbox.removeAttribute('inert')
     lightbox.classList.add('open')
@@ -547,11 +537,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .card-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
 .card-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 700; color: var(--wave); margin-top: 0.6rem; transition: color 0.2s, gap 0.2s; }
 
-/*
-  Modal-Backdrop: hidden-Attribut setzt display:none per UA-Stylesheet.
-  Die open-Klasse überschreibt das via display:flex — das ist korrekt,
-  weil wir hidden per JS entfernen BEVOR open gesetzt wird.
-*/
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(8,20,30,0.72);
   z-index: 1000; display: flex; align-items: flex-end; justify-content: center;
@@ -609,7 +594,6 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   .mh-title { font-size: 1.15rem; }
 }
 
-/* Lightbox: gleiche hidden/inert-Logik wie Modal */
 .lightbox {
   position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1100;
   display: flex; align-items: center; justify-content: center; padding: 1.5rem;
