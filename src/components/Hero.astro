@@ -24,11 +24,21 @@ const links = await getLinks()
       <span class="badge-dot" aria-hidden="true"></span>
       <span>Foodtruck 2.0 · Sütel-Strand</span>
     </div>
+
+    <!--
+      FIX: LCP-Element — keine fadeDown-Animation mehr.
+      Vorher: animation: fadeDown 0.8s 0.1s ease both
+      → Der h1 war für mind. 100ms opacity:0 und transform:translateY(-20px),
+        was Lighthouse als "nicht gerendert" wertet und den LCP-Zeitpunkt
+        nach hinten schiebt (~200–400ms Verlust auf Mobile).
+      Nachher: sofort sichtbar, kein opacity-0 zu Beginn.
+    -->
     <h1 class="hero-title">
       Bei exakt<br/>
       <span class="temp">167°C</span><br/>
       immer frisch.
     </h1>
+
     <p class="hero-sub">Alles andere ist Wissenschaft.</p>
     <p class="hero-desc">
       Fischbrötchen, Currywurst, Pommes und kalte Drinks —<br class="br-lg"/>
@@ -59,11 +69,6 @@ const links = await getLinks()
     </div>
   </div>
 
-  <!--
-    KONTRAST-FIX: hero-scroll war rgba(255,255,255,0.35) → ~2.8:1 (WCAG-Fehler)
-    aria-hidden="true" weil "Scroll" rein dekorativ ist und keinen
-    Mehrwert für Screenreader-Nutzer hat.
-  -->
   <div class="hero-scroll" aria-hidden="true">
     <span>Scroll</span>
     <div class="scroll-line"></div>
@@ -134,6 +139,15 @@ const links = await getLinks()
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(0.8); }
 }
+
+/*
+  FIX: hero-title hat KEINE animation mehr.
+  Lighthouse misst LCP am Zeitpunkt, wo das Element erstmals vollständig
+  sichtbar ist (opacity > 0, keine clip/transform-Verdeckung).
+  fadeDown startete mit opacity:0 → das verzögerte den LCP unnötig.
+  Die anderen Elemente (badge, sub, desc, actions, stats) behalten
+  ihre Animationen — nur das LCP-Element (h1) nicht.
+*/
 .hero-title {
   font-family: 'Playfair Display', serif;
   font-size: clamp(3rem, 8vw, 6.5rem);
@@ -141,7 +155,7 @@ const links = await getLinks()
   line-height: 1.0;
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
-  animation: fadeDown 0.8s 0.1s ease both;
+  /* animation entfernt — war: fadeDown 0.8s 0.1s ease both */
 }
 .temp {
   color: var(--sun);
@@ -222,11 +236,6 @@ const links = await getLinks()
   font-weight: 700;
   color: var(--sun);
 }
-/*
-  KONTRAST-FIX stat-label:
-  Vorher: rgba(255,255,255,0.5) → ~4.1:1 auf #0D2233 (unter WCAG AA 4.5:1)
-  Nachher: rgba(255,255,255,0.65) → ~5.4:1 (WCAG AA ✓)
-*/
 .stat-label {
   font-size: 0.75rem;
   color: rgba(255,255,255,0.65);
@@ -234,14 +243,6 @@ const links = await getLinks()
   letter-spacing: 0.05em;
 }
 .stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.15); }
-
-/*
-  KONTRAST-FIX hero-scroll:
-  "Scroll" ist rein dekorativ → aria-hidden="true" im HTML gesetzt.
-  Das Element wird von Lighthouse nicht mehr als Kontrast-Fehler gewertet,
-  weil aria-hidden es aus dem Accessibility-Tree entfernt.
-  Farbe bleibt bewusst subtil (es ist ein visueller Hinweis, kein Inhalt).
-*/
 .hero-scroll {
   position: absolute;
   bottom: 220px; right: 2rem;
