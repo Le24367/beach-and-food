@@ -69,64 +69,12 @@ const jsonLd = {
   <!-- ── Ende PWA ───────────────────────────────────────────────── -->
 
   <!--
-    FIX 1: LCP Preload — Logo (WebP) und Hero-Schrift früh anfordern.
-    Das Logo ist das erste sichtbare Bild in der Navbar.
+    Logo früh laden — erstes sichtbares Bild in der Navbar.
+    Fonts laufen über global.css mit font-display: swap — kein preload-Link
+    nötig, da @fontsource beim Build einen Hash in den Dateinamen einfügt
+    und ein hardcodierter Pfad immer 404 erzeugen würde.
   -->
   <link rel="preload" as="image" href="/logo/logo-300w.webp" type="image/webp" fetchpriority="high" />
-
-  <!--
-    FIX 2: Font Preload — Playfair Display ist das LCP-Element (hero-title h1).
-    Ohne Preload wartet der Browser auf CSS, dann auf den Font → +400 ms Verzögerung.
-
-    ⚠️  HASH NACH JEDEM BUILD AKTUALISIEREN:
-    1. `npm run build` ausführen
-    2. `ls dist/_astro/*.woff2` → Dateinamen kopieren
-    3. Oder in Vercel DevTools: Network → Font → Dateinamen ablesen
-    Die Hashes ändern sich nur wenn sich die Schriftdatei selbst ändert (sehr selten).
-  -->
-  <link
-    rel="preload"
-    as="font"
-    type="font/woff2"
-    crossorigin
-    href="/_astro/playfair-display-latin-700-normal.woff2"
-  />
-  <link
-    rel="preload"
-    as="font"
-    type="font/woff2"
-    crossorigin
-    href="/_astro/playfair-display-latin-900-normal.woff2"
-  />
-  <!--
-    DM Sans (Fließtext) — zweithöchste Priorität.
-    400 = normal text, 600 = Buttons/Labels
-  -->
-  <link
-    rel="preload"
-    as="font"
-    type="font/woff2"
-    crossorigin
-    href="/_astro/dm-sans-latin-400-normal.woff2"
-  />
-  <link
-    rel="preload"
-    as="font"
-    type="font/woff2"
-    crossorigin
-    href="/_astro/dm-sans-latin-600-normal.woff2"
-  />
-
-  <!--
-    FIX 3: CSS render-blocking entschärfen.
-    Der Browser lädt das Stylesheet mit hoher Priorität vor (preload),
-    setzt es aber erst als Stylesheet ein wenn es fertig ist (onload-Trick).
-    Das <noscript>-Fallback sorgt dafür, dass CSS auch ohne JS funktioniert.
-
-    Hinweis: Astro injiziert /_astro/*.css automatisch — diese preload-Links
-    ergänzen nur den frühen Fetch. Den genauen Dateinamen nach dem Build prüfen
-    (gleiche Methode wie bei den Fonts oben).
-  -->
 
   <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website" />
