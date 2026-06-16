@@ -9,8 +9,11 @@ export default defineConfig({
   vite: {
     build: {
       cssCodeSplit: true,
-      // Inline CSS unter 4KB direkt im HTML — verkürzt den kritischen Pfad
-      assetsInlineLimit: 4096,
+      // Beide CSS-Dateien zusammen ~9.5 KiB → Limit auf 12 KB setzen
+      // damit sie inline eingebettet werden und nicht render-blocking laden.
+      // Für eine kleine One-Page-Site ist das der richtige Trade-off:
+      // kein extra HTTP-Request, kein render-blocking, marginaler HTML-Overhead.
+      assetsInlineLimit: 12288,
     },
   },
 })

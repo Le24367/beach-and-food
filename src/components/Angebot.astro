@@ -136,17 +136,24 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         const color = badgeColor(item)
         const isFirst = i === 0
 
-        let cardImgUrl: string | null = null
-        let fullImgUrl: string | null = null
+        let cardImgUrl: string | null = null   // 640w – Standard-src
+        let medImgUrl:  string | null = null   // 634w – neu, passgenau für Desktop-Slot
+        let fullImgUrl: string | null = null   // 900w – nur im srcset, nie als src
         if (item.image) {
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
           const entry = imageMap[sanityFUrl]
           if (entry) {
-            cardImgUrl = entry.card
-            fullImgUrl = entry.full
+            cardImgUrl = entry.card   // 640px
+            fullImgUrl = entry.full   // 900px
+            // medium: 634px passgenau für den Desktop-Slot → spart ~29 KiB vs. 900px
+            const sanityMUrl = urlFor(item.image).width(634).height(362).fit('crop').quality(78).auto('format').url()
+            medImgUrl = localOrRemote(sanityMUrl, 'card')
           } else {
+            // Fallback: beide Größen direkt aus Sanity
             const sanityCUrl = urlFor(item.image).width(640).height(336).fit('crop').quality(72).auto('format').url()
+            const sanityMUrl = urlFor(item.image).width(634).height(362).fit('crop').quality(78).auto('format').url()
             cardImgUrl = sanityCUrl
+            medImgUrl  = sanityMUrl
             fullImgUrl = sanityFUrl
           }
         }
@@ -164,7 +171,11 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
                 ? (
                   <img
                     src={cardImgUrl}
-                    srcset={fullImgUrl ? `${cardImgUrl} 640w, ${fullImgUrl} 900w` : undefined}
+                    srcset={[
+                      `${cardImgUrl} 640w`,
+                      medImgUrl  ? `${medImgUrl} 634w`  : '',
+                      fullImgUrl ? `${fullImgUrl} 900w`  : '',
+                    ].filter(Boolean).join(', ')}
                     sizes="(max-width: 640px) 100vw, (max-width: 900px) 50vw, 634px"
                     alt={item.title}
                     width="640"
