@@ -2,6 +2,8 @@
 import Analytics from '@vercel/analytics/astro'
 import SpeedInsights from '@vercel/speed-insights/astro'
 import '../styles/global.css'
+import { getSiteSettings } from '../lib/sanity'
+import { CONTACT, SITE } from '../lib/config'
 
 export interface Props {
   title?: string;
@@ -12,8 +14,13 @@ const {
   description = 'Fischbrötchen, Currywurst, Pommes und kalte Drinks – direkt am Sütel-Strand auf dem Campingplatz Sütel. Bei exakt 167°C, täglich frisch.'
 } = Astro.props;
 
-const canonicalUrl = 'https://beachandfood.de';
-const ogImage = 'https://beachandfood.de/og-image.jpg';
+// Kontaktdaten für JSON-LD: Sanity hat Vorrang, config.ts als Fallback
+const settings = await getSiteSettings().catch(() => null)
+const telephone = settings?.contact?.telephone ?? CONTACT.telephone
+const email     = settings?.contact?.email     ?? CONTACT.email
+
+const canonicalUrl = SITE.url
+const ogImage = `${SITE.url}/og-image.jpg`
 
 // JSON-LD: LocalBusiness + FoodEstablishment
 const jsonLd = {
@@ -24,8 +31,8 @@ const jsonLd = {
   "url": canonicalUrl,
   "logo": `${canonicalUrl}/logo/logo.jpeg`,
   "image": ogImage,
-  "telephone": "+4915164652760",
-  "email": "info@beachandfood.de",
+  "telephone": telephone,
+  "email": email,
   "priceRange": "€",
   "servesCuisine": ["Fischbrötchen", "Currywurst", "Fast Food"],
   "address": {

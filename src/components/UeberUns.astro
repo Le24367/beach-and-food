@@ -1,5 +1,14 @@
 ---
-const YT_ID = "QuSgl1-ZICE";
+import { getSiteSettings } from '../lib/sanity'
+
+const settings = await getSiteSettings().catch(() => null)
+
+// YouTube-ID aus Sanity, Fallback auf hardcodierten Wert
+const YT_ID = settings?.youtubeId ?? 'QuSgl1-ZICE'
+
+// Thumbnail wird automatisch aus der ID abgeleitet —
+// bei Änderung der ID in Sanity wird beim nächsten Build das richtige Bild geladen
+const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`
 
 // Galerie-Bilder: jetzt mit srcset (sm + lg) für responsive Bildgrößen
 interface GallerySlide {
@@ -22,8 +31,6 @@ const slides: GallerySlide[] =
   sanitySlides.length > 0
     ? sanitySlides
     : [{ src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food', caption: null }];
-
-const ytThumbnail = `https://i.ytimg.com/vi/${YT_ID}/hqdefault.jpg`;
 ---
 <section class="ueber-uns" id="ueber-uns">
   <div class="uu-card">

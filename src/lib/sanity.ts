@@ -28,7 +28,7 @@ export const serverClient = createClient({
   projectId: PROJECT_ID,
   dataset:   DATASET,
   apiVersion: '2024-01-01',
-  token:     import.meta.env.SANITY_TOKEN,  // Nicht PUBLIC_ → bleibt serverseitig
+  token:     import.meta.env.SANITY_TOKEN,
   useCdn:    false,
 })
 
@@ -39,11 +39,9 @@ export const publicClient = createClient({
   projectId: PROJECT_ID,
   dataset:   DATASET,
   apiVersion: '2024-01-01',
-  // Kein Token!
   useCdn:    true,
 })
 
-// Rückwärtskompatibilität — alle bestehenden Imports funktionieren weiter
 export const sanityClient = publicClient
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +54,7 @@ export function urlFor(source: SanityImageSource) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Types (unverändert aus Original)
+// Types
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface MenuCategory {
@@ -106,6 +104,12 @@ export interface OpeningHoursEntry {
   closed: boolean
 }
 
+export interface PaymentMethod {
+  _key: string
+  label: string
+  emoji?: string
+}
+
 export interface SiteSettings {
   address: {
     name: string
@@ -115,11 +119,14 @@ export interface SiteSettings {
   }
   contact: {
     email: string
+    telephone?: string
     whatsapp: string
     whatsappDisplay: string
   }
   openingHours: OpeningHoursEntry[]
   seasonNote?: string
+  youtubeId?: string
+  paymentMethods?: PaymentMethod[]
   links?: {
     order?: string
     voucher?: string
@@ -150,7 +157,7 @@ export interface ResolvedLegal {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Queries (unverändert aus Original)
+// Queries
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getMenuCategories(): Promise<MenuCategory[]> {
@@ -201,6 +208,8 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
       contact,
       openingHours,
       seasonNote,
+      youtubeId,
+      paymentMethods,
       links,
       legal
     }`
@@ -208,7 +217,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers (unverändert aus Original)
+// Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getLinks(): Promise<ResolvedLinks> {

@@ -1,13 +1,25 @@
 ---
-import { getLinks } from '../lib/sanity'
-const links = await getLinks()
+import { getLinks, getSiteSettings } from '../lib/sanity'
+import type { PaymentMethod } from '../lib/sanity'
+
+const [links, settings] = await Promise.all([
+  getLinks(),
+  getSiteSettings().catch(() => null),
+])
+
+// Zahlungsarten aus Sanity, Fallback auf statische Liste
+const paymentMethods: PaymentMethod[] = settings?.paymentMethods ?? [
+  { _key: 'ec',    label: 'EC/Kreditkarte', emoji: '💳' },
+  { _key: 'apple', label: 'Apple Pay',      emoji: '⌚' },
+  { _key: 'gpay',  label: 'G Pay',          emoji: '' },
+  { _key: 'pp',    label: 'PayPal',         emoji: '' },
+  { _key: 'bar',   label: 'Bar',            emoji: '💵' },
+]
 
 // URL kommt aus Sanity → Einstellungen → Links → Spotify URL
-// Funktioniert mit Track- UND Playlist-URLs
 const spotifyUrl = links.spotify ?? ''
 
 // Typ (track/playlist) und ID aus der URL extrahieren
-// Unterstützt auch intl-URLs wie open.spotify.com/intl-de/track/...
 const spotifyMatch = spotifyUrl.match(/spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album)\/([A-Za-z0-9]+)/)
 const spotifyType  = spotifyMatch?.[1] ?? 'track'
 const spotifyId    = spotifyMatch?.[2] ?? ''
@@ -15,8 +27,6 @@ const spotifyId    = spotifyMatch?.[2] ?? ''
 const TRACK_URL = spotifyId ? `https://open.spotify.com/${spotifyType}/${spotifyId}` : '#'
 const EMBED_URL = spotifyId ? `https://open.spotify.com/embed/${spotifyType}/${spotifyId}?utm_source=generator&theme=0` : ''
 
-// oEmbed-Daten beim Build von Spotify holen (serverseitig — kein Browser-Request)
-// Das liefert: title, thumbnail_url, thumbnail_width, thumbnail_height
 interface SpotifyOEmbed {
   title: string
   thumbnail_url: string
@@ -34,7 +44,6 @@ try {
   const res = await fetch(oembedUrl)
   if (res.ok) {
     const data: SpotifyOEmbed = await res.json()
-    // title kommt als "Songname" oder "Songname - Artist"
     const parts = data.title.split(' - ')
     if (parts.length >= 2) {
       trackTitle  = parts[0].trim()
@@ -45,7 +54,6 @@ try {
     trackCover = data.thumbnail_url
   }
 } catch (e) {
-  // Fallback-Werte bleiben bestehen
   console.warn('[Bestellen] Spotify oEmbed nicht erreichbar, nutze Fallback.')
 }
 ---
@@ -70,11 +78,11 @@ try {
         <div class="payment-info">
           <span class="pi-label">Wir akzeptieren</span>
           <div class="payment-icons">
-            <span class="pi-badge">💳 EC/Kreditkarte</span>
-            <span class="pi-badge">⌚ Apple Pay</span>
-            <span class="pi-badge">G Pay</span>
-            <span class="pi-badge">PayPal</span>
-            <span class="pi-badge">💵 Bar</span>
+            {paymentMethods.map((method) => (
+              <span class="pi-badge">
+                {method.emoji ? `${method.emoji} ` : ''}{method.label}
+              </span>
+            ))}
           </div>
         </div>
       </div>
@@ -195,7 +203,6 @@ try {
 
 <script>
   // ── Spotify Facade ───────────────────────────────────────────────
-  // Das iframe wird erst beim Klick erzeugt — bis dahin kein Spotify-Kontakt.
   function initSpotifyFacade(facade: HTMLElement) {
     const activate = () => {
       const embedSrc = facade.dataset.embedSrc
@@ -213,7 +220,6 @@ try {
       iframe.style.display = 'block'
       iframe.style.width = '100%'
 
-      // Consent-Hinweis entfernen, iframe einfügen
       facade.replaceWith(iframe)
     }
 
@@ -318,8 +324,6 @@ try {
   padding: 1rem 1.2rem;
   text-align: left;
 }
-
-/* Albumcover */
 .sp-cover-wrap { flex-shrink: 0; }
 .sp-cover {
   width: 72px;
@@ -334,8 +338,6 @@ try {
   background: rgba(29,185,84,0.15);
   display: flex; align-items: center; justify-content: center;
 }
-
-/* Text */
 .sp-info { flex: 1; min-width: 0; }
 .sp-provider {
   display: inline-flex; align-items: center; gap: 4px;
@@ -352,19 +354,13 @@ try {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   margin-bottom: 0.4rem;
 }
-.sp-hint {
-  font-size: 0.72rem; color: rgba(255,255,255,0.3);
-}
-
-/* Play-Button */
+.sp-hint { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
 .sp-play-btn {
   flex-shrink: 0;
   background: none; border: none; cursor: pointer; padding: 4px;
   transition: transform 0.2s;
 }
 .spotify-facade:hover .sp-play-btn { transform: scale(1.12); }
-
-/* Consent-Hinweis */
 .sp-consent {
   background: rgba(0,0,0,0.3);
   font-size: 0.7rem; color: rgba(255,255,255,0.3);
@@ -372,8 +368,6 @@ try {
   text-align: center;
 }
 .sp-consent a { color: rgba(255,255,255,0.5); text-decoration: underline; }
-
-/* Externer Link */
 .spotify-open-link {
   display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.75rem;
   background: rgba(29,185,84,0.12); border: 1px solid rgba(29,185,84,0.3);
