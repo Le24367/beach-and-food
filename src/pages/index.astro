@@ -2,19 +2,20 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Hero from '../components/Hero.astro';
+import MarqueeBand from '../components/MarqueeBand.astro';
 import Angebot from '../components/Angebot.astro';
 import Bestellen from '../components/Bestellen.astro';
 import UeberUns from '../components/UeberUns.astro';
 import Kontakt from '../components/Kontakt.astro';
 
-// Reihenfolge: Hero → Speisekarte → Bestellen → Über uns → Kontakt
-// Nutzer werden nach dem Stöbern direkt zum Bestellen geführt
+// Reihenfolge: Hero → Marquee-Band → Speisekarte → Bestellen → Über uns → Kontakt
 ---
 
 <Layout>
   <Navbar />
   <main>
     <Hero />
+    <MarqueeBand />
     <Angebot />
     <Bestellen />
     <UeberUns />

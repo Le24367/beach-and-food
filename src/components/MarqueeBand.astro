@@ -1,0 +1,95 @@
+---
+// MarqueeBand.astro
+// Platzierung in index.astro: zwischen <Hero /> und <Angebot />
+// Kein JS benötigt — reine CSS-Animation.
+---
+<div class="marquee-band" aria-hidden="true">
+  <div class="marquee-track">
+    <!-- Inhalt wird zweimal ausgegeben für nahtlose Endlosschleife -->
+    <span class="marquee-item">167°C Frittiertemperatur</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Täglich frisch</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Sütel-Strand</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Seit 2014</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Digital Bestellen</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Indoor Sitzbereich</span>
+    <span class="marquee-dot">·</span>
+    <!-- Duplikat für nahtlosen Loop -->
+    <span class="marquee-item">167°C Frittiertemperatur</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Täglich frisch</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Sütel-Strand</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Seit 2014</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Digital Bestellen</span>
+    <span class="marquee-dot">·</span>
+    <span class="marquee-item">Indoor Sitzbereich</span>
+    <span class="marquee-dot">·</span>
+  </div>
+</div>
+
+<style>
+.marquee-band {
+  background: #C11B2C; /* Brand Rot */
+  overflow: hidden;
+  padding: 13px 0;
+  /* Kein width/height animieren → Layout-thrashing vermieden */
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); } /* -50% weil Inhalt doppelt */
+}
+
+.marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+  will-change: transform; /* GPU-Compositing → kein Layout-Reflow */
+}
+
+/* Pause on hover — UX-Detail */
+.marquee-band:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-item {
+  color: #F5F0E8;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.marquee-dot {
+  color: #FDAF3F; /* Brand Amber als Trenner */
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+/* Reduced Motion: Animation stoppen, Band bleibt aber sichtbar */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    /* Statisch zentriert darstellen */
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+}
+</style>
