@@ -31,15 +31,10 @@ const links = await getLinks()
       Foodtruck 2.0 · Sütel-Strand
     </div>
 
-    <!--
-      H1: KEINE Animation — LCP-Schutz.
-      aria-label bleibt statisch für Screen Reader.
-      JS-Counter überschreibt nur den visuell sichtbaren Inhalt.
-    -->
     <h1 class="hero-title">
       Bei exakt
       <span class="temp" id="temp-display" aria-label="167 Grad Celsius">
-        <span id="temp-number" aria-hidden="true" style="visibility:hidden">0</span>°C
+        <span id="temp-number" aria-hidden="true">167</span>°C
       </span><br/>
       immer frisch.
     </h1>
@@ -88,6 +83,18 @@ const links = await getLinks()
 </section>
 
 <style>
+/*
+  CSS @property erlaubt dem Browser, --count als echte Zahl zu
+  interpolieren — er rendert jeden Subframe-Wert (z.B. 83.47),
+  counter() zeigt immer den gerundeten Ganzzahlwert.
+  Kein JS-Rounding, keine sichtbaren Steps — buttersmooth.
+*/
+@property --count {
+  syntax: '<integer>';
+  initial-value: 0;
+  inherits: false;
+}
+
 .hero {
   min-height: 100vh;
   display: flex;
@@ -154,7 +161,7 @@ const links = await getLinks()
   50%       { opacity: 0.5; transform: scale(0.75); }
 }
 
-/* ── H1 — kein animation, LCP-Schutz ── */
+/* ── H1 ── */
 .hero-title {
   font-family: 'Playfair Display', serif;
   font-size: clamp(3rem, 8vw, 6.5rem);
@@ -169,18 +176,40 @@ const links = await getLinks()
   font-style: italic;
   display: inline-block;
   white-space: nowrap;
-  /*
-    Glow startet erst nach dem Count-Up (JS fügt .glow-active hinzu).
-    So leuchtet die Zahl erst wenn sie bei 167 angekommen ist.
-  */
 }
+
+/*
+  Der #temp-number Span nutzt CSS counter() um --count anzuzeigen.
+  content: counter(count) funktioniert nur auf ::before/::after,
+  daher rendern wir den Inhalt über einen Pseudo-Trick:
+  Das span selbst wird leer, ::before zeigt den Counter-Wert.
+*/
+#temp-number {
+  display: inline;
+  font-style: inherit;
+  /* Startzustand: unsichtbar bis JS die Animation triggert */
+  visibility: hidden;
+}
+#temp-number::before {
+  content: counter(temp-count);
+  counter-reset: temp-count var(--count);
+}
+
+/* Counting-State: JS fügt .counting hinzu → Animation läuft */
+#temp-number.counting {
+  visibility: visible;
+  --count: 167;
+  animation: countUp 1800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes countUp {
+  from { --count: 0; }
+  to   { --count: 167; }
+}
+
 .temp.glow-active {
   animation: glow-pulse 3s ease infinite alternate;
 }
-/*
-  Flash wenn Counter landet — kurzer weißer Aufblitz, dann Glow.
-  JS setzt .flash-active für 600ms, entfernt es dann.
-*/
 .temp.flash-active {
   animation: temp-flash 0.55s ease forwards;
 }
@@ -295,78 +324,92 @@ const links = await getLinks()
   }
   .temp, .label-dot, .scroll-line { animation: none !important; }
   .wave-parallax > use { animation: none !important; }
+  /* Reduced motion: direkt Zielwert zeigen */
+  #temp-number {
+    visibility: visible !important;
+    --count: 167 !important;
+    animation: none !important;
+  }
+  #temp-number::before {
+    content: '167';
+  }
 }
 </style>
 
 <script>
   /*
-    Count-Up Animation für "167°C"
+    Count-Up via CSS @property — buttersmooth
     ─────────────────────────────────────────────────────────────────
-    Easing: easeOutQuart — gleichmäßiger Anstieg, bremst sanft ein.
-    Kein "Sprung" am Anfang wie bei easeOutExpo.
+    @property --count deklariert die CSS-Variable als <integer>.
+    Der Browser interpoliert sie nativ auf jedem Subframe — kein
+    JS Math.round(), keine sichtbaren Sprünge mehr.
 
-    Ablauf:
-      1. Sofort: visibility:hidden aufheben, Startwert 0 setzen
-         → verhindert den "167 → 0" Flash vor dem ersten Frame
-      2. IntersectionObserver wartet bis Hero sichtbar
-      3. 300ms Pause (Seite wirkt "settled")
-      4. Zählt von 0 auf 167 mit easeOutQuart
-      5. Bei Ankunft: Flash + dauerhafter Glow-Puls
+    JS macht nur noch zwei Dinge:
+      1. Warten bis Hero sichtbar (IntersectionObserver)
+      2. .counting-Klasse setzen → CSS-Animation läuft los
+
+    Fallback für Browser ohne @property-Support (Safari < 15.4):
+    JS-Counter mit hoher Auflösung (10x Schritte, dann /10 runden).
   */
 
-  const TARGET   = 167
-  const START    = 0
-  const DURATION = 1800  // ms
+  const tempNumber  = document.getElementById('temp-number')
+  const tempDisplay = document.getElementById('temp-display')
+  const hero        = document.getElementById('hero')
 
-  const tempNumber  = document.getElementById('temp-number') as HTMLElement | null
-  const tempDisplay = document.getElementById('temp-display') as HTMLElement | null
-  const hero        = document.getElementById('hero') as HTMLElement | null
+  const TARGET   = 167
+  const DURATION = 1800
 
   let hasRun = false
 
-  // Sofort sichtbar machen + Startwert setzen — läuft synchron beim
-  // Script-Parse, also bevor der Browser das nächste Frame malt.
-  // Damit sieht der User nie die hartcodierte "167" im HTML.
-  if (tempNumber) {
-    tempNumber.textContent = String(START)
-    tempNumber.style.visibility = 'visible'
+  // @property Support-Check
+  const supportsAtProperty = CSS.supports('(--count: 0)')
+    && typeof CSS.registerProperty === 'function'
+
+  function startCSSAnimation() {
+    if (!tempNumber) return
+    tempNumber.classList.add('counting')
+    // Nach DURATION ms ist die Animation fertig → onDone
+    setTimeout(onDone, DURATION)
   }
 
-  // easeOutQuart: gleichmäßig beschleunigt, bremst sanft ein
-  // bei t=0.1 → ~34% | t=0.5 → ~94% | t=0.9 → ~100%
-  // Zahlen laufen schrittweise durch, kein Sprung am Anfang
-  function easeOutQuart(t: number): number {
-    return 1 - Math.pow(1 - t, 4)
+  function startJSFallback() {
+    // Fallback: JS-Counter mit kleinen Schritten für ältere Browser
+    if (!tempNumber) return
+    tempNumber.style.visibility = 'visible'
+
+    const startTime = performance.now()
+
+    function easeOutQuart(t: number) { return 1 - Math.pow(1 - t, 4) }
+
+    function tick(now: number) {
+      const elapsed  = now - startTime
+      const progress = Math.min(elapsed / DURATION, 1)
+      const value    = Math.round(TARGET * easeOutQuart(progress))
+      tempNumber.textContent = String(value)
+      if (progress < 1) {
+        requestAnimationFrame(tick)
+      } else {
+        tempNumber.textContent = String(TARGET)
+        onDone()
+      }
+    }
+    requestAnimationFrame(tick)
   }
 
   function runCountUp() {
     if (hasRun) return
     hasRun = true
 
-    const startTime = performance.now()
-
-    function tick(now: number) {
-      const elapsed  = now - startTime
-      const progress = Math.min(elapsed / DURATION, 1)
-      const eased    = easeOutQuart(progress)
-      const current  = Math.round(START + (TARGET - START) * eased)
-
-      if (tempNumber) tempNumber.textContent = String(current)
-
-      if (progress < 1) {
-        requestAnimationFrame(tick)
-      } else {
-        // Sicherstellen dass exakt 167 angezeigt wird
-        if (tempNumber) tempNumber.textContent = String(TARGET)
-        onDone()
-      }
+    // CSS @property: nativ smooth — bevorzugte Methode
+    // Fallback: JS RAF für ältere Browser
+    if (supportsAtProperty) {
+      startCSSAnimation()
+    } else {
+      startJSFallback()
     }
-
-    requestAnimationFrame(tick)
   }
 
   function onDone() {
-    // Flash-Aufblitz, dann Glow
     tempDisplay?.classList.add('flash-active')
     setTimeout(() => {
       tempDisplay?.classList.remove('flash-active')
@@ -377,7 +420,10 @@ const links = await getLinks()
   // Reduced Motion: direkt Zielwert, kein Counter
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     hasRun = true
-    if (tempNumber) tempNumber.textContent = String(TARGET)
+    if (tempNumber) {
+      tempNumber.style.setProperty('--count', '167')
+      tempNumber.style.visibility = 'visible'
+    }
     tempDisplay?.classList.add('glow-active')
   } else if (hero && 'IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
