@@ -4,15 +4,12 @@ const links = await getLinks()
 ---
 <section class="hero" id="hero">
 
-  <!-- Hintergrund: Navy + subtiles Licht-Orb oben rechts -->
   <div class="hero-bg" aria-hidden="true">
     <div class="bg-orb bg-orb--amber"></div>
     <div class="bg-orb bg-orb--blue"></div>
-    <!-- Noise-Texture via inline SVG (kein extra HTTP-Request) -->
     <div class="bg-noise"></div>
   </div>
 
-  <!-- Wellen am unteren Rand — sanfter Übergang zur nächsten Section -->
   <div class="waves-container" aria-hidden="true">
     <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
       <defs>
@@ -29,66 +26,119 @@ const links = await getLinks()
 
   <div class="container hero-inner">
 
-    <!--
-      Top-Label: kleiner Amber-Badge
-      animation-delay: 0.1s → erstes Element das erscheint
-    -->
-    <div class="hero-label">
-      <span class="label-dot" aria-hidden="true"></span>
-      Foodtruck 2.0 · Sütel-Strand
+    <!-- Linke Spalte: Text -->
+    <div class="hero-content">
+
+      <div class="hero-label">
+        <span class="label-dot" aria-hidden="true"></span>
+        Foodtruck 2.0 · Sütel-Strand
+      </div>
+
+      <!--
+        H1: KEINE Animation — LCP-Schutz.
+        aria-label="167 Grad Celsius" bleibt statisch für Screen Reader.
+        JS-Counter überschreibt nur den visuell sichtbaren Inhalt.
+      -->
+      <h1 class="hero-title">
+        Bei exakt
+        <span class="temp" id="temp-display" aria-label="167 Grad Celsius">
+          <span class="temp-number" id="temp-number" aria-hidden="true">167</span><span class="temp-unit" aria-hidden="true">°C</span>
+        </span><br/>
+        immer frisch.
+      </h1>
+
+      <p class="hero-sub">Alles andere ist Wissenschaft.</p>
+
+      <p class="hero-desc">
+        Fischbrötchen, Currywurst, Pommes und kalte Drinks —<br class="br-lg"/>
+        direkt am Sütel-Strand auf dem Campingplatz Sütel.
+      </p>
+
+      <div class="hero-ctas">
+        <a href={links.order} target="_blank" rel="noopener" class="btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+          Jetzt online bestellen
+        </a>
+        <a href="#angebot" class="btn-secondary">Speisekarte ansehen</a>
+      </div>
+
+      <div class="hero-badges">
+        <span class="hero-badge-pill">
+          <span class="bp-dot" aria-hidden="true"></span>
+          167°C Frittiertemperatur
+        </span>
+        <span class="hero-badge-pill">
+          <span class="bp-dot" aria-hidden="true"></span>
+          Indoor Sitzbereich
+        </span>
+        <span class="hero-badge-pill">
+          <span class="bp-dot" aria-hidden="true"></span>
+          Digital Bestellung
+        </span>
+      </div>
+
     </div>
 
-    <!--
-      H1: KEINE Animation — LCP-Element muss sofort sichtbar sein.
-      Vorher: fadeDown-Animation verzögerte den LCP-Messzeitpunkt.
-      Die "167°C"-Zahl leuchtet in Brand-Amber (#FDAF3F) als Signature-Element.
-    -->
-    <h1 class="hero-title">
-      Bei exakt <span class="temp">167°C</span><br/>
-      immer frisch.
-    </h1>
+    <!-- Rechte Spalte: Thermometer -->
+    <div class="thermo-wrap" aria-hidden="true">
+      <div class="thermo" id="thermo">
 
-    <!-- Subtext: kurzer Italic-Teaser -->
-    <p class="hero-sub">Alles andere ist Wissenschaft.</p>
+        <div class="thermo-scale">
+          <span class="scale-mark scale-mark--target">
+            <span class="scale-line"></span>
+            <span class="scale-label">167°C</span>
+          </span>
+          <span class="scale-mark">
+            <span class="scale-line scale-line--short"></span>
+            <span class="scale-label scale-label--dim">150°C</span>
+          </span>
+          <span class="scale-mark">
+            <span class="scale-line scale-line--short"></span>
+            <span class="scale-label scale-label--dim">130°C</span>
+          </span>
+          <span class="scale-mark">
+            <span class="scale-line scale-line--short"></span>
+            <span class="scale-label scale-label--dim">100°C</span>
+          </span>
+          <span class="scale-mark">
+            <span class="scale-line scale-line--short"></span>
+            <span class="scale-label scale-label--dim">70°C</span>
+          </span>
+          <span class="scale-mark">
+            <span class="scale-line scale-line--short"></span>
+            <span class="scale-label scale-label--dim">0°C</span>
+          </span>
+        </div>
 
-    <!-- Beschreibung -->
-    <p class="hero-desc">
-      Fischbrötchen, Currywurst, Pommes und kalte Drinks —<br class="br-lg"/>
-      direkt am Sütel-Strand auf dem Campingplatz Sütel.
-    </p>
+        <div class="thermo-tube">
+          <div class="thermo-fill" id="thermo-fill"></div>
+          <div class="thermo-gloss"></div>
+          <div class="thermo-bubbles" id="thermo-bubbles">
+            <span class="bubble bubble--1"></span>
+            <span class="bubble bubble--2"></span>
+            <span class="bubble bubble--3"></span>
+          </div>
+        </div>
 
-    <!-- CTA-Buttons -->
-    <div class="hero-ctas">
-      <a href={links.order} target="_blank" rel="noopener" class="btn-primary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <path d="M16 10a4 4 0 01-8 0"/>
-        </svg>
-        Jetzt online bestellen
-      </a>
-      <a href="#angebot" class="btn-secondary">Speisekarte ansehen</a>
-    </div>
+        <div class="thermo-bulb">
+          <div class="thermo-bulb-fill"></div>
+          <div class="thermo-bulb-gloss"></div>
+        </div>
 
-    <!-- Feature-Badges: drei Pills -->
-    <div class="hero-badges">
-      <span class="hero-badge-pill">
-        <span class="bp-dot" aria-hidden="true"></span>
-        167°C Frittiertemperatur
-      </span>
-      <span class="hero-badge-pill">
-        <span class="bp-dot" aria-hidden="true"></span>
-        Indoor Sitzbereich
-      </span>
-      <span class="hero-badge-pill">
-        <span class="bp-dot" aria-hidden="true"></span>
-        Digital Bestellung
-      </span>
+        <div class="thermo-label">
+          <span class="thermo-label-temp" id="thermo-label-temp">0°C</span>
+          <span class="thermo-label-text">Frittiertemperatur</span>
+        </div>
+
+      </div>
     </div>
 
   </div>
 
-  <!-- Scroll-Indikator: unten fixiert, bounced vertikal -->
   <div class="hero-scroll" aria-hidden="true">
     <span class="scroll-text">Scroll</span>
     <div class="scroll-line"></div>
@@ -97,14 +147,12 @@ const links = await getLinks()
 </section>
 
 <style>
-/* ─── Basis ─────────────────────────────────────────────────────────── */
 .hero {
   min-height: 100vh;
   display: flex;
   align-items: center;
   position: relative;
   overflow: hidden;
-  /* "Bold Coastal" — tiefdunkles Navy */
   background: #0D1B2A;
   padding: 8rem 0 13rem;
 }
@@ -112,57 +160,23 @@ const links = await getLinks()
   .hero { min-height: 130vh; padding-bottom: 14rem; }
 }
 
-/* ─── Hintergrund-Orbs ──────────────────────────────────────────────── */
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.bg-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-}
-/* Amber-Orb oben rechts — Brand Amber abgedunkelt */
+.hero-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.bg-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
 .bg-orb--amber {
-  top: -150px; right: -100px;
-  width: 580px; height: 580px;
-  background: radial-gradient(
-    circle,
-    rgba(253, 175, 63, 0.22) 0%,
-    rgba(235, 179, 93, 0.10) 40%,
-    transparent 70%
-  );
+  top: -150px; right: -100px; width: 580px; height: 580px;
+  background: radial-gradient(circle, rgba(253,175,63,0.22) 0%, rgba(235,179,93,0.10) 40%, transparent 70%);
 }
-/* Blauer Orb unten links — Brand Blue abgedunkelt */
 .bg-orb--blue {
-  bottom: 80px; left: -150px;
-  width: 500px; height: 500px;
-  background: radial-gradient(
-    circle,
-    rgba(51, 61, 145, 0.20) 0%,
-    transparent 70%
-  );
+  bottom: 80px; left: -150px; width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(51,61,145,0.20) 0%, transparent 70%);
 }
-/* Noise-Texture: data-URI SVG — kein HTTP-Request, kein CLS */
 .bg-noise {
-  position: absolute;
-  inset: 0;
-  opacity: 0.025;
+  position: absolute; inset: 0; opacity: 0.025;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-  pointer-events: none;
+  background-size: 200px 200px; pointer-events: none;
 }
 
-/* ─── Wellen ────────────────────────────────────────────────────────── */
-.waves-container {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 160px;
-  overflow: hidden;
-}
+.waves-container { position: absolute; bottom: 0; left: 0; right: 0; height: 160px; overflow: hidden; }
 .waves { position: absolute; bottom: 0; width: 200%; height: 100%; }
 .wave-parallax > use { animation: wave-move 20s cubic-bezier(.55,.5,.45,.5) infinite; }
 .wave-layer1 { fill: rgba(251,244,230,0.7); animation-duration: 12s; animation-delay: -2s; }
@@ -174,36 +188,27 @@ const links = await getLinks()
   100% { transform: translate3d(85px, 0, 0); }
 }
 
-/* ─── Hero Inner ────────────────────────────────────────────────────── */
+/* ── Zweispalten-Layout ── */
 .hero-inner {
-  position: relative;
-  z-index: 2;
-  color: #F5F0E8; /* Cream White auf Navy */
-}
-
-/* ─── Top Label ─────────────────────────────────────────────────────── */
-.hero-label {
-  display: inline-flex;
+  position: relative; z-index: 2; color: #F5F0E8;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 4rem;
   align-items: center;
-  gap: 0.5rem;
-  color: #FDAF3F; /* Brand Amber */
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  border: 1px solid rgba(253, 175, 63, 0.3);
-  border-radius: 20px;
-  padding: 6px 16px;
-  margin-bottom: 2rem;
-  /* Staggered Entry Animation — delay 0.1s */
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.1s;
+}
+@media (max-width: 900px) { .hero-inner { grid-template-columns: 1fr; } }
+
+/* ── Label ── */
+.hero-label {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  color: #FDAF3F; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  border: 1px solid rgba(253,175,63,0.3); border-radius: 20px;
+  padding: 6px 16px; margin-bottom: 2rem;
+  opacity: 0; animation: fadeUp 0.6s ease forwards 0.1s;
 }
 .label-dot {
-  width: 7px; height: 7px;
-  background: #FDAF3F;
-  border-radius: 50%;
+  width: 7px; height: 7px; background: #FDAF3F; border-radius: 50%;
   animation: pulse-dot 2s ease infinite;
 }
 @keyframes pulse-dot {
@@ -211,181 +216,186 @@ const links = await getLinks()
   50%       { opacity: 0.5; transform: scale(0.75); }
 }
 
-/* ─── H1 — LCP-Element: KEINE animation, sofort sichtbar ───────────── */
-/*
-  WICHTIG: Keine opacity:0 / animation hier.
-  Lighthouse misst LCP am ersten vollständig sichtbaren Frame des Elements.
-  Eine fadeUp-Animation würde den LCP ~300-600ms nach hinten schieben.
-  Alle anderen Hero-Elemente animieren — nur die h1 nicht.
-*/
+/* ── H1 — kein animation, LCP-Schutz ── */
 .hero-title {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(3rem, 8vw, 6.5rem);
-  font-weight: 900;
-  line-height: 1.0;
-  letter-spacing: -0.02em;
-  color: #F5F0E8;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 900; line-height: 1.05;
+  letter-spacing: -0.02em; color: #F5F0E8;
   margin-bottom: 1.25rem;
-  /* Kein animation — LCP-Schutz */
 }
 
-/* 167°C: Das Signature-Element — leuchtet in Brand-Amber */
-.temp {
-  color: #FDAF3F;
-  font-style: italic;
-  display: inline-block;
-  text-shadow: 0 0 40px rgba(253, 175, 63, 0.3);
-  animation: glow-pulse 3s ease infinite alternate;
+/* ── 167°C Signature ── */
+.temp { color: #FDAF3F; font-style: italic; display: inline-block; white-space: nowrap; }
+.temp.glow-active { animation: glow-pulse 3s ease infinite alternate; }
+.temp.flash-active { animation: temp-flash 0.6s ease forwards; }
+@keyframes temp-flash {
+  0%   { text-shadow: 0 0 0px rgba(253,175,63,0); color: #FDAF3F; }
+  30%  { text-shadow: 0 0 80px rgba(253,175,63,1), 0 0 120px rgba(253,175,63,0.6); color: #fff; }
+  100% { text-shadow: 0 0 40px rgba(253,175,63,0.4); color: #FDAF3F; }
 }
 @keyframes glow-pulse {
-  from { text-shadow: 0 0 20px rgba(253, 175, 63, 0.25); }
-  to   { text-shadow: 0 0 70px rgba(253, 175, 63, 0.65); }
+  from { text-shadow: 0 0 20px rgba(253,175,63,0.25); }
+  to   { text-shadow: 0 0 70px rgba(253,175,63,0.65); }
 }
 
-/* ─── Subtext ───────────────────────────────────────────────────────── */
+/* ── Subtext ── */
 .hero-sub {
-  font-size: 1.1rem;
-  color: #C11B2C; /* Brand Rot — auffälliger Kontrast */
-  font-style: italic;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.3s;
+  font-size: 1.1rem; color: #C11B2C; font-style: italic; font-weight: 600;
+  margin-bottom: 1rem; opacity: 0; animation: fadeUp 0.6s ease forwards 0.3s;
 }
-
 .hero-desc {
-  font-size: 1.05rem;
-  color: rgba(245, 240, 232, 0.72);
-  line-height: 1.7;
-  margin-bottom: 2.5rem;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.45s;
+  font-size: 1.05rem; color: rgba(245,240,232,0.72); line-height: 1.7;
+  margin-bottom: 2.5rem; opacity: 0; animation: fadeUp 0.6s ease forwards 0.45s;
 }
 .br-lg { display: none; }
 @media (min-width: 600px) { .br-lg { display: inline; } }
 
-/* ─── CTA Buttons ───────────────────────────────────────────────────── */
+/* ── Buttons ── */
 .hero-ctas {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 3rem;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.6s;
+  display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem;
+  opacity: 0; animation: fadeUp 0.6s ease forwards 0.6s;
 }
-
-/* Primär: Brand Rot */
 .btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #C11B2C;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 1rem;
-  padding: 14px 28px;
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.2s ease,
-              box-shadow 0.2s ease;
-  box-shadow: 0 4px 20px rgba(193, 27, 44, 0.35);
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: #C11B2C; color: #ffffff; font-weight: 700; font-size: 1rem;
+  padding: 14px 28px; border-radius: 8px; position: relative; overflow: hidden;
+  transition: background 0.3s cubic-bezier(0.4,0,0.2,1), transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(193,27,44,0.35);
 }
-/* Shimmer-Glint beim Hover */
 .btn-primary::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 60%;
-  height: 100%;
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 60%; height: 100%;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
-  transform: skewX(-20deg);
-  transition: left 0.5s ease;
+  transform: skewX(-20deg); transition: left 0.5s ease;
 }
-.btn-primary:hover {
-  background: #A01525;
-  transform: scale(1.02);
-  box-shadow: 0 8px 28px rgba(193, 27, 44, 0.45);
-}
+.btn-primary:hover { background: #A01525; transform: scale(1.02); box-shadow: 0 8px 28px rgba(193,27,44,0.45); }
 .btn-primary:hover::after { left: 150%; }
-
-/* Sekundär: transparent mit feinem Border */
 .btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  color: #F5F0E8;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 14px 28px;
-  border-radius: 8px;
-  border: 1px solid rgba(245, 240, 232, 0.3);
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: transparent; color: #F5F0E8; font-weight: 600; font-size: 1rem;
+  padding: 14px 28px; border-radius: 8px; border: 1px solid rgba(245,240,232,0.3);
   transition: border-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
 }
-.btn-secondary:hover {
-  border-color: #FDAF3F;
-  color: #FDAF3F;
-  transform: translateY(-1px);
-}
+.btn-secondary:hover { border-color: #FDAF3F; color: #FDAF3F; transform: translateY(-1px); }
 
-/* ─── Feature Badges ────────────────────────────────────────────────── */
+/* ── Badges ── */
 .hero-badges {
-  display: flex;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.75s;
+  display: flex; gap: 0.65rem; flex-wrap: wrap;
+  opacity: 0; animation: fadeUp 0.6s ease forwards 0.75s;
 }
 .hero-badge-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 999px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  color: rgba(245, 240, 232, 0.80);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 14px;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  color: rgba(245,240,232,0.80); font-size: 13px; font-weight: 500; padding: 6px 14px;
 }
-.bp-dot {
-  width: 6px; height: 6px;
-  background: #FDAF3F;
-  border-radius: 50%;
-  flex-shrink: 0;
+.bp-dot { width: 6px; height: 6px; background: #FDAF3F; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Thermometer Wrap ── */
+.thermo-wrap {
+  display: flex; justify-content: center; align-items: flex-end;
+  opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s;
+}
+@media (max-width: 900px) { .thermo-wrap { display: none; } }
+
+.thermo {
+  display: flex; flex-direction: column; align-items: center;
+  position: relative; height: 380px;
 }
 
-/* ─── Scroll Indikator ──────────────────────────────────────────────── */
+/* Skala */
+.thermo-scale {
+  position: absolute; right: calc(100% + 14px);
+  top: 0; bottom: 60px;
+  display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end;
+}
+.scale-mark { display: flex; align-items: center; gap: 6px; }
+.scale-line { width: 16px; height: 1px; background: rgba(253,175,63,0.5); }
+.scale-line--short { width: 10px; background: rgba(255,255,255,0.15); }
+.scale-label { font-size: 11px; font-weight: 600; color: #FDAF3F; letter-spacing: 0.04em; white-space: nowrap; }
+.scale-label--dim { color: rgba(255,255,255,0.25); font-weight: 400; }
+.scale-mark--target .scale-line { width: 20px; height: 2px; background: #FDAF3F; }
+
+/* Röhre */
+.thermo-tube {
+  width: 28px; flex: 1;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px 14px 0 0; position: relative; overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 30px rgba(253,175,63,0.05);
+}
+.thermo-fill {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 0%;
+  background: linear-gradient(to top, #C11B2C 0%, #EBB35D 45%, #FDAF3F 100%);
+  transition: height 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 0 20px rgba(253,175,63,0.3);
+}
+.thermo-fill.filled { box-shadow: 0 0 40px rgba(253,175,63,0.6), 0 0 80px rgba(193,27,44,0.2); }
+.thermo-gloss {
+  position: absolute; top: 8px; bottom: 8px; left: 5px; width: 4px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0.05));
+  border-radius: 2px; pointer-events: none;
+}
+
+/* Blasen */
+.thermo-bubbles { position: absolute; inset: 0; pointer-events: none; }
+.bubble { position: absolute; border-radius: 50%; background: rgba(253,175,63,0.5); opacity: 0; }
+.bubble--1 { width: 5px; height: 5px; left: 8px; bottom: 20%; }
+.bubble--2 { width: 4px; height: 4px; left: 14px; bottom: 10%; }
+.bubble--3 { width: 6px; height: 6px; left: 6px; bottom: 35%; }
+.thermo-bubbles.bubbles-active .bubble--1 { animation: bubble-rise 1.8s ease-in-out infinite 0.0s; }
+.thermo-bubbles.bubbles-active .bubble--2 { animation: bubble-rise 1.8s ease-in-out infinite 0.6s; }
+.thermo-bubbles.bubbles-active .bubble--3 { animation: bubble-rise 1.8s ease-in-out infinite 1.2s; }
+@keyframes bubble-rise {
+  0%   { opacity: 0; transform: translateY(0) scale(1); }
+  20%  { opacity: 0.7; }
+  80%  { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-120px) scale(0.5); }
+}
+
+/* Bulb */
+.thermo-bulb {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(193,27,44,0.15); border: 1px solid rgba(255,255,255,0.10);
+  position: relative; overflow: hidden;
+  box-shadow: 0 0 20px rgba(193,27,44,0.2);
+  transition: box-shadow 1s ease;
+}
+.thermo-bulb-fill {
+  position: absolute; inset: 3px; border-radius: 50%;
+  background: linear-gradient(135deg, #C11B2C 0%, #EBB35D 100%);
+  transform: scale(0); transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+.thermo-bulb.bulb-filled { box-shadow: 0 0 40px rgba(193,27,44,0.6), 0 0 80px rgba(193,27,44,0.2); }
+.thermo-bulb.bulb-filled .thermo-bulb-fill { transform: scale(1); }
+.thermo-bulb-gloss {
+  position: absolute; top: 8px; left: 10px; width: 10px; height: 10px;
+  background: rgba(255,255,255,0.3); border-radius: 50%; pointer-events: none;
+}
+
+/* Thermo-Label */
+.thermo-label { margin-top: 1.2rem; text-align: center; display: flex; flex-direction: column; gap: 3px; }
+.thermo-label-temp {
+  font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700;
+  color: #FDAF3F; transition: color 0.3s ease;
+}
+.thermo-label-text {
+  font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* ── Scroll Indikator ── */
 .hero-scroll {
-  position: absolute;
-  bottom: 200px; right: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: rgba(245, 240, 232, 0.55);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  writing-mode: vertical-lr;
-  animation: bounce-scroll 2.2s ease-in-out infinite, fadeUp 1s ease forwards;
-  animation-delay: 0s, 1.2s;
-  opacity: 0;
+  position: absolute; bottom: 200px; right: 2.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: rgba(245,240,232,0.55); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; writing-mode: vertical-lr;
+  opacity: 0; animation: fadeUp 1s ease forwards 1.2s, bounce-scroll 2.2s ease-in-out infinite 2.4s;
 }
 .scroll-text { writing-mode: vertical-lr; }
 .scroll-line {
-  width: 1px;
-  height: 50px;
-  /* Gradient: Amber oben, transparent unten */
-  background: linear-gradient(to bottom, rgba(253, 175, 63, 0.7), transparent);
+  width: 1px; height: 50px;
+  background: linear-gradient(to bottom, rgba(253,175,63,0.7), transparent);
   animation: scrollLine 2s ease infinite;
 }
 @keyframes bounce-scroll {
@@ -399,45 +409,117 @@ const links = await getLinks()
   100% { transform: scaleY(0); transform-origin: bottom; }
 }
 
-/* ─── FadeUp Keyframe (für alle animierten Elemente außer h1) ───────── */
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .hero-scroll { display: none; }
   .hero-badges { gap: 0.5rem; }
   .hero-badge-pill { font-size: 12px; padding: 5px 11px; }
 }
 
-/* ─── Reduced Motion ────────────────────────────────────────────────── */
-/*
-  Alle Animationen deaktivieren falls der User
-  prefers-reduced-motion aktiviert hat.
-  Elemente werden sofort sichtbar gesetzt.
-*/
 @media (prefers-reduced-motion: reduce) {
-  .hero-label,
-  .hero-sub,
-  .hero-desc,
-  .hero-ctas,
-  .hero-badges,
-  .hero-scroll {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
+  .hero-label, .hero-sub, .hero-desc,
+  .hero-ctas, .hero-badges, .hero-scroll, .thermo-wrap {
+    animation: none !important; opacity: 1 !important; transform: none !important;
   }
   .temp { animation: none !important; }
-  .wave-parallax > use { animation: none !important; }
-  .label-dot { animation: none !important; }
-  .scroll-line { animation: none !important; }
+  .thermo-fill { transition: none !important; }
+  .thermo-bulb, .thermo-bulb-fill { transition: none !important; }
+  .wave-parallax > use, .label-dot, .scroll-line { animation: none !important; }
 }
 </style>
+
+<script>
+  const TARGET      = 167
+  const START_VALUE = 130
+  const DURATION    = 1400
+
+  const tempNumber    = document.getElementById('temp-number')
+  const tempDisplay   = document.getElementById('temp-display')
+  const thermoFill    = document.getElementById('thermo-fill')
+  const thermoLabel   = document.getElementById('thermo-label-temp')
+  const thermoBulb    = document.querySelector('.thermo-bulb') as HTMLElement | null
+  const thermoBubbles = document.getElementById('thermo-bubbles')
+  const heroSection   = document.getElementById('hero')
+
+  let animated = false
+
+  function easeOutCubic(t: number): number {
+    return 1 - Math.pow(1 - t, 3)
+  }
+
+  function runAnimation() {
+    if (animated) return
+    animated = true
+
+    // Schritt 1: Bulb füllt sich zuerst
+    setTimeout(() => {
+      thermoBulb?.classList.add('bulb-filled')
+    }, 100)
+
+    // Schritt 2: Füllung steigt (CSS transition macht den Rest)
+    setTimeout(() => {
+      if (thermoFill) thermoFill.style.height = '100%'
+    }, 300)
+
+    // Schritt 3: Count-Up parallel zur Füllung
+    const startTime = performance.now() + 300
+
+    function tick(now: number) {
+      const elapsed  = Math.max(0, now - startTime)
+      const progress = Math.min(elapsed / DURATION, 1)
+      const current  = Math.round(START_VALUE + (TARGET - START_VALUE) * easeOutCubic(progress))
+
+      if (tempNumber) tempNumber.textContent = String(current)
+      if (thermoLabel) thermoLabel.textContent = current + '°C'
+
+      if (progress < 1) {
+        requestAnimationFrame(tick)
+      } else {
+        onCounterDone()
+      }
+    }
+    requestAnimationFrame(tick)
+  }
+
+  function onCounterDone() {
+    // Starker Glow auf der Röhre
+    thermoFill?.classList.add('filled')
+
+    // Heller Flash auf der h1-Zahl, dann dauerhafter Glow-Puls
+    tempDisplay?.classList.add('flash-active')
+    setTimeout(() => {
+      tempDisplay?.classList.remove('flash-active')
+      tempDisplay?.classList.add('glow-active')
+    }, 650)
+
+    // Blasen starten
+    setTimeout(() => {
+      thermoBubbles?.classList.add('bubbles-active')
+    }, 300)
+  }
+
+  // Reduced Motion: direkt Zielwert setzen
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    animated = true
+    if (tempNumber) tempNumber.textContent = '167'
+    if (thermoLabel) thermoLabel.textContent = '167°C'
+    if (thermoFill) thermoFill.style.height = '100%'
+    thermoBulb?.classList.add('bulb-filled')
+    tempDisplay?.classList.add('glow-active')
+  } else if (heroSection && 'IntersectionObserver' in window) {
+    // Observer startet Animation wenn Hero sichtbar
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setTimeout(runAnimation, 400)
+        observer.disconnect()
+      }
+    }, { threshold: 0.2 })
+    observer.observe(heroSection)
+  } else {
+    setTimeout(runAnimation, 500)
+  }
+</script>
