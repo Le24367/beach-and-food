@@ -39,7 +39,7 @@ const links = await getLinks()
     <h1 class="hero-title">
       Bei exakt
       <span class="temp" id="temp-display" aria-label="167 Grad Celsius">
-        <span id="temp-number" aria-hidden="true">167</span>°C
+        <span id="temp-number" aria-hidden="true" style="visibility:hidden">0</span>°C
       </span><br/>
       immer frisch.
     </h1>
@@ -302,46 +302,53 @@ const links = await getLinks()
   /*
     Count-Up Animation für "167°C"
     ─────────────────────────────────────────────────────────────────
-    Easing: easeOutExpo — sehr schnell am Anfang, zieht am Ende
-    fast zum Stillstand. Das gibt den "Einrasten bei 167°C"-Effekt.
+    Easing: easeOutQuart — gleichmäßiger Anstieg, bremst sanft ein.
+    Kein "Sprung" am Anfang wie bei easeOutExpo.
 
     Ablauf:
-      1. IntersectionObserver wartet bis Hero sichtbar
-      2. 300ms Pause (Seite wirkt "settled")
-      3. Zählt von START (0) auf 167 mit easeOutExpo
-      4. Bei Ankunft: Flash + dauerhafter Glow-Puls
+      1. Sofort: visibility:hidden aufheben, Startwert 0 setzen
+         → verhindert den "167 → 0" Flash vor dem ersten Frame
+      2. IntersectionObserver wartet bis Hero sichtbar
+      3. 300ms Pause (Seite wirkt "settled")
+      4. Zählt von 0 auf 167 mit easeOutQuart
+      5. Bei Ankunft: Flash + dauerhafter Glow-Puls
   */
 
   const TARGET   = 167
   const START    = 0
-  const DURATION = 1800  // ms — lang genug um die Kurve zu spüren
+  const DURATION = 1800  // ms
 
-  const tempNumber  = document.getElementById('temp-number')
-  const tempDisplay = document.getElementById('temp-display')
-  const hero        = document.getElementById('hero')
+  const tempNumber  = document.getElementById('temp-number') as HTMLElement | null
+  const tempDisplay = document.getElementById('temp-display') as HTMLElement | null
+  const hero        = document.getElementById('hero') as HTMLElement | null
 
   let hasRun = false
 
-  // easeOutExpo: sehr steil am Anfang, flacht stark ab
-  // t=0.1 → 0.50 | t=0.5 → 0.97 | t=0.9 → ~1.0
-  // Das ist der "Einrasten"-Effekt: Zahl schießt hoch und bremst sanft ein
-  function easeOutExpo(t: number): number {
-    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
+  // Sofort sichtbar machen + Startwert setzen — läuft synchron beim
+  // Script-Parse, also bevor der Browser das nächste Frame malt.
+  // Damit sieht der User nie die hartcodierte "167" im HTML.
+  if (tempNumber) {
+    tempNumber.textContent = String(START)
+    tempNumber.style.visibility = 'visible'
+  }
+
+  // easeOutQuart: gleichmäßig beschleunigt, bremst sanft ein
+  // bei t=0.1 → ~34% | t=0.5 → ~94% | t=0.9 → ~100%
+  // Zahlen laufen schrittweise durch, kein Sprung am Anfang
+  function easeOutQuart(t: number): number {
+    return 1 - Math.pow(1 - t, 4)
   }
 
   function runCountUp() {
     if (hasRun) return
     hasRun = true
 
-    // Startwert sofort setzen bevor RAF läuft
-    if (tempNumber) tempNumber.textContent = String(START)
-
     const startTime = performance.now()
 
     function tick(now: number) {
       const elapsed  = now - startTime
       const progress = Math.min(elapsed / DURATION, 1)
-      const eased    = easeOutExpo(progress)
+      const eased    = easeOutQuart(progress)
       const current  = Math.round(START + (TARGET - START) * eased)
 
       if (tempNumber) tempNumber.textContent = String(current)
