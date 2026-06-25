@@ -4,15 +4,12 @@ const links = await getLinks()
 ---
 <section class="hero" id="hero">
 
-  <!-- Hintergrund: Navy + subtiles Licht-Orb oben rechts -->
   <div class="hero-bg" aria-hidden="true">
     <div class="bg-orb bg-orb--amber"></div>
     <div class="bg-orb bg-orb--blue"></div>
-    <!-- Noise-Texture via inline SVG (kein extra HTTP-Request) -->
     <div class="bg-noise"></div>
   </div>
 
-  <!-- Wellen am unteren Rand — sanfter Übergang zur nächsten Section -->
   <div class="waves-container" aria-hidden="true">
     <svg class="waves" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none">
       <defs>
@@ -29,35 +26,31 @@ const links = await getLinks()
 
   <div class="container hero-inner">
 
-    <!--
-      Top-Label: kleiner Amber-Badge
-      animation-delay: 0.1s → erstes Element das erscheint
-    -->
     <div class="hero-label">
       <span class="label-dot" aria-hidden="true"></span>
       Foodtruck 2.0 · Sütel-Strand
     </div>
 
     <!--
-      H1: KEINE Animation — LCP-Element muss sofort sichtbar sein.
-      Vorher: fadeDown-Animation verzögerte den LCP-Messzeitpunkt.
-      Die "167°C"-Zahl leuchtet in Brand-Amber (#FDAF3F) als Signature-Element.
+      H1: KEINE Animation — LCP-Schutz.
+      aria-label bleibt statisch für Screen Reader.
+      JS-Counter überschreibt nur den visuell sichtbaren Inhalt.
     -->
     <h1 class="hero-title">
-      Bei exakt <span class="temp">167°C</span><br/>
+      Bei exakt
+      <span class="temp" id="temp-display" aria-label="167 Grad Celsius">
+        <span id="temp-number" aria-hidden="true">167</span>°C
+      </span><br/>
       immer frisch.
     </h1>
 
-    <!-- Subtext: kurzer Italic-Teaser -->
     <p class="hero-sub">Alles andere ist Wissenschaft.</p>
 
-    <!-- Beschreibung -->
     <p class="hero-desc">
       Fischbrötchen, Currywurst, Pommes und kalte Drinks —<br class="br-lg"/>
       direkt am Sütel-Strand auf dem Campingplatz Sütel.
     </p>
 
-    <!-- CTA-Buttons -->
     <div class="hero-ctas">
       <a href={links.order} target="_blank" rel="noopener" class="btn-primary">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
@@ -70,7 +63,6 @@ const links = await getLinks()
       <a href="#angebot" class="btn-secondary">Speisekarte ansehen</a>
     </div>
 
-    <!-- Feature-Badges: drei Pills -->
     <div class="hero-badges">
       <span class="hero-badge-pill">
         <span class="bp-dot" aria-hidden="true"></span>
@@ -88,7 +80,6 @@ const links = await getLinks()
 
   </div>
 
-  <!-- Scroll-Indikator: unten fixiert, bounced vertikal -->
   <div class="hero-scroll" aria-hidden="true">
     <span class="scroll-text">Scroll</span>
     <div class="scroll-line"></div>
@@ -97,14 +88,12 @@ const links = await getLinks()
 </section>
 
 <style>
-/* ─── Basis ─────────────────────────────────────────────────────────── */
 .hero {
   min-height: 100vh;
   display: flex;
   align-items: center;
   position: relative;
   overflow: hidden;
-  /* "Bold Coastal" — tiefdunkles Navy */
   background: #0D1B2A;
   padding: 8rem 0 13rem;
 }
@@ -112,57 +101,25 @@ const links = await getLinks()
   .hero { min-height: 130vh; padding-bottom: 14rem; }
 }
 
-/* ─── Hintergrund-Orbs ──────────────────────────────────────────────── */
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.bg-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-}
-/* Amber-Orb oben rechts — Brand Amber abgedunkelt */
+/* ── Hintergrund ── */
+.hero-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.bg-orb  { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
 .bg-orb--amber {
-  top: -150px; right: -100px;
-  width: 580px; height: 580px;
-  background: radial-gradient(
-    circle,
-    rgba(253, 175, 63, 0.22) 0%,
-    rgba(235, 179, 93, 0.10) 40%,
-    transparent 70%
-  );
+  top: -150px; right: -100px; width: 580px; height: 580px;
+  background: radial-gradient(circle, rgba(253,175,63,0.22) 0%, rgba(235,179,93,0.10) 40%, transparent 70%);
 }
-/* Blauer Orb unten links — Brand Blue abgedunkelt */
 .bg-orb--blue {
-  bottom: 80px; left: -150px;
-  width: 500px; height: 500px;
-  background: radial-gradient(
-    circle,
-    rgba(51, 61, 145, 0.20) 0%,
-    transparent 70%
-  );
+  bottom: 80px; left: -150px; width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(51,61,145,0.20) 0%, transparent 70%);
 }
-/* Noise-Texture: data-URI SVG — kein HTTP-Request, kein CLS */
 .bg-noise {
-  position: absolute;
-  inset: 0;
-  opacity: 0.025;
+  position: absolute; inset: 0; opacity: 0.025; pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-size: 200px 200px;
-  pointer-events: none;
 }
 
-/* ─── Wellen ────────────────────────────────────────────────────────── */
-.waves-container {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 160px;
-  overflow: hidden;
-}
+/* ── Wellen ── */
+.waves-container { position: absolute; bottom: 0; left: 0; right: 0; height: 160px; overflow: hidden; }
 .waves { position: absolute; bottom: 0; width: 200%; height: 100%; }
 .wave-parallax > use { animation: wave-move 20s cubic-bezier(.55,.5,.45,.5) infinite; }
 .wave-layer1 { fill: rgba(251,244,230,0.7); animation-duration: 12s; animation-delay: -2s; }
@@ -174,36 +131,22 @@ const links = await getLinks()
   100% { transform: translate3d(85px, 0, 0); }
 }
 
-/* ─── Hero Inner ────────────────────────────────────────────────────── */
+/* ── Layout ── */
 .hero-inner {
-  position: relative;
-  z-index: 2;
-  color: #F5F0E8; /* Cream White auf Navy */
+  position: relative; z-index: 2; color: #F5F0E8;
 }
 
-/* ─── Top Label ─────────────────────────────────────────────────────── */
+/* ── Label ── */
 .hero-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #FDAF3F; /* Brand Amber */
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  border: 1px solid rgba(253, 175, 63, 0.3);
-  border-radius: 20px;
-  padding: 6px 16px;
-  margin-bottom: 2rem;
-  /* Staggered Entry Animation — delay 0.1s */
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.1s;
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  color: #FDAF3F; font-size: 13px; font-weight: 600;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  border: 1px solid rgba(253,175,63,0.3); border-radius: 20px;
+  padding: 6px 16px; margin-bottom: 2rem;
+  opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.1s;
 }
 .label-dot {
-  width: 7px; height: 7px;
-  background: #FDAF3F;
-  border-radius: 50%;
+  width: 7px; height: 7px; background: #FDAF3F; border-radius: 50%;
   animation: pulse-dot 2s ease infinite;
 }
 @keyframes pulse-dot {
@@ -211,181 +154,116 @@ const links = await getLinks()
   50%       { opacity: 0.5; transform: scale(0.75); }
 }
 
-/* ─── H1 — LCP-Element: KEINE animation, sofort sichtbar ───────────── */
-/*
-  WICHTIG: Keine opacity:0 / animation hier.
-  Lighthouse misst LCP am ersten vollständig sichtbaren Frame des Elements.
-  Eine fadeUp-Animation würde den LCP ~300-600ms nach hinten schieben.
-  Alle anderen Hero-Elemente animieren — nur die h1 nicht.
-*/
+/* ── H1 — kein animation, LCP-Schutz ── */
 .hero-title {
   font-family: 'Playfair Display', serif;
   font-size: clamp(3rem, 8vw, 6.5rem);
-  font-weight: 900;
-  line-height: 1.0;
-  letter-spacing: -0.02em;
-  color: #F5F0E8;
+  font-weight: 900; line-height: 1.0;
+  letter-spacing: -0.02em; color: #F5F0E8;
   margin-bottom: 1.25rem;
-  /* Kein animation — LCP-Schutz */
 }
 
-/* 167°C: Das Signature-Element — leuchtet in Brand-Amber */
+/* ── 167°C — Signature Element ── */
 .temp {
   color: #FDAF3F;
   font-style: italic;
   display: inline-block;
-  text-shadow: 0 0 40px rgba(253, 175, 63, 0.3);
+  white-space: nowrap;
+  /*
+    Glow startet erst nach dem Count-Up (JS fügt .glow-active hinzu).
+    So leuchtet die Zahl erst wenn sie bei 167 angekommen ist.
+  */
+}
+.temp.glow-active {
   animation: glow-pulse 3s ease infinite alternate;
 }
+/*
+  Flash wenn Counter landet — kurzer weißer Aufblitz, dann Glow.
+  JS setzt .flash-active für 600ms, entfernt es dann.
+*/
+.temp.flash-active {
+  animation: temp-flash 0.55s ease forwards;
+}
+@keyframes temp-flash {
+  0%   { color: #FDAF3F; text-shadow: none; }
+  35%  { color: #ffffff; text-shadow: 0 0 60px rgba(253,175,63,1), 0 0 100px rgba(253,175,63,0.5); }
+  100% { color: #FDAF3F; text-shadow: 0 0 30px rgba(253,175,63,0.35); }
+}
 @keyframes glow-pulse {
-  from { text-shadow: 0 0 20px rgba(253, 175, 63, 0.25); }
-  to   { text-shadow: 0 0 70px rgba(253, 175, 63, 0.65); }
+  from { text-shadow: 0 0 20px rgba(253,175,63,0.2); }
+  to   { text-shadow: 0 0 60px rgba(253,175,63,0.6); }
 }
 
-/* ─── Subtext ───────────────────────────────────────────────────────── */
+/* ── Subtext ── */
 .hero-sub {
-  font-size: 1.1rem;
-  color: #C11B2C; /* Brand Rot — auffälliger Kontrast */
-  font-style: italic;
-  font-weight: 600;
+  font-size: 1.1rem; color: #C11B2C;
+  font-style: italic; font-weight: 600;
   margin-bottom: 1rem;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.3s;
+  opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.25s;
 }
-
 .hero-desc {
-  font-size: 1.05rem;
-  color: rgba(245, 240, 232, 0.72);
-  line-height: 1.7;
-  margin-bottom: 2.5rem;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.45s;
+  font-size: 1.05rem; color: rgba(245,240,232,0.72);
+  line-height: 1.7; margin-bottom: 2.5rem;
+  opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.4s;
 }
 .br-lg { display: none; }
 @media (min-width: 600px) { .br-lg { display: inline; } }
 
-/* ─── CTA Buttons ───────────────────────────────────────────────────── */
+/* ── CTAs ── */
 .hero-ctas {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 3rem;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.6s;
+  display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 3rem;
+  opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.55s;
 }
-
-/* Primär: Brand Rot */
 .btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #C11B2C;
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 1rem;
-  padding: 14px 28px;
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.2s ease,
-              box-shadow 0.2s ease;
-  box-shadow: 0 4px 20px rgba(193, 27, 44, 0.35);
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: #C11B2C; color: #ffffff;
+  font-weight: 700; font-size: 1rem; padding: 14px 28px;
+  border-radius: 8px; position: relative; overflow: hidden;
+  transition: background 0.3s cubic-bezier(0.4,0,0.2,1), transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(193,27,44,0.35);
 }
-/* Shimmer-Glint beim Hover */
 .btn-primary::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 60%;
-  height: 100%;
+  content: ''; position: absolute; top: 0; left: -100%;
+  width: 60%; height: 100%;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
-  transform: skewX(-20deg);
-  transition: left 0.5s ease;
+  transform: skewX(-20deg); transition: left 0.5s ease;
 }
-.btn-primary:hover {
-  background: #A01525;
-  transform: scale(1.02);
-  box-shadow: 0 8px 28px rgba(193, 27, 44, 0.45);
-}
+.btn-primary:hover { background: #A01525; transform: scale(1.02); box-shadow: 0 8px 28px rgba(193,27,44,0.45); }
 .btn-primary:hover::after { left: 150%; }
-
-/* Sekundär: transparent mit feinem Border */
 .btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: transparent;
-  color: #F5F0E8;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 14px 28px;
-  border-radius: 8px;
-  border: 1px solid rgba(245, 240, 232, 0.3);
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: transparent; color: #F5F0E8;
+  font-weight: 600; font-size: 1rem; padding: 14px 28px;
+  border-radius: 8px; border: 1px solid rgba(245,240,232,0.3);
   transition: border-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
 }
-.btn-secondary:hover {
-  border-color: #FDAF3F;
-  color: #FDAF3F;
-  transform: translateY(-1px);
-}
+.btn-secondary:hover { border-color: #FDAF3F; color: #FDAF3F; transform: translateY(-1px); }
 
-/* ─── Feature Badges ────────────────────────────────────────────────── */
+/* ── Badges ── */
 .hero-badges {
-  display: flex;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-  opacity: 0;
-  animation: fadeUp 0.6s ease forwards;
-  animation-delay: 0.75s;
+  display: flex; gap: 0.65rem; flex-wrap: wrap;
+  opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 0.7s;
 }
 .hero-badge-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 999px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  color: rgba(245, 240, 232, 0.80);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 14px;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  color: rgba(245,240,232,0.80); font-size: 13px; font-weight: 500; padding: 6px 14px;
 }
-.bp-dot {
-  width: 6px; height: 6px;
-  background: #FDAF3F;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+.bp-dot { width: 6px; height: 6px; background: #FDAF3F; border-radius: 50%; flex-shrink: 0; }
 
-/* ─── Scroll Indikator ──────────────────────────────────────────────── */
+/* ── Scroll Indikator ── */
 .hero-scroll {
-  position: absolute;
-  bottom: 200px; right: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: rgba(245, 240, 232, 0.55);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  writing-mode: vertical-lr;
-  animation: bounce-scroll 2.2s ease-in-out infinite, fadeUp 1s ease forwards;
-  animation-delay: 0s, 1.2s;
-  opacity: 0;
+  position: absolute; bottom: 200px; right: 2.5rem;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: rgba(245,240,232,0.55); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; writing-mode: vertical-lr;
+  opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards 1.0s, bounce-scroll 2.2s ease-in-out infinite 2.2s;
 }
 .scroll-text { writing-mode: vertical-lr; }
 .scroll-line {
-  width: 1px;
-  height: 50px;
-  /* Gradient: Amber oben, transparent unten */
-  background: linear-gradient(to bottom, rgba(253, 175, 63, 0.7), transparent);
+  width: 1px; height: 50px;
+  background: linear-gradient(to bottom, rgba(253,175,63,0.7), transparent);
   animation: scrollLine 2s ease infinite;
 }
 @keyframes bounce-scroll {
@@ -399,45 +277,117 @@ const links = await getLinks()
   100% { transform: scaleY(0); transform-origin: bottom; }
 }
 
-/* ─── FadeUp Keyframe (für alle animierten Elemente außer h1) ───────── */
+/*
+  Smoother fadeUp:
+  - translateY 8px statt 20px → weniger Bewegung, wirkt eleganter
+  - cubic-bezier(0.22, 1, 0.36, 1) = ease-out-quint:
+    startet fast unsichtbar weich, gleitet dann flüssig rein
+  - 0.9s statt 0.6s → mehr Zeit zum Atmen
+*/
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .hero-scroll { display: none; }
   .hero-badges { gap: 0.5rem; }
   .hero-badge-pill { font-size: 12px; padding: 5px 11px; }
 }
 
-/* ─── Reduced Motion ────────────────────────────────────────────────── */
-/*
-  Alle Animationen deaktivieren falls der User
-  prefers-reduced-motion aktiviert hat.
-  Elemente werden sofort sichtbar gesetzt.
-*/
 @media (prefers-reduced-motion: reduce) {
-  .hero-label,
-  .hero-sub,
-  .hero-desc,
-  .hero-ctas,
-  .hero-badges,
-  .hero-scroll {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
+  .hero-label, .hero-sub, .hero-desc,
+  .hero-ctas, .hero-badges, .hero-scroll {
+    animation: none !important; opacity: 1 !important; transform: none !important;
   }
-  .temp { animation: none !important; }
+  .temp, .label-dot, .scroll-line { animation: none !important; }
   .wave-parallax > use { animation: none !important; }
-  .label-dot { animation: none !important; }
-  .scroll-line { animation: none !important; }
 }
 </style>
+
+<script>
+  /*
+    Count-Up Animation für "167°C"
+    ─────────────────────────────────────────────────────────────────
+    Easing: easeOutExpo — sehr schnell am Anfang, zieht am Ende
+    fast zum Stillstand. Das gibt den "Einrasten bei 167°C"-Effekt.
+
+    Ablauf:
+      1. IntersectionObserver wartet bis Hero sichtbar
+      2. 300ms Pause (Seite wirkt "settled")
+      3. Zählt von START (0) auf 167 mit easeOutExpo
+      4. Bei Ankunft: Flash + dauerhafter Glow-Puls
+  */
+
+  const TARGET   = 167
+  const START    = 0
+  const DURATION = 1800  // ms — lang genug um die Kurve zu spüren
+
+  const tempNumber  = document.getElementById('temp-number')
+  const tempDisplay = document.getElementById('temp-display')
+  const hero        = document.getElementById('hero')
+
+  let hasRun = false
+
+  // easeOutExpo: sehr steil am Anfang, flacht stark ab
+  // t=0.1 → 0.50 | t=0.5 → 0.97 | t=0.9 → ~1.0
+  // Das ist der "Einrasten"-Effekt: Zahl schießt hoch und bremst sanft ein
+  function easeOutExpo(t: number): number {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t)
+  }
+
+  function runCountUp() {
+    if (hasRun) return
+    hasRun = true
+
+    // Startwert sofort setzen bevor RAF läuft
+    if (tempNumber) tempNumber.textContent = String(START)
+
+    const startTime = performance.now()
+
+    function tick(now: number) {
+      const elapsed  = now - startTime
+      const progress = Math.min(elapsed / DURATION, 1)
+      const eased    = easeOutExpo(progress)
+      const current  = Math.round(START + (TARGET - START) * eased)
+
+      if (tempNumber) tempNumber.textContent = String(current)
+
+      if (progress < 1) {
+        requestAnimationFrame(tick)
+      } else {
+        // Sicherstellen dass exakt 167 angezeigt wird
+        if (tempNumber) tempNumber.textContent = String(TARGET)
+        onDone()
+      }
+    }
+
+    requestAnimationFrame(tick)
+  }
+
+  function onDone() {
+    // Flash-Aufblitz, dann Glow
+    tempDisplay?.classList.add('flash-active')
+    setTimeout(() => {
+      tempDisplay?.classList.remove('flash-active')
+      tempDisplay?.classList.add('glow-active')
+    }, 600)
+  }
+
+  // Reduced Motion: direkt Zielwert, kein Counter
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    hasRun = true
+    if (tempNumber) tempNumber.textContent = String(TARGET)
+    tempDisplay?.classList.add('glow-active')
+  } else if (hero && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setTimeout(runCountUp, 300)
+        observer.disconnect()
+      }
+    }, { threshold: 0.15 })
+    observer.observe(hero)
+  } else {
+    setTimeout(runCountUp, 400)
+  }
+</script>
