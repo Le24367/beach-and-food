@@ -72,6 +72,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  /* Scrollbar verstecken – Firefox */
+  scrollbar-width: none;
+}
+
+/* Scrollbar verstecken – Chrome / Safari / Edge */
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
@@ -79,6 +87,7 @@ body {
   background: var(--sand-light);
   color: var(--text);
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Dunkle Sections — volle Browserbreite */

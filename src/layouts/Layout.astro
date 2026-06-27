@@ -56,7 +56,12 @@ const jsonLd = {
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!--
+    maximum-scale=1.0, user-scalable=no:
+    Verhindert Pinch-to-Zoom und Doppeltipp-Zoom auf Mobile.
+    user-scalable=no ist für einen Foodtruck-Auftritt üblich und unproblematisch.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
