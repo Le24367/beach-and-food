@@ -30,7 +30,10 @@ const links = await getLinks()
       <li><a href={links.voucher} target="_blank" rel="noopener" class="nav-link">🎁 Gutschein</a></li>
     </ul>
 
-    <a href={links.order} target="_blank" rel="noopener" class="nav-cta">Jetzt bestellen</a>
+    <a href={links.order} target="_blank" rel="noopener" class="nav-cta">
+      <span class="cta-text">Jetzt bestellen</span>
+      <span class="cta-arrow" aria-hidden="true">→ Jetzt bestellen</span>
+    </a>
 
     <button class="burger" id="burger" aria-label="Menü öffnen" aria-expanded="false">
       <span></span><span></span><span></span>
@@ -128,25 +131,42 @@ const links = await getLinks()
   white-space: nowrap;
   position: relative;
   overflow: hidden;
+  /* Feste Breite verhindert Layout-Shift beim Hover */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-/* Shimmer-Effekt */
-.nav-cta::after {
-  content: '';
-  position: absolute;
-  top: 0; left: -100%;
-  width: 60%;
-  height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.28), transparent);
-  transform: skewX(-20deg);
-  transition: left 0.5s ease;
 }
 .nav-cta:hover {
   background: var(--coral);
   transform: scale(1.04);
   box-shadow: 0 4px 16px rgba(244, 168, 32, 0.3);
 }
-.nav-cta:hover::after { left: 150%; }
+
+/* Text-Span: im Ruhezustand sichtbar, bei Hover nach rechts raus */
+.cta-text {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+}
+.nav-cta:hover .cta-text {
+  transform: translateX(110%);
+  opacity: 0;
+}
+
+/* Pfeil-Span: im Ruhezustand links versteckt, bei Hover reinfahren */
+.cta-arrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(calc(-50% - 110%));
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease;
+}
+.nav-cta:hover .cta-arrow {
+  transform: translateX(-50%);
+  opacity: 1;
+}
 
 /* ─── Burger ────────────────────────────────────────────────────────── */
 .burger {
@@ -251,7 +271,8 @@ const links = await getLinks()
 @media (prefers-reduced-motion: reduce) {
   .nav-link::after,
   .nav-cta,
-  .nav-cta::after,
+  .cta-text,
+  .cta-arrow,
   .burger span,
   .mobile-menu,
   .mobile-menu li,
