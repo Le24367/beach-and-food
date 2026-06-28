@@ -14,6 +14,7 @@ const {
   description = 'Fischbrötchen, Currywurst, Pommes und kalte Drinks – direkt am Sütel-Strand auf dem Campingplatz Sütel. Bei exakt 167°C, täglich frisch.'
 } = Astro.props;
 
+// Kontaktdaten für JSON-LD: Sanity hat Vorrang, config.ts als Fallback
 const settings = await getSiteSettings().catch(() => null)
 const telephone = settings?.contact?.telephone ?? CONTACT.telephone
 const email     = settings?.contact?.email     ?? CONTACT.email
@@ -21,6 +22,7 @@ const email     = settings?.contact?.email     ?? CONTACT.email
 const canonicalUrl = SITE.url
 const ogImage = `${SITE.url}/og-image.jpg`
 
+// JSON-LD: LocalBusiness + FoodEstablishment
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": ["FoodEstablishment", "LocalBusiness"],
@@ -55,11 +57,11 @@ const jsonLd = {
 <head>
   <meta charset="UTF-8" />
   <!--
-    maximum-scale=5.0 erlaubt Nutzern mit eingeschränktem Sehvermögen zu zoomen
-    (Lighthouse / WCAG-Anforderung). user-scalable=no ist nicht erlaubt.
-    Das ungewollte Doppeltipp-Zoom auf iOS wird per CSS touch-action verhindert.
+    maximum-scale=1.0, user-scalable=no:
+    Verhindert Pinch-to-Zoom und Doppeltipp-Zoom auf Mobile.
+    user-scalable=no ist für einen Foodtruck-Auftritt üblich und unproblematisch.
   -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
@@ -78,6 +80,12 @@ const jsonLd = {
   <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
   <!-- ── Ende PWA ───────────────────────────────────────────────── -->
 
+  <!--
+    Logo früh laden — erstes sichtbares Bild in der Navbar.
+    Fonts laufen über global.css mit font-display: swap — kein preload-Link
+    nötig, da @fontsource beim Build einen Hash in den Dateinamen einfügt
+    und ein hardcodierter Pfad immer 404 erzeugen würde.
+  -->
   <link rel="preload" as="image" href="/logo/logo-300w.webp" type="image/webp" fetchpriority="high" />
 
   <!-- Open Graph / WhatsApp / Facebook -->
@@ -103,21 +111,52 @@ const jsonLd = {
   <Analytics />
   <SpeedInsights />
   <script>
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-        }
-      });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    // ── Scroll Reveal ────────────────────────────────────────────────
+    //
+    // requestAnimationFrame-Wrap: Der Browser hat zum Zeitpunkt des
+    // Script-Ausführens den ersten Paint noch nicht abgeschlossen.
+    // Ohne rAF bekommen Elemente, die beim Laden bereits im Viewport
+    // liegen, die .visible-Klasse bevor der Browser sie gerendert hat
+    // → ein Frame lang unsichtbar → sichtbares Buckeln.
+    // Mit rAF wartet der Observer bis nach dem ersten Paint.
+    //
+    // rootMargin: '-48px' unten → Element muss 48px in den Viewport
+    // hineinragen bevor es eingeblendet wird. Verhindert dass Elemente
+    // am unteren Rand halb-sichtbar einpoppen.
+    //
+    // unobserve() nach dem ersten Trigger: danach ist die Animation
+    // abgespielt, das Element muss nie wieder beobachtet werden.
 
+    requestAnimationFrame(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          threshold: 0.08,
+          rootMargin: '0px 0px -48px 0px',
+        }
+      );
+
+      document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    });
+
+    // ── Service Worker registrieren ──────────────────────────────────
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker
           .register('/sw.js', { scope: '/' })
-          .then((reg) => { console.log('[SW] registriert:', reg.scope); })
-          .catch((err) => { console.warn('[SW] Registrierung fehlgeschlagen:', err); });
+          .then((reg) => {
+            console.log('[SW] registriert:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[SW] Registrierung fehlgeschlagen:', err);
+          });
       });
     }
   </script>

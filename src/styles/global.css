@@ -118,13 +118,38 @@ a {
   padding: 0 1.5rem;
 }
 
-/* Scroll animations */
+/*
+  Scroll-Reveal Animation
+  ─────────────────────────────────────────────────────────────────────
+  - will-change: opacity, transform → Browser promoted diese Elemente
+    auf eigene Compositor-Layer → kein Layout-Thrashing beim Einblenden
+  - cubic-bezier(0.22, 1, 0.36, 1) = "ease-out-quint": startet schnell,
+    läuft weich aus — kein Buckeln am Ende
+  - transition-delay kommt aus --reveal-delay (gesetzt per Inline-Style
+    auf der jeweiligen Kachel). So greift der Delay NUR beim Reveal,
+    nicht beim Hover.
+  - unobserve() nach dem ersten Trigger: Element wird danach nicht mehr
+    beobachtet → kein unnötiger Observer-Overhead
+*/
 .reveal {
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(24px);
+  transition:
+    opacity  0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0s);
+  will-change: opacity, transform;
 }
+
 .reveal.visible {
   opacity: 1;
   transform: none;
+}
+
+/*
+  Nach dem Reveal den will-change wieder freigeben —
+  spart GPU-Speicher wenn alle Kacheln längst sichtbar sind.
+*/
+.reveal.visible {
+  will-change: auto;
 }

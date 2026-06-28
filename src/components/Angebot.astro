@@ -136,20 +136,18 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         const color = badgeColor(item)
         const isFirst = i === 0
 
-        let cardImgUrl: string | null = null   // 640w – Standard-src
-        let medImgUrl:  string | null = null   // 634w – neu, passgenau für Desktop-Slot
-        let fullImgUrl: string | null = null   // 900w – nur im srcset, nie als src
+        let cardImgUrl: string | null = null
+        let medImgUrl:  string | null = null
+        let fullImgUrl: string | null = null
         if (item.image) {
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
           const entry = imageMap[sanityFUrl]
           if (entry) {
-            cardImgUrl = entry.card   // 640px
-            fullImgUrl = entry.full   // 900px
-            // medium: 634px passgenau für den Desktop-Slot → spart ~29 KiB vs. 900px
+            cardImgUrl = entry.card
+            fullImgUrl = entry.full
             const sanityMUrl = urlFor(item.image).width(634).height(362).fit('crop').quality(78).auto('format').url()
             medImgUrl = localOrRemote(sanityMUrl, 'card')
           } else {
-            // Fallback: beide Größen direkt aus Sanity
             const sanityCUrl = urlFor(item.image).width(640).height(336).fit('crop').quality(72).auto('format').url()
             const sanityMUrl = urlFor(item.image).width(634).height(362).fit('crop').quality(78).auto('format').url()
             cardImgUrl = sanityCUrl
@@ -162,7 +160,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         return (
           <button
             class="menu-card reveal"
-            style={`--accent: ${color}; transition-delay: ${i * 0.08}s`}
+            style={`--accent: ${color}; --reveal-delay: ${i * 0.08}s`}
             data-category-id={item._id}
             aria-label={item.title}
           >
@@ -522,16 +520,40 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .section-sub { color: var(--text-muted); font-size: 1rem; line-height: 1.7; }
 
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1.5rem; }
+
 .menu-card {
   background: #fff; border-radius: 20px; overflow: hidden;
   border: 1px solid rgba(0,0,0,0.07); box-shadow: 0 2px 12px rgba(0,0,0,0.05);
   cursor: pointer; text-align: left; padding: 0; width: 100%; font-family: inherit;
-  transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease;
+  /*
+    transition-delay kommt aus --reveal-delay (gesetzt per Inline-Style).
+    Wichtig: Der Delay gilt NUR für opacity und transform beim Reveal.
+    Hover-Transitions laufen ohne Delay, weil beim Hover die Klasse
+    .visible bereits gesetzt ist und transition-delay nur beim
+    Einblenden (0→1) wirkt, nicht beim Hover-State-Wechsel.
+
+    Hover nutzt eigene Properties (transform via :hover, box-shadow),
+    die mit separaten Werten überschrieben werden — kein Delay dort.
+  */
+  transition:
+    transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.28s ease;
   display: flex; flex-direction: column;
 }
-.menu-card:hover { transform: translateY(-8px) scale(1.01); box-shadow: 0 20px 50px rgba(0,0,0,0.13); }
+
+/*
+  Hover: transition-delay explizit auf 0s setzen.
+  Ohne das würde der --reveal-delay auch beim Hover-rein greifen
+  und die Kachel verzögert hochspringen lassen.
+*/
+.menu-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.13);
+  transition-delay: 0s;
+}
 .menu-card:hover .card-img { transform: scale(1.06); }
 .menu-card:hover .card-cta { color: var(--accent, #E85D3A); gap: 0.6rem; }
+
 .card-visual {
   position: relative; height: 190px;
   background: linear-gradient(135deg, #f0ebe3 0%, #e8e0d4 100%); overflow: hidden;
