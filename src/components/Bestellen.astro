@@ -7,7 +7,6 @@ const [links, settings] = await Promise.all([
   getSiteSettings().catch(() => null),
 ])
 
-// Zahlungsarten aus Sanity, Fallback auf statische Liste
 const paymentMethods: PaymentMethod[] = settings?.paymentMethods ?? [
   { _key: 'ec',    label: 'EC/Kreditkarte', emoji: '💳' },
   { _key: 'apple', label: 'Apple Pay',      emoji: '⌚' },
@@ -16,10 +15,7 @@ const paymentMethods: PaymentMethod[] = settings?.paymentMethods ?? [
   { _key: 'bar',   label: 'Bar',            emoji: '💵' },
 ]
 
-// URL kommt aus Sanity → Einstellungen → Links → Spotify URL
 const spotifyUrl = links.spotify ?? ''
-
-// Typ (track/playlist) und ID aus der URL extrahieren
 const spotifyMatch = spotifyUrl.match(/spotify\.com\/(?:intl-[a-z]+\/)?(track|playlist|album)\/([A-Za-z0-9]+)/)
 const spotifyType  = spotifyMatch?.[1] ?? 'track'
 const spotifyId    = spotifyMatch?.[2] ?? ''
@@ -135,12 +131,6 @@ try {
         <h2>Der Sound zum Strandtag.</h2>
         <p>Unser Song — gute Laune inklusive.</p>
 
-        <!--
-          DSGVO-konformes Spotify-Facade-Pattern:
-          - Vorschau (Cover, Titel, Artist) kommt vom Build-Server via oEmbed → kein Browser-Request
-          - Das iframe zu open.spotify.com wird erst beim Klick auf Play geladen
-          - Bis dahin: keine Verbindung zu Spotify, keine Cookies, kein Fingerprinting
-        -->
         <div
           class="spotify-facade"
           data-embed-src={EMBED_URL}
@@ -149,7 +139,6 @@ try {
           tabindex="0"
           aria-label={`${trackTitle} von ${trackArtist} auf Spotify abspielen`}
         >
-          <!-- Vorschau-Karte — sichtbar OHNE iframe -->
           <div class="sp-preview">
             <div class="sp-cover-wrap">
               {trackCover
@@ -170,7 +159,6 @@ try {
               <p class="sp-hint">▶ Klicken zum Abspielen</p>
             </div>
 
-            <!-- Großer Play-Button -->
             <button class="sp-play-btn" aria-label="Song auf Spotify abspielen" tabindex="-1">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
                 <circle cx="12" cy="12" r="12" fill="#1DB954"/>
@@ -181,11 +169,16 @@ try {
 
           <p class="sp-consent">
             Mit Klick wird eine Verbindung zu Spotify hergestellt.
-            <a href="https://www.spotify.com/de/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">Datenschutz</a>
+            {/* aria-label unterscheidet diesen Link von den anderen "Datenschutz"-Links */}
+            <a
+              href="https://www.spotify.com/de/legal/privacy-policy/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Datenschutzerklärung von Spotify"
+            >Datenschutz</a>
           </p>
         </div>
 
-        <!-- Externer Link — immer sichtbar, kein iframe nötig -->
         <a
           href={TRACK_URL}
           target="_blank"
@@ -202,7 +195,6 @@ try {
 </section>
 
 <script>
-  // ── Spotify Facade ───────────────────────────────────────────────
   function initSpotifyFacade(facade: HTMLElement) {
     const activate = () => {
       const embedSrc = facade.dataset.embedSrc

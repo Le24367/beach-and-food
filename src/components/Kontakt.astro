@@ -82,11 +82,6 @@ const seasonNote = settings?.seasonNote
 
       <div class="k-map reveal" style="transition-delay:0.2s">
         <div class="map-wrap">
-          <!--
-            ARIA-FIX: aria-label ist auf einem <div> ohne Rolle nicht erlaubt.
-            role="region" + aria-label macht den Container zu einer benannten
-            Landmark-Region — korrekt und WCAG-konform.
-          -->
           <div
             id="leaflet-map"
             role="region"
@@ -130,8 +125,12 @@ const seasonNote = settings?.seasonNote
     <div class="footer-legal">
       <p>© {new Date().getFullYear()} {legal.siteName} — Inhaber {legal.owner}, {legal.address}</p>
       <div class="footer-legal-links">
-        <a href="#">Impressum</a>
-        <a href="#">Datenschutz</a>
+        <!--
+          aria-label unterscheidet diese Links von den "Datenschutz"-Links
+          bei Spotify und YouTube — Lighthouse "identische Links" Fix.
+        -->
+        <a href="/impressum" aria-label="Impressum von Beach and Food">Impressum</a>
+        <a href="/datenschutz" aria-label="Datenschutzerklärung von Beach and Food">Datenschutz</a>
       </div>
     </div>
   </div>
@@ -207,28 +206,14 @@ const seasonNote = settings?.seasonNote
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }
 .footer-logo-img { height: 52px; width: auto; object-fit: contain; display: block; }
-
-/*
-  KONTRAST-FIX:
-  Vorher: color: var(--coral) opacity: 0.85  → #E85D3A bei ~85% = zu wenig Kontrast auf #0D2233
-  Nachher: volle Farbe ohne opacity, leicht aufgehellt → Ratio ~4.6:1 (WCAG AA ✓)
-*/
 .footer-tagline {
-  color: #f07a5a;  /* coral aufgehellt: war #E85D3A * 0.85 opacity → jetzt solide #f07a5a */
+  color: #f07a5a;
   font-size: 0.9rem;
   font-style: italic;
 }
-
 .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; }
-
-/*
-  KONTRAST-FIX footer-links:
-  Vorher: rgba(255,255,255,0.55) → Kontrastverhältnis ~5.2:1 (knapp, je nach Hintergrund)
-  Nachher: rgba(255,255,255,0.75) → sicher über 4.5:1
-*/
 .footer-links a { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-weight: 500; transition: color 0.2s; }
 .footer-links a:hover { color: var(--coral); }
-
 .footer-legal {
   width: 100%;
   padding-top: 1.5rem;
@@ -239,13 +224,6 @@ const seasonNote = settings?.seasonNote
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-
-/*
-  KONTRAST-FIX footer-legal:
-  Vorher: rgba(255,255,255,0.3) → Kontrastverhältnis ~2.7:1 (WCAG-Fehler, unter 4.5:1)
-  Nachher: rgba(255,255,255,0.55) → ~5.2:1 (WCAG AA ✓)
-  Kleine Texte (< 18px normal / < 14px bold) brauchen mindestens 4.5:1
-*/
 .footer-legal p { font-size: 0.75rem; color: rgba(255,255,255,0.55); }
 .footer-legal-links { display: flex; gap: 1.2rem; }
 .footer-legal-links a { font-size: 0.75rem; color: rgba(255,255,255,0.55); transition: color 0.2s; }

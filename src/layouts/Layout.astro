@@ -14,7 +14,6 @@ const {
   description = 'Fischbrötchen, Currywurst, Pommes und kalte Drinks – direkt am Sütel-Strand auf dem Campingplatz Sütel. Bei exakt 167°C, täglich frisch.'
 } = Astro.props;
 
-// Kontaktdaten für JSON-LD: Sanity hat Vorrang, config.ts als Fallback
 const settings = await getSiteSettings().catch(() => null)
 const telephone = settings?.contact?.telephone ?? CONTACT.telephone
 const email     = settings?.contact?.email     ?? CONTACT.email
@@ -22,7 +21,6 @@ const email     = settings?.contact?.email     ?? CONTACT.email
 const canonicalUrl = SITE.url
 const ogImage = `${SITE.url}/og-image.jpg`
 
-// JSON-LD: LocalBusiness + FoodEstablishment
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": ["FoodEstablishment", "LocalBusiness"],
@@ -57,11 +55,11 @@ const jsonLd = {
 <head>
   <meta charset="UTF-8" />
   <!--
-    maximum-scale=1.0, user-scalable=no:
-    Verhindert Pinch-to-Zoom und Doppeltipp-Zoom auf Mobile.
-    user-scalable=no ist für einen Foodtruck-Auftritt üblich und unproblematisch.
+    maximum-scale=5.0 erlaubt Nutzern mit eingeschränktem Sehvermögen zu zoomen
+    (Lighthouse / WCAG-Anforderung). user-scalable=no ist nicht erlaubt.
+    Das ungewollte Doppeltipp-Zoom auf iOS wird per CSS touch-action verhindert.
   -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
@@ -80,12 +78,6 @@ const jsonLd = {
   <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
   <!-- ── Ende PWA ───────────────────────────────────────────────── -->
 
-  <!--
-    Logo früh laden — erstes sichtbares Bild in der Navbar.
-    Fonts laufen über global.css mit font-display: swap — kein preload-Link
-    nötig, da @fontsource beim Build einen Hash in den Dateinamen einfügt
-    und ein hardcodierter Pfad immer 404 erzeugen würde.
-  -->
   <link rel="preload" as="image" href="/logo/logo-300w.webp" type="image/webp" fetchpriority="high" />
 
   <!-- Open Graph / WhatsApp / Facebook -->
@@ -111,7 +103,6 @@ const jsonLd = {
   <Analytics />
   <SpeedInsights />
   <script>
-    // ── Scroll reveal ────────────────────────────────────────────────
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
@@ -121,17 +112,12 @@ const jsonLd = {
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // ── Service Worker registrieren ──────────────────────────────────
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker
           .register('/sw.js', { scope: '/' })
-          .then((reg) => {
-            console.log('[SW] registriert:', reg.scope);
-          })
-          .catch((err) => {
-            console.warn('[SW] Registrierung fehlgeschlagen:', err);
-          });
+          .then((reg) => { console.log('[SW] registriert:', reg.scope); })
+          .catch((err) => { console.warn('[SW] Registrierung fehlgeschlagen:', err); });
       });
     }
   </script>
