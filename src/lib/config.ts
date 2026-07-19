@@ -26,3 +26,20 @@ export const CONTACT = {
   owner:          'Martin Heidrich',
   address:        'Schäferkamp 3c, 23569 Lübeck',
 } as const
+
+/**
+ * Impressum-Pflichtangaben (§ 5 DDG, ex-TMG) für die GmbH.
+ *
+ * WICHTIG: Die mit ⚠️ markierten Werte sind Platzhalter und MÜSSEN
+ * vor Livegang durch die echten Angaben des Kunden ersetzt werden —
+ * entweder hier oder (empfohlen) direkt im Sanity-Feld "legal".
+ * Diese Konstanten greifen nur als Fallback, falls Sanity nicht
+ * erreichbar ist.
+ */
+export const LEGAL = {
+  companyName:      'Beach and Food GmbH ⚠️ BITTE PRÜFEN',
+  managingDirector: 'Martin Heidrich ⚠️ BITTE PRÜFEN',
+  registerCourt:    '⚠️ BITTE AUSFÜLLEN (z.B. Amtsgericht Lübeck)',
+  registerNumber:   '⚠️ BITTE AUSFÜLLEN (z.B. HRB 12345)',
+  vatId:            '⚠️ BITTE AUSFÜLLEN (z.B. DE123456789)',
+} as const
