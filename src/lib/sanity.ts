@@ -134,8 +134,13 @@ export interface SiteSettings {
     whatsapp?: string
   }
   legal?: {
+    companyName?: string
+    managingDirector?: string
     owner?: string
     address?: string
+    registerCourt?: string
+    registerNumber?: string
+    vatId?: string
     siteName?: string
     tagline?: string
   }
@@ -150,10 +155,18 @@ export interface ResolvedLinks {
 }
 
 export interface ResolvedLegal {
+  // Bestehende Felder — unverändert, damit Layout.astro/Kontakt.astro
+  // ohne Anpassung weiterlaufen.
   owner: string
   address: string
   siteName: string
   tagline: string
+  // Neu: Impressum-Pflichtangaben (§ 5 DDG) für die GmbH.
+  companyName: string
+  managingDirector: string
+  registerCourt: string
+  registerNumber: string
+  vatId: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -231,12 +244,17 @@ export async function getLinks(): Promise<ResolvedLinks> {
 }
 
 export async function getLegal(): Promise<ResolvedLegal> {
-  const { SITE, CONTACT } = await import('./config')
+  const { SITE, CONTACT, LEGAL } = await import('./config')
   const fallback: ResolvedLegal = {
-    owner:    CONTACT.owner,
-    address:  CONTACT.address,
-    siteName: SITE.name,
-    tagline:  SITE.tagline,
+    owner:            CONTACT.owner,
+    address:          CONTACT.address,
+    siteName:         SITE.name,
+    tagline:          SITE.tagline,
+    companyName:      LEGAL.companyName,
+    managingDirector: LEGAL.managingDirector,
+    registerCourt:    LEGAL.registerCourt,
+    registerNumber:   LEGAL.registerNumber,
+    vatId:            LEGAL.vatId,
   }
   try {
     const settings = await getSiteSettings()

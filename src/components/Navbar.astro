@@ -23,10 +23,10 @@ const links = await getLinks()
     </a>
 
     <ul class="nav-links">
-      <li><a href="#angebot" class="nav-link">Speisekarte</a></li>
-      <li><a href="#vibes" class="nav-link">Beach Vibes</a></li>
-      <li><a href="#ueber-uns" class="nav-link">Über uns</a></li>
-      <li><a href="#kontakt" class="nav-link">Kontakt</a></li>
+      <li><a href="/#angebot" class="nav-link">Speisekarte</a></li>
+      <li><a href="/#vibes" class="nav-link">Beach Vibes</a></li>
+      <li><a href="/#ueber-uns" class="nav-link">Über uns</a></li>
+      <li><a href="/#kontakt" class="nav-link">Kontakt</a></li>
       <li><a href={links.voucher} target="_blank" rel="noopener" class="nav-link">🎁 Gutschein</a></li>
     </ul>
 
@@ -42,10 +42,10 @@ const links = await getLinks()
 
   <div class="mobile-menu" id="mobile-menu">
     <ul>
-      <li><a href="#angebot">Speisekarte</a></li>
-      <li><a href="#vibes">Beach Vibes</a></li>
-      <li><a href="#ueber-uns">Über uns</a></li>
-      <li><a href="#kontakt">Kontakt</a></li>
+      <li><a href="/#angebot">Speisekarte</a></li>
+      <li><a href="/#vibes">Beach Vibes</a></li>
+      <li><a href="/#ueber-uns">Über uns</a></li>
+      <li><a href="/#kontakt">Kontakt</a></li>
       <li><a href={links.voucher} target="_blank" rel="noopener">🎁 Gutschein</a></li>
       <li><a href={links.order} target="_blank" rel="noopener" class="nav-cta-mobile">Jetzt bestellen</a></li>
     </ul>
@@ -131,7 +131,6 @@ const links = await getLinks()
   white-space: nowrap;
   position: relative;
   overflow: hidden;
-  /* Feste Breite verhindert Layout-Shift beim Hover */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -143,7 +142,6 @@ const links = await getLinks()
   box-shadow: 0 4px 16px rgba(244, 168, 32, 0.3);
 }
 
-/* Text-Span: im Ruhezustand sichtbar, bei Hover nach rechts raus */
 .cta-text {
   display: inline-block;
   transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
@@ -154,7 +152,6 @@ const links = await getLinks()
   opacity: 0;
 }
 
-/* Pfeil-Span: im Ruhezustand links versteckt, bei Hover reinfahren */
 .cta-arrow {
   position: absolute;
   left: 50%;
@@ -226,7 +223,6 @@ const links = await getLinks()
 }
 .mobile-menu li:last-child { border-bottom: none; }
 
-/* Staggered entry beim Öffnen */
 .mobile-menu.open li:nth-child(1) { transition-delay: 0.05s; }
 .mobile-menu.open li:nth-child(2) { transition-delay: 0.10s; }
 .mobile-menu.open li:nth-child(3) { transition-delay: 0.15s; }
@@ -296,7 +292,6 @@ const links = await getLinks()
     burger.setAttribute('aria-label', isOpen ? 'Menü schließen' : 'Menü öffnen')
   })
 
-  // Menü schließen beim Klick auf Link
   mobileMenu?.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', () => {
       mobileMenu.classList.remove('open')
@@ -306,7 +301,6 @@ const links = await getLinks()
     })
   })
 
-  // Menü schließen bei resize > Breakpoint
   window.addEventListener('resize', () => {
     if (window.innerWidth > 1024) {
       mobileMenu?.classList.remove('open')
@@ -316,12 +310,15 @@ const links = await getLinks()
   })
 
   // ── Active-State via IntersectionObserver ──────────────────────────
+  // Läuft nur sinnvoll auf der Startseite (dort existieren die Section-IDs).
+  // Auf anderen Seiten (z.B. /impressum) findet der Observer schlicht keine
+  // Sections und bleibt inaktiv — kein Fehler, kein Crash.
   const sections = ['angebot', 'vibes', 'ueber-uns', 'kontakt']
-  const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-links .nav-link[href^="#"]')
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-links .nav-link[href^="/#"]')
 
   const setActive = (id: string) => {
     navLinks.forEach(a => {
-      a.classList.toggle('active', a.getAttribute('href') === `#${id}`)
+      a.classList.toggle('active', a.getAttribute('href') === `/#${id}`)
     })
   }
 

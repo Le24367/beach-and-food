@@ -1,0 +1,281 @@
+---
+import Layout from '../layouts/Layout.astro'
+import Navbar from '../components/Navbar.astro'
+import { getLegal, getSiteSettings } from '../lib/sanity'
+import { CONTACT } from '../lib/config'
+
+const legal = await getLegal()
+const settings = await getSiteSettings().catch(() => null)
+
+const email = settings?.contact?.email ?? CONTACT.email
+---
+
+<Layout
+  title="Datenschutzerklärung – Beach and Food"
+  description="Datenschutzerklärung von Beach and Food gemäß Art. 13 DSGVO."
+>
+  <Navbar />
+  <main class="legal-page">
+    <div class="container">
+      <a href="/" class="back-link">← Zurück zur Startseite</a>
+      <h1>Datenschutzerklärung</h1>
+      <p class="legal-sub">Stand: {new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long' })}</p>
+
+      <section>
+        <h2>1. Verantwortlicher</h2>
+        <p>
+          Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br />
+          {legal.companyName}<br />
+          {legal.address}<br />
+          E-Mail: <a href={`mailto:${email}`}>{email}</a>
+        </p>
+      </section>
+
+      <section>
+        <h2>2. Hosting</h2>
+        <p>
+          Diese Website wird bei Vercel Inc. gehostet. Beim Aufruf der Website
+          erfasst der Hosting-Anbieter automatisch technische Zugriffsdaten
+          (sogenannte Server-Logs), z. B. IP-Adresse, Datum und Uhrzeit des
+          Zugriffs, aufgerufene Seite, Browsertyp. Diese Verarbeitung dient
+          der technischen Bereitstellung und Absicherung der Website
+          (Art. 6 Abs. 1 lit. f DSGVO, berechtigtes Interesse an einem
+          stabilen und sicheren Betrieb). Details entnehmen Sie der
+          Datenschutzerklärung von Vercel:
+          <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">
+            vercel.com/legal/privacy-policy
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>3. Vercel Analytics &amp; Speed Insights</h2>
+        <p>
+          Wir nutzen Vercel Analytics und Vercel Speed Insights, um
+          anonymisierte, aggregierte Nutzungs- und Performance-Statistiken
+          zu erheben (z. B. Seitenaufrufe, Ladezeiten). Diese Dienste
+          arbeiten nach Angaben des Anbieters ohne Cookies und ohne
+          personenbezogene Profile einzelner Besucher zu bilden.
+          Rechtsgrundlage ist unser berechtigtes Interesse an der
+          Optimierung von Ladezeit und Nutzererlebnis (Art. 6 Abs. 1 lit. f
+          DSGVO). Weitere Informationen:
+          <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">
+            vercel.com/legal/privacy-policy
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Content-Management-System (Sanity)</h2>
+        <p>
+          Inhalte dieser Website (z. B. Speisekarte, Bilder) werden über den
+          Dienst Sanity (Sanity.io) verwaltet und ausgeliefert. Beim Laden
+          von Bildern kann eine Verbindung zum CDN von Sanity aufgebaut
+          werden, wobei technische Verbindungsdaten (IP-Adresse) verarbeitet
+          werden können. Rechtsgrundlage ist unser berechtigtes Interesse an
+          einer zuverlässigen technischen Bereitstellung der Inhalte
+          (Art. 6 Abs. 1 lit. f DSGVO). Weitere Informationen:
+          <a href="https://www.sanity.io/legal/privacy" target="_blank" rel="noopener noreferrer">
+            sanity.io/legal/privacy
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>5. Spotify-Einbindung</h2>
+        <p>
+          Im Bereich „Beach Vibes“ zeigen wir zunächst nur eine
+          Vorschau-Kachel an, ohne dass eine Verbindung zu Spotify
+          hergestellt wird. Erst wenn Sie aktiv darauf klicken, wird ein
+          eingebetteter Spotify-Player nachgeladen. In diesem Moment kann
+          Spotify (Spotify AB) technische Daten wie Ihre IP-Adresse
+          verarbeiten und ggf. Cookies setzen. Rechtsgrundlage ist Ihre
+          Einwilligung durch aktives Anklicken (Art. 6 Abs. 1 lit. a DSGVO).
+          Informationen zur Datenverarbeitung durch Spotify:
+          <a href="https://www.spotify.com/de/legal/privacy-policy/" target="_blank" rel="noopener noreferrer">
+            spotify.com/de/legal/privacy-policy
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>6. YouTube-Vorschaubild</h2>
+        <p>
+          Im Bereich „Über uns“ binden wir ein statisches Vorschaubild
+          (Thumbnail) von YouTube (Google Ireland Limited) ein. Beim Laden
+          dieses Bildes wird eine Verbindung zu Servern von Google
+          hergestellt, wobei Ihre IP-Adresse verarbeitet werden kann. Es
+          wird an dieser Stelle kein YouTube-Video eingebettet und kein
+          YouTube-Player geladen. Rechtsgrundlage ist unser berechtigtes
+          Interesse an einer ansprechenden Darstellung unserer Inhalte
+          (Art. 6 Abs. 1 lit. f DSGVO). Informationen zur
+          Datenverarbeitung durch Google:
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+            policies.google.com/privacy
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>7. Kartendarstellung (OpenStreetMap / Leaflet)</h2>
+        <p>
+          Zur Anzeige unseres Standorts nutzen wir die quelloffene
+          Kartenbibliothek Leaflet, die Kartenkacheln von OpenStreetMap
+          lädt. Die Karte wird erst geladen, sobald sie in Ihren
+          Sichtbereich scrollt. Beim Laden der Kartenkacheln wird eine
+          Verbindung zu Servern von OpenStreetMap sowie zum
+          Auslieferungsnetzwerk jsDelivr (zum Laden der Leaflet-Bibliothek)
+          hergestellt, wobei Ihre IP-Adresse verarbeitet werden kann.
+          Rechtsgrundlage ist unser berechtigtes Interesse an einer
+          nutzerfreundlichen Anfahrtsbeschreibung (Art. 6 Abs. 1 lit. f
+          DSGVO). Weitere Informationen:
+          <a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener noreferrer">
+            OSM-Datenschutzrichtlinie
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>8. Progressive Web App &amp; Service Worker</h2>
+        <p>
+          Diese Website kann als Progressive Web App auf Ihrem Gerät
+          installiert werden. Dabei kommt ein Service Worker zum Einsatz,
+          der bestimmte Dateien (z. B. Bilder, Schriftarten, Layoutdateien)
+          lokal in Ihrem Browser zwischenspeichert, damit die Website
+          schneller lädt und eingeschränkt auch offline nutzbar ist. Diese
+          Daten verbleiben lokal auf Ihrem Gerät und werden nicht an uns
+          übertragen.
+        </p>
+      </section>
+
+      <section>
+        <h2>9. Kontaktaufnahme</h2>
+        <p>
+          Wenn Sie uns per E-Mail oder WhatsApp kontaktieren, verarbeiten
+          wir die von Ihnen mitgeteilten Daten (z. B. Name, Kontaktdaten,
+          Nachrichtinhalt) zur Bearbeitung Ihrer Anfrage
+          (Art. 6 Abs. 1 lit. b DSGVO). Bei einer Kontaktaufnahme über
+          WhatsApp weisen wir darauf hin, dass diese Nachrichten über die
+          Infrastruktur von WhatsApp (Meta Platforms Ireland Limited)
+          übermittelt werden. Informationen zur Datenverarbeitung durch
+          WhatsApp:
+          <a href="https://www.whatsapp.com/legal/privacy-policy-eea" target="_blank" rel="noopener noreferrer">
+            whatsapp.com/legal/privacy-policy-eea
+          </a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. Online-Bestellung &amp; Gutscheine</h2>
+        <p>
+          Für die Online-Bestellung und den Gutscheinkauf verlinken wir auf
+          externe Anbieter (Bestellsystem bzw. Gutschein-Plattform). Sobald
+          Sie diesen Links folgen, gelten die Datenschutzbestimmungen des
+          jeweiligen Anbieters, auf dessen Datenverarbeitung wir keinen
+          Einfluss haben.
+        </p>
+      </section>
+
+      <section>
+        <h2>11. Ihre Rechte</h2>
+        <p>
+          Sie haben das Recht auf Auskunft über die zu Ihrer Person
+          gespeicherten Daten (Art. 15 DSGVO), auf Berichtigung
+          (Art. 16 DSGVO), auf Löschung (Art. 17 DSGVO), auf Einschränkung
+          der Verarbeitung (Art. 18 DSGVO), auf Datenübertragbarkeit
+          (Art. 20 DSGVO) sowie auf Widerspruch gegen die Verarbeitung
+          (Art. 21 DSGVO). Sofern eine Verarbeitung auf Ihrer Einwilligung
+          beruht, können Sie diese jederzeit mit Wirkung für die Zukunft
+          widerrufen. Zudem steht Ihnen ein Beschwerderecht bei einer
+          Datenschutzaufsichtsbehörde zu.
+        </p>
+      </section>
+
+      <section>
+        <h2>12. Kontakt für Datenschutzanfragen</h2>
+        <p>
+          Für Auskünfte, Berichtigungen, Löschungen oder sonstige Anliegen
+          zum Datenschutz wenden Sie sich bitte an:<br />
+          <a href={`mailto:${email}`}>{email}</a>
+        </p>
+      </section>
+
+      <p class="legal-note">
+        ⚠️ Hinweis für den Betreiber: Dies ist eine Vorlage, die alle im
+        Code identifizierten Dienste abdeckt (Vercel, Sanity, Spotify,
+        YouTube-Thumbnail, OpenStreetMap/Leaflet, Service Worker, E-Mail/
+        WhatsApp). Sollten künftig weitere Dienste (z. B. Cookie-Banner,
+        Newsletter, Werbetracking) hinzukommen, muss diese Erklärung
+        entsprechend ergänzt werden. Bei Unsicherheit empfiehlt sich eine
+        kurze Prüfung durch einen Anwalt oder Datenschutzbeauftragten.
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<style>
+.legal-page {
+  padding: 9rem 0 6rem;
+  background: var(--sand-light);
+  min-height: 100vh;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--wave);
+  margin-bottom: 2rem;
+  transition: gap 0.2s ease, color 0.2s ease;
+}
+.back-link:hover {
+  gap: 0.6rem;
+  color: var(--coral);
+}
+.legal-page h1 {
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  font-weight: 900;
+  color: var(--ocean-deep);
+  margin-bottom: 0.5rem;
+}
+.legal-sub {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 2.5rem;
+}
+.legal-page section {
+  margin-bottom: 2rem;
+  max-width: 720px;
+}
+.legal-page h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ocean-deep);
+  margin-bottom: 0.5rem;
+}
+.legal-page p {
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+.legal-page a {
+  color: var(--wave);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+.legal-page a:hover {
+  text-decoration-color: var(--wave);
+}
+.legal-note {
+  margin-top: 3rem;
+  padding: 1rem 1.25rem;
+  background: rgba(244, 168, 32, 0.12);
+  border: 1px solid rgba(244, 168, 32, 0.35);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 720px;
+}
+</style>
