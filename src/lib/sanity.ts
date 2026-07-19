@@ -18,8 +18,15 @@ import { createClient } from '@sanity/client'
 import imageUrlBuilder from '@sanity/image-url'
 import type { SanityImageSource } from '@sanity/image-url/lib/types/types'
 
-const PROJECT_ID = '6a4o5kn7'
-const DATASET    = 'production'
+// FIX: Liest jetzt aus den in env.d.ts deklarierten PUBLIC_-Variablen,
+// mit dem bisherigen Wert als Fallback. Vorher waren die ENV-Deklarationen
+// in env.d.ts vorhanden, wurden hier aber nie tatsächlich gelesen — die
+// Projekt-ID war ausschließlich hart kodiert. Kein Sicherheitsproblem
+// (Projekt-ID ist ohnehin öffentlich), aber inkonsistent zur eigenen
+// Doku. Jetzt lässt sich Projekt-ID/Dataset bei Bedarf per ENV
+// überschreiben, ohne den Code anzufassen.
+const PROJECT_ID = import.meta.env.PUBLIC_SANITY_PROJECT_ID || '6a4o5kn7'
+const DATASET    = import.meta.env.PUBLIC_SANITY_DATASET    || 'production'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Server-Client (mit Token) — NUR in .astro-Frontmatter verwenden

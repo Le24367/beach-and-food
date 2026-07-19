@@ -35,9 +35,16 @@ let trackTitle  = 'Beach and Food'
 let trackArtist = 'Jens & Maria Fox'
 let trackCover  = ''
 
+// FIX: Timeout ergänzt (AbortController, 5s). Vorher konnte ein langsamer/
+// nicht erreichbarer Spotify-oEmbed-Endpunkt den Build unnötig verzögern,
+// da fetch() ohne Timeout im schlimmsten Fall sehr lange auf eine Antwort
+// wartet, bevor der Try/Catch überhaupt greift.
 try {
   const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(TRACK_URL)}`
-  const res = await fetch(oembedUrl)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 5000)
+  const res = await fetch(oembedUrl, { signal: controller.signal })
+  clearTimeout(timeout)
   if (res.ok) {
     const data: SpotifyOEmbed = await res.json()
     const parts = data.title.split(' - ')
@@ -50,7 +57,7 @@ try {
     trackCover = data.thumbnail_url
   }
 } catch (e) {
-  console.warn('[Bestellen] Spotify oEmbed nicht erreichbar, nutze Fallback.')
+  console.warn('[Bestellen] Spotify oEmbed nicht erreichbar oder Timeout, nutze Fallback.')
 }
 ---
 

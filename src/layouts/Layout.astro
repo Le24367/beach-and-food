@@ -19,6 +19,15 @@ const settings = await getSiteSettings().catch(() => null)
 const telephone = settings?.contact?.telephone ?? CONTACT.telephone
 const email     = settings?.contact?.email     ?? CONTACT.email
 
+// Adresse für JSON-LD: Sanity hat Vorrang, damit eine Adressänderung im CMS
+// auch in den strukturierten Daten (Google-Suchergebnisse) ankommt, ohne
+// dass jemand Code anfassen muss.
+const addr = settings?.address
+const streetAddress   = addr?.street ?? 'Sütel Strand'
+const addressLocality  = addr?.zip?.replace(/^\d+\s*/, '') || 'Neukirchen'
+const postalCodeMatch  = addr?.zip?.match(/^\d+/)
+const postalCode       = postalCodeMatch?.[0] ?? '23779'
+
 const canonicalUrl = SITE.url
 const ogImage = `${SITE.url}/og-image.jpg`
 
@@ -37,9 +46,9 @@ const jsonLd = {
   "servesCuisine": ["Fischbrötchen", "Currywurst", "Fast Food"],
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "Sütel Strand",
-    "addressLocality": "Neukirchen",
-    "postalCode": "23779",
+    "streetAddress": streetAddress,
+    "addressLocality": addressLocality,
+    "postalCode": postalCode,
     "addressCountry": "DE"
   },
   "geo": {
@@ -57,11 +66,11 @@ const jsonLd = {
 <head>
   <meta charset="UTF-8" />
   <!--
-    maximum-scale=1.0, user-scalable=no:
-    Verhindert Pinch-to-Zoom und Doppeltipp-Zoom auf Mobile.
-    user-scalable=no ist für einen Foodtruck-Auftritt üblich und unproblematisch.
+    FIX: user-scalable=no entfernt (WCAG 1.4.4 — Pinch-to-Zoom darf nicht
+    verhindert werden). maximum-scale bleibt bei 5, ein üblicher, unauffälliger
+    Wert, der trotzdem echtes Zoomen für sehbeeinträchtigte Nutzer erlaubt.
   -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
@@ -147,13 +156,12 @@ const jsonLd = {
     });
 
     // ── Service Worker registrieren ──────────────────────────────────
+    // Kein Erfolgs-Log mehr in Produktion — nur eine Warnung, falls die
+    // Registrierung fehlschlägt (hilfreich für Support-Anfragen des Kunden).
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker
           .register('/sw.js', { scope: '/' })
-          .then((reg) => {
-            console.log('[SW] registriert:', reg.scope);
-          })
           .catch((err) => {
             console.warn('[SW] Registrierung fehlgeschlagen:', err);
           });

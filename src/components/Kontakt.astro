@@ -117,10 +117,17 @@ const seasonNote = settings?.seasonNote
     </div>
     <p class="footer-tagline">{legal.tagline}</p>
     <div class="footer-links">
-      <a href="#angebot">Speisekarte</a>
-      <a href="#ueber-uns">Über uns</a>
+      <!--
+        FIX: "/#" statt "#" — konsistent mit der Navbar. Aktuell erscheint
+        dieser Footer nur auf der Startseite, daher war es bisher kein
+        sichtbarer Bug. Falls der Footer später auch auf /impressum oder
+        /datenschutz eingebunden wird, funktionieren die Links dann sofort
+        mit, ohne dass jemand daran denken muss.
+      -->
+      <a href="/#angebot">Speisekarte</a>
+      <a href="/#ueber-uns">Über uns</a>
       <a href={links.order} target="_blank" rel="noopener">Online bestellen</a>
-      <a href="#kontakt">Kontakt</a>
+      <a href="/#kontakt">Kontakt</a>
     </div>
     <div class="footer-legal">
       <p>© {new Date().getFullYear()} {legal.siteName} — Inhaber {legal.owner}, {legal.address}</p>
