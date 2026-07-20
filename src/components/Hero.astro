@@ -1,21 +1,8 @@
 ---
 import { getLinks } from '../lib/sanity'
-import busWebp from '../assets/bus/bus-body-nowheels.webp'
-import busPng from '../assets/bus/bus-body-nowheels.png'
-import wheelFrontWebp from '../assets/bus/wheel-front.webp'
-import wheelBackWebp from '../assets/bus/wheel-back.webp'
 const links = await getLinks()
 ---
 <section class="hero" id="hero">
-  <!-- Ohne JS gibt es keine Bus-Sequenz, die .hero-inner/.hero-scroll sichtbar
-       machen könnte — harter CSS-Fallback, damit der Inhalt nicht für immer
-       ausgeblendet bleibt. -->
-  <noscript>
-    <style>
-      .bus-wrap, .beach-strip { display: none; }
-      .hero-inner, .hero-scroll { opacity: 1 !important; pointer-events: auto !important; }
-    </style>
-  </noscript>
   <div class="hero-bg">
     <div class="sun-orb"></div>
   </div>
@@ -32,61 +19,19 @@ const links = await getLinks()
       </g>
     </svg>
   </div>
-
-  <div class="beach-strip" aria-hidden="true"></div>
-
-  <!--
-    Bus-Anfahrt: ersetzt die frühere sofortige LCP-Sichtbarkeit des Titels
-    bewusst durch eine Show-Sequenz (Absprache mit Kunde). Physik der
-    Radrotation ist exakt an die tatsächlich zurückgelegte Strecke gekoppelt
-    (siehe trackWheelRotation im Script unten), WHEEL_TIRE_FILL_RATIO
-    kompensiert den transparenten Rand um den Reifen in den PNG/WEBP-Assets.
-  -->
-  <div class="bus-wrap" id="busWrap">
-    <picture>
-      <source srcset={busWebp.src} type="image/webp" />
-      <img
-        src={busPng.src}
-        alt=""
-        aria-hidden="true"
-        class="bus-body"
-        width={busPng.width}
-        height={busPng.height}
-        fetchpriority="high"
-        decoding="async"
-      />
-    </picture>
-
-    <div class="wheel-well well-front"></div>
-    <div class="wheel-well well-back"></div>
-
-    <div class="wheel wheel-front" id="wheelFront">
-      <picture>
-        <source srcset={wheelFrontWebp.src} type="image/webp" />
-        <img src={wheelFrontWebp.src} alt="" aria-hidden="true" loading="eager" />
-      </picture>
-    </div>
-
-    <div class="wheel wheel-back" id="wheelBack">
-      <picture>
-        <source srcset={wheelBackWebp.src} type="image/webp" />
-        <img src={wheelBackWebp.src} alt="" aria-hidden="true" loading="eager" />
-      </picture>
-    </div>
-  </div>
-
-  <div class="container hero-inner" id="heroInner">
+  <div class="container hero-inner">
     <div class="hero-badge">
       <span class="badge-dot" aria-hidden="true"></span>
       <span>Foodtruck 2.0 · Sütel-Strand</span>
     </div>
 
     <!--
-      Frühere LCP-Sofort-Sichtbarkeit (h1 ohne Animation) wurde bewusst
-      aufgegeben: der Titel erscheint jetzt wie der Rest von .hero-inner
-      erst nach der Bus-Zoom-Sequenz (siehe .hero-inner.visible weiter
-      oben und das Script am Ende der Datei). Abgestimmter Trade-off,
-      kein Versehen — LCP wird dadurch um die Animationsdauer verzögert.
+      FIX: LCP-Element — keine fadeDown-Animation mehr.
+      Vorher: animation: fadeDown 0.8s 0.1s ease both
+      → Der h1 war für mind. 100ms opacity:0 und transform:translateY(-20px),
+        was Lighthouse als "nicht gerendert" wertet und den LCP-Zeitpunkt
+        nach hinten schiebt (~200–400ms Verlust auf Mobile).
+      Nachher: sofort sichtbar, kein opacity-0 zu Beginn.
     -->
     <h1 class="hero-title">
       Bei exakt<br/>
@@ -124,7 +69,7 @@ const links = await getLinks()
     </div>
   </div>
 
-  <div class="hero-scroll" id="heroScroll" aria-hidden="true">
+  <div class="hero-scroll" aria-hidden="true">
     <span>Scroll</span>
     <div class="scroll-line"></div>
   </div>
@@ -167,96 +112,7 @@ const links = await getLinks()
   0%   { transform: translate3d(-90px, 0, 0); }
   100% { transform: translate3d(85px,  0, 0); }
 }
-/* ── Beach-Fahrbahn + Bus-Anfahrt ────────────────────────────────── */
-.beach-strip {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 230px;
-  background: linear-gradient(to bottom, transparent 0%, var(--sand-light) 40%, var(--sand-light) 100%);
-  z-index: 1;
-}
-
-.bus-wrap {
-  position: absolute;
-  left: -60%;
-  bottom: 165px;
-  width: 46%;
-  max-width: 620px;
-  z-index: 3;
-  transform-origin: 41% 50%;
-  will-change: left, transform, opacity;
-}
-.bus-body { width: 100%; height: auto; display: block; }
-
-.wheel-well {
-  position: absolute;
-  width: 10.8%;
-  height: 22.5%;
-  top: 57.5%;
-  background: #2b2b29;
-  border-radius: 50% 50% 3px 3px;
-}
-.well-front { left: 23.15%; }
-.well-back  { left: 66.75%; }
-
-.wheel {
-  position: absolute;
-  width: 10.5%;
-  top: 58%;
-}
-.wheel img { width: 100%; height: auto; display: block; }
-.wheel-front { left: 23.45%; }
-.wheel-back  { left: 67.05%; }
-
-.bus-wrap.arrived {
-  left: 15%;
-  transition: left 3.2s cubic-bezier(.25,.7,.3,1);
-}
-.bus-wrap.zoom {
-  transform: scale(9);
-  opacity: 0;
-  transition: transform 1.1s ease-in, opacity 1.1s ease-in;
-}
-
-/* Fallback ohne Animation (reduced-motion / langsame Verbindung):
-   Bus komplett weglassen, Inhalt wird per JS sofort sichtbar gemacht. */
-.no-anim .bus-wrap,
-.no-anim .beach-strip {
-  display: none;
-}
-
-.hero-inner {
-  position: relative;
-  z-index: 4;
-  color: var(--foam);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.6s ease-in;
-}
-.hero-inner.visible { opacity: 1; pointer-events: auto; }
-
-/*
-  Titel/Badge/CTAs etc. sind absichtlich erst nach der Bus-Zoom-Sequenz
-  sichtbar (siehe Script unten) — bewusster Trade-off gegen die frühere
-  LCP-Sofort-Sichtbarkeit, mit dem Kunden abgestimmt. Jedes Element bleibt
-  bis dahin opacity:0 (statisch, nicht Teil der Animation) und startet sein
-  fadeDown erst, sobald .hero-inner die Klasse .visible bekommt.
-*/
-.hero-title,
-.hero-badge,
-.hero-sub,
-.hero-desc,
-.hero-actions,
-.hero-stats {
-  opacity: 0;
-}
-.hero-inner.visible .hero-title   { animation: fadeDown 0.8s ease both; }
-.hero-inner.visible .hero-badge   { animation: fadeDown 0.8s 0.1s ease both; }
-.hero-inner.visible .hero-sub     { animation: fadeDown 0.8s 0.2s ease both; }
-.hero-inner.visible .hero-desc    { animation: fadeDown 0.8s 0.3s ease both; }
-.hero-inner.visible .hero-actions { animation: fadeDown 0.8s 0.4s ease both; }
-.hero-inner.visible .hero-stats   { animation: fadeDown 0.8s 0.5s ease both; }
-
+.hero-inner { position: relative; z-index: 2; color: var(--foam); }
 .hero-badge {
   display: inline-flex;
   align-items: center;
@@ -271,6 +127,7 @@ const links = await getLinks()
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 2rem;
+  animation: fadeDown 0.8s ease both;
   /*
     KONTRAST-FIX: Explizit #ffffff setzen.
     #ffffff auf #0D2233 (ocean-deep) → 16.1:1 (WCAG AAA ✓).
@@ -289,6 +146,14 @@ const links = await getLinks()
   50% { opacity: 0.6; transform: scale(0.8); }
 }
 
+/*
+  FIX: hero-title hat KEINE animation mehr.
+  Lighthouse misst LCP am Zeitpunkt, wo das Element erstmals vollständig
+  sichtbar ist (opacity > 0, keine clip/transform-Verdeckung).
+  fadeDown startete mit opacity:0 → das verzögerte den LCP unnötig.
+  Die anderen Elemente (badge, sub, desc, actions, stats) behalten
+  ihre Animationen — nur das LCP-Element (h1) nicht.
+*/
 .hero-title {
   font-family: 'Playfair Display', serif;
   font-size: clamp(3rem, 8vw, 6.5rem);
@@ -296,6 +161,7 @@ const links = await getLinks()
   line-height: 1.0;
   letter-spacing: -0.02em;
   margin-bottom: 1rem;
+  /* animation entfernt — war: fadeDown 0.8s 0.1s ease both */
 }
 .temp {
   color: var(--sun);
@@ -312,12 +178,14 @@ const links = await getLinks()
   color: var(--coral);
   font-style: italic;
   margin-bottom: 1.5rem;
+  animation: fadeDown 0.8s 0.2s ease both;
 }
 .hero-desc {
   font-size: 1.1rem;
   color: rgba(255,255,255,0.75);
   line-height: 1.6;
   margin-bottom: 2.5rem;
+  animation: fadeDown 0.8s 0.3s ease both;
 }
 .br-lg { display: none; }
 @media (min-width: 600px) { .br-lg { display: inline; } }
@@ -326,6 +194,7 @@ const links = await getLinks()
   gap: 1rem;
   flex-wrap: wrap;
   margin-bottom: 3.5rem;
+  animation: fadeDown 0.8s 0.4s ease both;
 }
 .btn-primary {
   display: inline-flex;
@@ -364,6 +233,7 @@ const links = await getLinks()
   align-items: center;
   gap: 2rem;
   flex-wrap: wrap;
+  animation: fadeDown 0.8s 0.5s ease both;
 }
 .stat { display: flex; flex-direction: column; gap: 0.2rem; }
 .stat-num {
@@ -397,10 +267,8 @@ const links = await getLinks()
   letter-spacing: 0.1em;
   text-transform: uppercase;
   writing-mode: vertical-lr;
-  z-index: 4;
-  opacity: 0;
+  animation: fadeDown 1s 1s ease both;
 }
-.hero-scroll.visible { animation: fadeDown 1s 0.5s ease both; }
 .scroll-line {
   width: 1px; height: 60px;
   background: linear-gradient(to bottom, rgba(255,255,255,0.70), transparent);
@@ -421,95 +289,3 @@ const links = await getLinks()
   .hero-stats { gap: 1.5rem; }
 }
 </style>
-
-<script>
-  // Bus-Anfahrt-Sequenz: fährt ein, Räder drehen sich physikalisch exakt zur
-  // zurückgelegten Strecke (kein IntersectionObserver nötig — der Hero ist
-  // immer im initialen Viewport), zoomt zur Tür, gibt dann den eigentlichen
-  // Hero-Inhalt frei (siehe .hero-inner.visible in den Styles oben).
-  const heroSection = document.getElementById('hero');
-  const busWrap = document.getElementById('busWrap');
-  const wheelFront = document.getElementById('wheelFront');
-  const wheelBack = document.getElementById('wheelBack');
-  const wheelFrontImg = wheelFront?.querySelector('img') as HTMLElement | null;
-  const wheelBackImg = wheelBack?.querySelector('img') as HTMLElement | null;
-  const heroInner = document.getElementById('heroInner');
-  const heroScroll = document.getElementById('heroScroll');
-
-  let rafId: number | null = null;
-  let totalRotation = 0;
-
-  // Die Wheel-Assets (240x240) haben einen transparenten Rand um den Reifen;
-  // der sichtbare Reifen füllt nur ~92% der Bildbreite. Ohne diese Korrektur
-  // würde der berechnete Radumfang zu groß ausfallen und das Rad beim
-  // Abrollen sichtbar rutschen statt physikalisch korrekt zu drehen.
-  const WHEEL_TIRE_FILL_RATIO = 0.9208;
-
-  function revealContent() {
-    heroInner?.classList.add('visible');
-    heroScroll?.classList.add('visible');
-  }
-
-  function trackWheelRotation(onDone: () => void) {
-    if (!busWrap || !wheelFrontImg || !wheelBackImg) return;
-    const wheelRadiusPx = (wheelFrontImg.getBoundingClientRect().width * WHEEL_TIRE_FILL_RATIO) / 2;
-    const circumference = 2 * Math.PI * wheelRadiusPx;
-    const degPerPx = 360 / circumference;
-
-    let lastX = busWrap.getBoundingClientRect().left;
-    let hasMoved = false;
-    let stillFrames = 0;
-
-    function tick() {
-      const currentX = busWrap!.getBoundingClientRect().left;
-      const deltaX = currentX - lastX;
-      lastX = currentX;
-
-      if (Math.abs(deltaX) > 0.02) {
-        hasMoved = true;
-        stillFrames = 0;
-        totalRotation += deltaX * degPerPx;
-        const t = `rotate(${totalRotation}deg)`;
-        wheelFrontImg!.style.transform = t;
-        wheelBackImg!.style.transform = t;
-      } else if (hasMoved) {
-        stillFrames++;
-      }
-
-      if (hasMoved && stillFrames > 4) {
-        onDone();
-        return;
-      }
-      rafId = requestAnimationFrame(tick);
-    }
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function runSequence() {
-    const conn = (navigator as any).connection;
-    const slow = conn && (conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g');
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (slow || reduceMotion) {
-      heroSection?.classList.add('no-anim');
-      revealContent();
-      return;
-    }
-
-    if (!busWrap || !wheelFrontImg || !wheelBackImg) {
-      revealContent();
-      return;
-    }
-
-    trackWheelRotation(() => {
-      setTimeout(() => busWrap?.classList.add('zoom'), 800);
-      setTimeout(() => revealContent(), 1800);
-    });
-
-    requestAnimationFrame(() => {
-      setTimeout(() => busWrap?.classList.add('arrived'), 50);
-    });
-  }
-
-  runSequence();
-</script>
