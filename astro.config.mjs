@@ -2,7 +2,12 @@ import { defineConfig } from 'astro/config'
 import sitemap from '@astrojs/sitemap'
 
 export default defineConfig({
-  site: 'https://beachandfood.de',
+  // FIX: www-Domain, passend zur bisherigen, extern verlinkten und bei
+  // Google indexierten Version (Google Maps, Yelp, TripAdvisor, Facebook
+  // verlinken auf www.beachandfood.de). Die Sitemap wird mit dieser
+  // Domain generiert — daher muss dieser Wert exakt zur finalen,
+  // öffentlichen URL passen.
+  site: 'https://www.beachandfood.de',
   integrations: [
     sitemap(),
   ],

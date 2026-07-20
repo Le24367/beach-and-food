@@ -8,7 +8,7 @@
 export const SITE = {
   name: 'Beach and Food',
   tagline: 'Bei exakt 167°C — alles andere ist Wissenschaft.',
-  url: 'https://beachandfood.de',
+  url: 'https://www.beachandfood.de',
 } as const
 
 export const LINKS = {
