@@ -515,7 +515,10 @@ const slides: GallerySlide[] =
 
     function startAuto() {
       if (total <= 1) return
-      autoTimer = setInterval(() => goTo((current + 1) % total), 4000)
+      // FIX: 4000ms → 7000ms. War zu schnell, um die Bilder/Bildunterschriften
+      // in Ruhe anzusehen. 7 Sekunden sind ein gängiger, entspannterer Wert für
+      // Bild-Karussells. Bei Bedarf hier einfach die Zahl weiter anpassen.
+      autoTimer = setInterval(() => goTo((current + 1) % total), 7000)
     }
     function stopAuto() {
       if (autoTimer) clearInterval(autoTimer)
