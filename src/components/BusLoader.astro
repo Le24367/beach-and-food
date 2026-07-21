@@ -170,13 +170,24 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     transition: transform 1.1s ease-in, opacity 1.1s ease-in;
   }
 
+  /* Mobile: Der Bus soll nicht komplett auf den Screen passen, sondern die
+     Bildhöhe nahezu ausfüllen (~70vh) und dabei breiter als der Viewport
+     sein -> er fährt sichtbar durchs Bild (mit overflow:hidden am Loader
+     gecroppt) statt komplett stehend anzukommen. Breite in vh statt % einer
+     Breiten-Basis, damit die Höhe unabhängig vom Geräte-Seitenverhältnis
+     immer ~70vh bleibt (Bus-Bild-Seitenverhältnis 1400:472 ≈ 2.966:1,
+     70vh * 2.966 ≈ 208vh Breite). Die Zielposition beim Ankommen wird per
+     calc() aus vw UND vh berechnet, damit die Bestelltür (41% der Busbreite,
+     selber Wert wie transform-origin) unabhängig vom Geräte-Seitenverhältnis
+     mittig im Screen landet, bevor gezoomt wird. */
   @media (max-width: 640px) {
-    .bus-wrap { width: 92%; bottom: 17vh; }
-    /* Bei 92% Breite würde die Standard-Zielposition (left:15%, für Desktop
-       gedacht) rechts über den Bildschirmrand hinausragen (107% Gesamtbreite).
-       Auf Mobile stattdessen zentrieren, damit der Bus nach der Durchfahrt
-       komplett sichtbar mittig stehen bleibt, bevor gezoomt wird. */
-    .bus-wrap.arrived { left: 4%; }
+    .bus-wrap {
+      width: 208vh;
+      max-width: none;
+      left: -230vh;
+      bottom: 12vh;
+    }
+    .bus-wrap.arrived { left: calc(50vw - 85.28vh); }
   }
 
   .loader-welcome {
