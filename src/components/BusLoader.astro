@@ -172,6 +172,11 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
 
   @media (max-width: 640px) {
     .bus-wrap { width: 92%; bottom: 17vh; }
+    /* Bei 92% Breite würde die Standard-Zielposition (left:15%, für Desktop
+       gedacht) rechts über den Bildschirmrand hinausragen (107% Gesamtbreite).
+       Auf Mobile stattdessen zentrieren, damit der Bus nach der Durchfahrt
+       komplett sichtbar mittig stehen bleibt, bevor gezoomt wird. */
+    .bus-wrap.arrived { left: 4%; }
   }
 
   .loader-welcome {
