@@ -90,6 +90,44 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Scroll-Lock während der Bus-Ladeanimation (BusLoader.astro setzt/entfernt
+   die Klasse auf <html>). Seite steht beim Laden ohnehin bei Scroll-Position
+   0 — overflow:hidden allein reicht, kein position:fixed-Trick nötig. */
+html.intro-active,
+html.intro-active body {
+  overflow: hidden !important;
+  height: 100%;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* Übergang zur eigentlichen Seite: #page-reveal (Wrapper um main) steht
+   während der Bus-Ladephase eine Viewport-Höhe tiefer (unsichtbar, da der
+   Loader ohnehin alles bedeckt) und fliegt beim Übergang von unten ins Bild,
+   während der Loader gleichzeitig nach oben rausfährt (siehe BusLoader.astro,
+   .bus-loader.slide-out). intro-reveal überschreibt intro-loading gezielt
+   (höhere Spezifität durch zwei Klassen), damit die Seite schon einfliegt,
+   während intro-loading noch den Loader sichtbar hält (display:block) —
+   beide Animationen laufen parallel.
+   Bewusst ein eigener Wrapper statt direkt "main": In manchen Umgebungen
+   (u.a. dieser Testumgebung) wird transform auf dem <main>-Element selbst
+   ignoriert (Inline-Styles inkl. !important zeigten keine Wirkung, obwohl
+   opacity/filter/margin auf demselben Element normal funktionierten) — ein
+   normales <div> ist davon nicht betroffen. */
+#page-reveal {
+  transition: transform 0.9s cubic-bezier(.4, 0, .2, 1);
+}
+html.intro-loading #page-reveal {
+  transform: translateY(100vh);
+  will-change: transform;
+}
+html.intro-loading.intro-reveal #page-reveal {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  #page-reveal { transition: none !important; }
+}
+
 /* Dunkle Sections — volle Browserbreite */
 .ueber-uns,
 .vibes {

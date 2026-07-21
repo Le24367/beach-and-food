@@ -156,16 +156,30 @@ const jsonLd = {
     });
 
     // ── Service Worker registrieren ──────────────────────────────────
-    // Kein Erfolgs-Log mehr in Produktion — nur eine Warnung, falls die
-    // Registrierung fehlschlägt (hilfreich für Support-Anfragen des Kunden).
+    // NUR in Produktion: sw.js liefert HTML/JS/CSS per stale-while-revalidate
+    // aus (siehe public/sw.js) — im Dev-Server (npm run dev) würde das jede
+    // Code-Änderung erst nach dem ÜBERNÄCHSTEN Reload sichtbar machen (Cache
+    // wird nur im Hintergrund fürs nächste Mal aktualisiert). Das hat in der
+    // Entwicklung wiederholt zu "Änderungen kommen nicht an"/"startet nicht"
+    // geführt. import.meta.env.DEV ist im Dev-Server true, im Build false.
+    // Zusätzlich: falls im Dev-Server bereits ein SW aus einer früheren
+    // Produktions-Vorschau registriert ist, hier automatisch entfernen.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js', { scope: '/' })
-          .catch((err) => {
-            console.warn('[SW] Registrierung fehlgeschlagen:', err);
-          });
-      });
+      if (import.meta.env.DEV) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister());
+        });
+      } else {
+        // Kein Erfolgs-Log mehr in Produktion — nur eine Warnung, falls die
+        // Registrierung fehlschlägt (hilfreich für Support-Anfragen des Kunden).
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .catch((err) => {
+              console.warn('[SW] Registrierung fehlgeschlagen:', err);
+            });
+        });
+      }
     }
   </script>
 </body>

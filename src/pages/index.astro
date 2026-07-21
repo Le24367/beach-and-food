@@ -1,23 +1,32 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import BusLoader from '../components/BusLoader.astro';
 import Navbar from '../components/Navbar.astro';
-import Hero from '../components/Hero.astro';
 import Angebot from '../components/Angebot.astro';
 import Bestellen from '../components/Bestellen.astro';
 import UeberUns from '../components/UeberUns.astro';
 import Kontakt from '../components/Kontakt.astro';
 
-// Reihenfolge: Hero → Speisekarte → Bestellen → Über uns → Kontakt
-// Nutzer werden nach dem Stöbern direkt zum Bestellen geführt
+// Reihenfolge: BusLoader (Vollbild-Splash mit Willkommens-Screen, sperrt
+// Scroll) → Speisekarte → Bestellen → Über uns → Kontakt.
+// Der Willkommensgruß lebt im BusLoader selbst (Fade-in, dann Slide-out) —
+// danach ist direkt die Speisekarte da, keine eigene Hero-Sektion mehr im
+// Seitenfluss nötig.
+// BusLoader steht bewusst vor Navbar/main, damit er als erstes Element
+// paint't und die Navbar (fixed, z-index 100) zuverlässig überdeckt.
 ---
 
 <Layout>
+  <BusLoader />
   <Navbar />
-  <main>
-    <Hero />
-    <Angebot />
-    <Bestellen />
-    <UeberUns />
-    <Kontakt />
-  </main>
+  <!-- #page-reveal (nicht main direkt) trägt die Einflug-Animation beim
+       Bus-Loader-Übergang (siehe global.css, html.intro-loading). -->
+  <div id="page-reveal">
+    <main>
+      <Angebot />
+      <Bestellen />
+      <UeberUns />
+      <Kontakt />
+    </main>
+  </div>
 </Layout>

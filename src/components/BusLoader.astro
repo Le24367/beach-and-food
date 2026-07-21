@@ -1,0 +1,325 @@
+---
+// BusLoader.astro
+// Vollbild-Ladescreen: Bus fährt groß rein, Räder rollen physikalisch exakt,
+// Zoom zur Tür, dann erscheint ein Willkommens-Screen (Fade-in/Fade-out),
+// danach ist direkt die Speisekarte da. Läuft nur einmal pro Browser-Sitzung
+// (sessionStorage).
+import busWebp from '../assets/bus/bus-body-nowheels.webp'
+import busPng from '../assets/bus/bus-body-nowheels.png'
+import wheelFrontWebp from '../assets/bus/wheel-front.webp'
+import wheelBackWebp from '../assets/bus/wheel-back.webp'
+---
+
+<!-- Synchron VOR jeglichem Paint entscheiden, ob das Intro läuft — verhindert
+     einen sichtbaren Scroll-Flash, bevor JS unten die Klasse setzen könnte. -->
+<script is:inline>
+  (function () {
+    try {
+      var played = sessionStorage.getItem('baf_intro_played');
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var conn = navigator.connection;
+      var slow = conn && (conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g');
+      if (!played && !reduceMotion && !slow) {
+        // intro-loading steuert NUR die Sichtbarkeit des Loaders (display:block)
+        // und bleibt bis zum tatsächlichen Entfernen aus dem DOM bestehen.
+        // intro-active steuert NUR den Scroll-Lock (global.css) und wird schon
+        // beim Start des Fade-outs entfernt — beide dürfen nicht an derselben
+        // Klasse hängen, sonst verschwindet der Loader beim Fade-out per
+        // display:none hart statt sanft über die Opacity-Transition.
+        document.documentElement.classList.add('intro-active', 'intro-pending', 'intro-loading');
+      }
+    } catch (e) {
+      // sessionStorage kann in seltenen Privacy-Modi fehlschlagen — dann läuft
+      // die Seite einfach ohne Intro-Lock weiter, kein harter Fehler.
+    }
+  })();
+</script>
+
+<!-- Ohne JS: Loader nie zeigen, Seite sofort nutzbar. -->
+<noscript>
+  <style>
+    #bus-loader { display: none !important; }
+  </style>
+</noscript>
+
+<div id="bus-loader" class="bus-loader">
+  <div class="loader-sky"></div>
+  <div class="loader-beach" aria-hidden="true"></div>
+
+  <div class="bus-wrap" id="loaderBusWrap">
+    <picture>
+      <source srcset={busWebp.src} type="image/webp" />
+      <img
+        src={busPng.src}
+        alt=""
+        aria-hidden="true"
+        class="bus-body"
+        width={busPng.width}
+        height={busPng.height}
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
+
+    <div class="wheel-well well-front"></div>
+    <div class="wheel-well well-back"></div>
+
+    <div class="wheel wheel-front" id="loaderWheelFront">
+      <picture>
+        <source srcset={wheelFrontWebp.src} type="image/webp" />
+        <img src={wheelFrontWebp.src} alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
+      </picture>
+    </div>
+
+    <div class="wheel wheel-back" id="loaderWheelBack">
+      <picture>
+        <source srcset={wheelBackWebp.src} type="image/webp" />
+        <img src={wheelBackWebp.src} alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
+      </picture>
+    </div>
+  </div>
+
+  <!-- Willkommens-Screen: erscheint per Fade-in, sobald der Bus in die Tür
+       gezoomt ist, bleibt kurz stehen, fährt dann zusammen mit dem ganzen
+       Overlay nach oben raus (.slide-out) -> direkt dahinter ist die
+       Speisekarte, die gleichzeitig von unten reinfährt. -->
+  <div class="loader-welcome" id="loaderWelcome" aria-hidden="true">
+    <h1>Willkommen bei Beach and Food</h1>
+  </div>
+</div>
+
+<style>
+  .bus-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: hidden;
+    background: var(--ocean-deep);
+    touch-action: none;
+    overscroll-behavior: contain;
+    will-change: transform;
+    /* Verhindert, dass der Loader bei einem Reload ohne Intro (kein JS-Setup
+       oben nötig) trotzdem kurz aufblitzt — Standard ist unsichtbar/weg,
+       das Script unten schaltet ihn nur bei laufendem Intro sichtbar. */
+    display: none;
+  }
+  /* Bewusst NICHT an intro-active gekoppelt: intro-active wird schon beim
+     Start des Slide-outs entfernt (steuert den Scroll-Lock), intro-loading
+     erst wenn der Loader tatsächlich aus dem DOM entfernt wird -> display
+     bleibt "block", solange die Transform-Transition läuft. */
+  html.intro-pending .bus-loader,
+  html.intro-loading .bus-loader {
+    display: block;
+  }
+
+  .loader-sky {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 78% -10%, rgba(244,168,32,0.28) 0%, rgba(255,149,0,0.12) 38%, transparent 68%),
+                var(--ocean-deep);
+  }
+
+  .loader-beach {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 26vh;
+    min-height: 190px;
+    background: linear-gradient(to bottom, transparent 0%, var(--sand-light) 45%, var(--sand-light) 100%);
+    z-index: 1;
+  }
+
+  .bus-wrap {
+    position: absolute;
+    left: -75%;
+    bottom: 15vh;
+    width: 70%;
+    max-width: 1000px;
+    z-index: 3;
+    transform-origin: 41% 50%;
+    will-change: left, transform, opacity;
+  }
+  .bus-body { width: 100%; height: auto; display: block; }
+
+  .wheel-well {
+    position: absolute;
+    width: 10.8%;
+    height: 22.5%;
+    top: 57.5%;
+    background: #2b2b29;
+    border-radius: 50% 50% 3px 3px;
+  }
+  .well-front { left: 23.15%; }
+  .well-back  { left: 66.75%; }
+
+  .wheel {
+    position: absolute;
+    width: 10.5%;
+    top: 58%;
+  }
+  .wheel img { width: 100%; height: auto; display: block; }
+  .wheel-front { left: 23.45%; }
+  .wheel-back  { left: 67.05%; }
+
+  .bus-wrap.arrived {
+    left: 15%;
+    transition: left 2.8s cubic-bezier(.25,.7,.3,1);
+  }
+  .bus-wrap.zoom {
+    transform: scale(7);
+    opacity: 0;
+    transition: transform 1.1s ease-in, opacity 1.1s ease-in;
+  }
+
+  @media (max-width: 640px) {
+    .bus-wrap { width: 92%; bottom: 17vh; }
+  }
+
+  .loader-welcome {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 1.5rem;
+    opacity: 0;
+  }
+  .loader-welcome h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    color: var(--foam);
+  }
+  .loader-welcome.visible {
+    opacity: 1;
+    transition: opacity 0.7s ease-out;
+  }
+
+  /* Slide-out: der ganze Screen (Hintergrund + Willkommens-Text zusammen)
+     fährt nach oben raus, während gleichzeitig main von unten reinfährt
+     (siehe html.intro-reveal in global.css) -> Push-Übergang statt Fade. */
+  .bus-loader.slide-out {
+    transform: translateY(-100%);
+    transition: transform 0.9s cubic-bezier(.4, 0, .2, 1);
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bus-wrap, .bus-loader.slide-out, .loader-welcome.visible { transition: none !important; }
+  }
+</style>
+
+<script>
+  const html = document.documentElement;
+
+  // Wenn der Loader gar nicht aktiviert wurde (kein intro-pending gesetzt:
+  // schon gesehen / reduced-motion / slow-2g), sofort aufräumen und raus.
+  if (!html.classList.contains('intro-pending')) {
+    document.getElementById('bus-loader')?.remove();
+  } else {
+    html.classList.remove('intro-pending');
+
+    const loader = document.getElementById('bus-loader');
+    const busWrap = document.getElementById('loaderBusWrap');
+    const wheelFront = document.getElementById('loaderWheelFront');
+    const wheelBack = document.getElementById('loaderWheelBack');
+    const wheelFrontImg = wheelFront?.querySelector('img') as HTMLElement | null;
+    const wheelBackImg = wheelBack?.querySelector('img') as HTMLElement | null;
+    const welcome = document.getElementById('loaderWelcome');
+
+    let rafId: number | null = null;
+    let totalRotation = 0;
+
+    // Die Wheel-Assets (240x240) haben einen transparenten Rand um den Reifen;
+    // der sichtbare Reifen füllt nur ~92% der Bildbreite. Ohne diese Korrektur
+    // würde der berechnete Radumfang zu groß ausfallen und das Rad beim
+    // Abrollen sichtbar rutschen statt physikalisch korrekt zu drehen.
+    const WHEEL_TIRE_FILL_RATIO = 0.9208;
+
+    function finishIntro() {
+      try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
+      html.classList.remove('intro-active');
+      loader?.classList.add('slide-out');
+      html.classList.add('intro-reveal');
+      setTimeout(() => {
+        loader?.remove();
+        html.classList.remove('intro-loading', 'intro-reveal');
+      }, 950);
+    }
+
+    function trackWheelRotation(onDone: () => void) {
+      if (!busWrap || !wheelFrontImg || !wheelBackImg) return;
+      const wheelRadiusPx = (wheelFrontImg.getBoundingClientRect().width * WHEEL_TIRE_FILL_RATIO) / 2;
+      const circumference = 2 * Math.PI * wheelRadiusPx;
+      const degPerPx = 360 / circumference;
+
+      let lastX = busWrap.getBoundingClientRect().left;
+      let hasMoved = false;
+      let stillFrames = 0;
+
+      function tick() {
+        const currentX = busWrap!.getBoundingClientRect().left;
+        const deltaX = currentX - lastX;
+        lastX = currentX;
+
+        if (Math.abs(deltaX) > 0.02) {
+          hasMoved = true;
+          stillFrames = 0;
+          totalRotation += deltaX * degPerPx;
+          const t = `rotate(${totalRotation}deg)`;
+          wheelFrontImg!.style.transform = t;
+          wheelBackImg!.style.transform = t;
+        } else if (hasMoved) {
+          stillFrames++;
+        }
+
+        if (hasMoved && stillFrames > 4) {
+          onDone();
+          return;
+        }
+        rafId = requestAnimationFrame(tick);
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function runSequence() {
+      if (!busWrap || !wheelFrontImg || !wheelBackImg) {
+        finishIntro();
+        return;
+      }
+
+      trackWheelRotation(() => {
+        // Bus zoomt zur Tür rein …
+        setTimeout(() => busWrap?.classList.add('zoom'), 500);
+        // … Zoom ist fertig (500ms Verzögerung + ~1.1s Zoom-Dauer) -> Willkommens-
+        // Screen blendet ein (~0.7s).
+        setTimeout(() => welcome?.classList.add('visible'), 1600);
+        // Bleibt ~1.5s stehen, dann fährt der ganze Screen (Text + Hintergrund
+        // zusammen) nach oben raus, während main gleichzeitig von unten
+        // reinfährt (html.intro-reveal, siehe global.css) -> Push-Übergang
+        // direkt in die Speisekarte statt Fade.
+        setTimeout(() => {
+          html.classList.remove('intro-active');
+          try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
+          loader?.classList.add('slide-out');
+          html.classList.add('intro-reveal');
+        }, 3800);
+        // intro-loading (steuert display:block) erst HIER entfernen, nachdem
+        // die Transform-Transition (0.9s) tatsächlich abgelaufen ist -> sonst
+        // würde der Loader vorher per display:none hart verschwinden.
+        setTimeout(() => {
+          loader?.remove();
+          html.classList.remove('intro-loading', 'intro-reveal');
+        }, 4800);
+      });
+
+      requestAnimationFrame(() => {
+        setTimeout(() => busWrap?.classList.add('arrived'), 50);
+      });
+    }
+
+    runSequence();
+  }
+</script>
