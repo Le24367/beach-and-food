@@ -44,47 +44,123 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
 
 <div id="bus-loader" class="bus-loader">
   <div class="loader-sky"></div>
-  <div class="loader-beach" aria-hidden="true"></div>
+
+  <!-- Atmosphäre: läuft in Dauerschleife unabhängig von der Bus-Sequenz,
+       damit die Szene schon lebendig wirkt, bevor überhaupt etwas fährt. -->
+  <div class="loader-sun" aria-hidden="true"></div>
+  <div class="loader-cloud cloud-1" aria-hidden="true"></div>
+  <div class="loader-cloud cloud-2" aria-hidden="true"></div>
+  <div class="loader-cloud cloud-3" aria-hidden="true"></div>
+  <svg class="loader-gull gull-1" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 8 Q6 2 12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+  </svg>
+  <svg class="loader-gull gull-2" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 8 Q6 2 12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+  </svg>
+
+  <div class="loader-beach" aria-hidden="true">
+    <div class="loader-foam-line" aria-hidden="true"></div>
+  </div>
 
   <div class="bus-wrap" id="loaderBusWrap">
-    <picture>
-      <source srcset={busWebp.src} type="image/webp" />
-      <img
-        src={busPng.src}
-        alt=""
-        aria-hidden="true"
-        class="bus-body"
-        width={busPng.width}
-        height={busPng.height}
-        fetchpriority="high"
-        decoding="async"
-      />
-    </picture>
-
-    <div class="wheel-well well-front"></div>
-    <div class="wheel-well well-back"></div>
-
-    <div class="wheel wheel-front" id="loaderWheelFront">
+    <!-- Innerer Wrapper nur fürs Einfeder-Wippen beim Stopp (translateY/
+         scaleY) — getrennt von .bus-wrap, das left (Anfahrt) und den
+         Zoom/Fade zur Tür steuert, damit sich die Transitions nicht in die
+         Quere kommen. -->
+    <div class="bus-suspension" id="loaderSuspension">
       <picture>
-        <source srcset={wheelFrontWebp.src} type="image/webp" />
-        <img src={wheelFrontWebp.src} alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
+        <source srcset={busWebp.src} type="image/webp" />
+        <img
+          src={busPng.src}
+          alt=""
+          aria-hidden="true"
+          class="bus-body"
+          width={busPng.width}
+          height={busPng.height}
+          fetchpriority="high"
+          decoding="async"
+        />
       </picture>
-    </div>
 
-    <div class="wheel wheel-back" id="loaderWheelBack">
-      <picture>
-        <source srcset={wheelBackWebp.src} type="image/webp" />
-        <img src={wheelBackWebp.src} alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
-      </picture>
+      <div class="wheel-well well-front"></div>
+      <div class="wheel-well well-back"></div>
+
+      <div class="wheel wheel-front" id="loaderWheelFront">
+        <picture>
+          <source srcset={wheelFrontWebp.src} type="image/webp" />
+          <img src={wheelFrontWebp.src} alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
+        </picture>
+      </div>
+
+      <div class="wheel wheel-back" id="loaderWheelBack">
+        <picture>
+          <source srcset={wheelBackWebp.src} type="image/webp" />
+          <img src={wheelBackWebp.src} alt="" aria-hidden="true" loading="eager" fetchpriority="high" />
+        </picture>
+      </div>
+
+      <!-- Kleiner Staubwirbel am Hinterrad, blitzt beim Ausfedern kurz auf. -->
+      <div class="dust-puff" id="loaderDust" aria-hidden="true"></div>
+
+      <!-- Echte Einstiegstür direkt links neben der Bestellausgabe (~35-45%
+           Busbreite, unterhalb des Logo-Schwungs). Liegt exakt über der ins
+           Busbild gemalten Tür (schlichte Glasscheibe + Ausgabe-Box, von
+           einem Rahmen umschlossen), in denselben Farben nachgebaut, damit
+           sie im Ruhezustand nahtlos wirkt. Nur die linke Scheibe (der
+           eigentliche Türflügel) klappt auf (scaleX-Zusammenklappen am
+           linken Anschlag) -- die rechte Seite mit der Ausgabe-Box ist fest
+           montiertes Equipment und bleibt stehen. Öffnet sich während des
+           Zooms -> wirkt wie ein Durchgehen durch die Tür, ohne Figur. -->
+      <div class="door-group" id="loaderDoor" aria-hidden="true">
+        <div class="door-interior" id="loaderDoorInterior"></div>
+        <div class="door-leaf" id="loaderDoorLeaf">
+          <span class="door-frame-left"></span>
+          <span class="door-pane-left"></span>
+        </div>
+        <div class="door-static">
+          <span class="door-mullion"></span>
+          <span class="door-pane-right">
+            <span class="door-glass"></span>
+            <span class="door-ledge"></span>
+            <span class="door-panel">
+              <span class="door-vent-light"></span>
+              <span class="door-vent-dark"></span>
+            </span>
+          </span>
+          <span class="door-frame-right"></span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Willkommens-Screen: erscheint per Fade-in, sobald der Bus in die Tür
-       gezoomt ist, bleibt kurz stehen, fährt dann zusammen mit dem ganzen
-       Overlay nach oben raus (.slide-out) -> direkt dahinter ist die
-       Speisekarte, die gleichzeitig von unten reinfährt. -->
+  <!-- Dunkel-Portal: eine auflösungs-unabhängige dunkle Fläche, die per
+       clip-path-Iris exakt aus der Türöffnung heraus aufgeht und den Screen
+       sauber füllt (kein Pixelmatsch wie beim tiefen Raster-Zoom). Liegt
+       über dem Bus, unter dem Willkommens-Screen. -->
+  <div class="entry-void" id="loaderEntryVoid" aria-hidden="true"></div>
+
+  <!-- Willkommens-Screen: erscheint per Fade-in, sobald das Dunkel-Portal
+       den Screen gefüllt hat, bleibt kurz stehen, fährt dann zusammen mit
+       dem ganzen Overlay nach oben raus (.slide-out) -> direkt dahinter ist
+       die Speisekarte, die gleichzeitig von unten reinfährt. -->
   <div class="loader-welcome" id="loaderWelcome" aria-hidden="true">
-    <h1>Willkommen bei Beach and Food</h1>
+    <h1>Willkommen bei</h1>
+    <div class="loader-logo-badge">
+      <picture>
+        <source
+          type="image/webp"
+          srcset="/logo/logo-footer-200w.webp 200w, /logo/logo-footer-400w.webp 400w"
+          sizes="200px"
+        />
+        <img
+          src="/logo/logo.jpeg"
+          alt="Beach and Food"
+          class="loader-logo-img"
+          width="200"
+          height="51"
+        />
+      </picture>
+    </div>
   </div>
 </div>
 
@@ -112,11 +188,82 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     display: block;
   }
 
+  /* Mehrstufiger Himmel statt einer flachen Fläche: dunkles Meeresblau oben,
+     über --ocean/--wave sanft heller Richtung Horizont -- der bestehende
+     Sonnen-Glow-Fleck bleibt als zusätzlicher Layer obendrauf erhalten. */
   .loader-sky {
     position: absolute;
     inset: 0;
     background: radial-gradient(circle at 78% -10%, rgba(244,168,32,0.28) 0%, rgba(255,149,0,0.12) 38%, transparent 68%),
-                var(--ocean-deep);
+                linear-gradient(to bottom, var(--ocean-deep) 0%, var(--ocean-deep) 35%, var(--ocean) 68%, var(--wave) 100%);
+  }
+
+  /* Sonne mit weichem Halo, atmet leicht -- sonst wäre der Himmel trotz
+     Verlauf immer noch komplett regungslos. */
+  .loader-sun {
+    position: absolute;
+    top: 8%;
+    left: 78%;
+    width: 6.5vw;
+    height: 6.5vw;
+    min-width: 46px;
+    min-height: 46px;
+    max-width: 90px;
+    max-height: 90px;
+    transform: translate(-50%, 0);
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--sun-bright) 0%, var(--sun) 70%, transparent 100%);
+    box-shadow: 0 0 60px 18px rgba(244,168,32,0.35);
+    z-index: 0;
+    animation: sun-pulse 5s ease-in-out infinite;
+  }
+  @keyframes sun-pulse {
+    0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.92; }
+    50%      { transform: translate(-50%, 0) scale(1.05); opacity: 1; }
+  }
+
+  /* Driftende Wolken -- weiche, verschwommene Ellipsen statt gezeichneter
+     Cumulus-Form, damit sie sich in den flachen Verlaufs-Look der Seite
+     einfügen statt wie ein Fremdkörper zu wirken. Lange, unterschiedliche
+     Laufzeiten + negative Delays -> laufen nie synchron, stehen beim
+     ersten Sichtbarwerden schon an unterschiedlichen Positionen. */
+  .loader-cloud {
+    position: absolute;
+    z-index: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    filter: blur(6px);
+    pointer-events: none;
+  }
+  .cloud-1 { top: 14%; width: 14vw; height: 3.2vw; max-width: 180px; max-height: 42px; animation: cloud-drift 58s linear infinite; animation-delay: -12s; }
+  .cloud-2 { top: 24%; width: 10vw; height: 2.4vw; max-width: 130px; max-height: 32px; opacity: 0.7; animation: cloud-drift 74s linear infinite; animation-delay: -40s; }
+  .cloud-3 { top: 9%;  width: 8vw;  height: 2vw;   max-width: 100px; max-height: 26px; opacity: 0.5; animation: cloud-drift 90s linear infinite; animation-delay: -65s; }
+  @keyframes cloud-drift {
+    from { transform: translateX(-25vw); }
+    to   { transform: translateX(125vw); }
+  }
+
+  /* Kleine Möwen -- reiner Stroke-Pfad (kein Fill), gleiten schneller als
+     die Wolken durchs Bild und wippen dabei sanft auf und ab. */
+  .loader-gull {
+    position: absolute;
+    width: 34px;
+    height: 17px;
+    color: rgba(13,34,51,0.55);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .gull-1 { top: 20%; animation: gull-drift-1 17s linear infinite; animation-delay: -4s; }
+  .gull-2 { top: 32%; width: 24px; height: 12px; animation: gull-drift-2 22s linear infinite; animation-delay: -14s; }
+  @keyframes gull-drift-1 {
+    0%   { transform: translate(-10vw, 0); }
+    50%  { transform: translate(55vw, -1.4vw); }
+    100% { transform: translate(120vw, 0); }
+  }
+  @keyframes gull-drift-2 {
+    0%   { transform: translate(-10vw, 0); }
+    50%  { transform: translate(60vw, 1.2vw); }
+    100% { transform: translate(130vw, 0); }
   }
 
   .loader-beach {
@@ -127,6 +274,45 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     background: linear-gradient(to bottom, transparent 0%, var(--sand-light) 45%, var(--sand-light) 100%);
     z-index: 1;
   }
+  /* Schimmernder Wellensaum am Übergang Himmel/Strand -- deutet einen
+     Wellenrand an, ohne eine echte Wellenform zeichnen zu müssen. */
+  .loader-foam-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.65), transparent);
+    overflow: hidden;
+  }
+  .loader-foam-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+    animation: foam-shimmer 6s ease-in-out infinite;
+  }
+
+  /* Sobald in die Tür gezoomt wird, blendet die ganze Atmosphäre (Sonne,
+     Wolken, Möwen, Wellensaum) mit aus -- soll beim Willkommens-Screen
+     nicht mehr zu sehen sein, damit Logo/Text ungestört im Fokus stehen. */
+  .bus-loader.atmosphere-hidden .loader-sun,
+  .bus-loader.atmosphere-hidden .loader-cloud,
+  .bus-loader.atmosphere-hidden .loader-gull,
+  .bus-loader.atmosphere-hidden .loader-foam-line {
+    /* .loader-sun hat eine eigene @keyframes-Animation, die opacity
+       mitanimiert (sun-pulse) -- die würde einen statischen opacity:0-Wert
+       jeden Frame wieder überschreiben. Deshalb hier zusätzlich die
+       laufende Animation stoppen, sonst greift der Fade-out nicht. */
+    animation: none;
+    opacity: 0;
+    transition: opacity 1s ease-out;
+  }
+  @keyframes foam-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+  }
 
   .bus-wrap {
     position: absolute;
@@ -135,10 +321,164 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     width: 70%;
     max-width: 1000px;
     z-index: 3;
-    transform-origin: 41% 50%;
-    will-change: left, transform, opacity;
+    transform-origin: 37.25% 55%;
+    will-change: left, transform, opacity, filter;
   }
   .bus-body { width: 100%; height: auto; display: block; }
+
+  .bus-suspension {
+    position: relative;
+    width: 100%;
+  }
+  .bus-suspension.settle {
+    animation: bus-settle 0.42s cubic-bezier(.36,.07,.19,.97);
+  }
+  @keyframes bus-settle {
+    0%   { transform: translateY(0) scaleY(1); }
+    35%  { transform: translateY(3.5px) scaleY(0.986); }
+    65%  { transform: translateY(-1px) scaleY(1.004); }
+    100% { transform: translateY(0) scaleY(1); }
+  }
+
+  .dust-puff {
+    position: absolute;
+    left: 62.5%;
+    bottom: 6%;
+    width: 9%;
+    padding-top: 9%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(214,201,173,0.55) 0%, rgba(214,201,173,0.22) 45%, transparent 75%);
+    opacity: 0;
+    transform: scale(0.55);
+    pointer-events: none;
+    z-index: 2;
+  }
+  .dust-puff.puff {
+    animation: dust-puff 0.6s ease-out forwards;
+  }
+  @keyframes dust-puff {
+    0%   { opacity: 0; transform: scale(0.5); }
+    25%  { opacity: 0.7; }
+    100% { opacity: 0; transform: scale(1.6); }
+  }
+
+  /* Türgruppe: exakt über der ins Busbild gemalten Tür (x ca. 492-636px von
+     1400px Bildbreite, y ca. 146-372px von 472px Bildhöhe -> in % der
+     Busbreite/-höhe umgerechnet, damit es mit dem Mobile-Layout mitskaliert.
+     Oben bewusst erst ab y146 statt am Türrahmen-Anfang, weil der gemalte
+     Logo-Schwung bis dahin überlappt -> sonst würde unsere Überlagerung
+     einen Teil des Logos verdecken. */
+  .door-group {
+    position: absolute;
+    left: 35.1%;
+    width: 10.3%;
+    top: 30.9%;
+    height: 47.9%;
+    z-index: 4;
+  }
+  /* Nur unter der linken Scheibe (dem eigentlichen Türflügel) liegt ein
+     dunkler Innenraum-Filler. Gradient + Inset-Schatten geben echte Tiefe:
+     stockdunkel am Scharnier (links), minimal angehoben zur Öffnung -> liest
+     sich als Kavität in den Bus hinein, nicht als flaches Rechteck. Die
+     rechte Seite (Ausgabe-Box) bewegt sich nie, braucht nichts dahinter. */
+  .door-interior {
+    position: absolute;
+    left: 0; width: 41.7%; top: 0; bottom: 0;
+    z-index: 1;
+    background: linear-gradient(to right, #05070b 0%, #0b0f17 55%, #161b28 100%);
+    box-shadow: inset 6px 0 12px rgba(0,0,0,0.6);
+    border-radius: 1px 0 0 1px;
+  }
+  /* Türblatt: NUR die linke schlichte Scheibe -- das ist der tatsächliche
+     Türflügel und schwingt am linken Scharnier nach innen auf. Die rechte
+     Seite (Mittelsteg + Ausgabe-Box, siehe .door-static) ist fest montiertes
+     Equipment und bewegt sich nicht mit. */
+  .door-leaf {
+    position: absolute;
+    left: 0; width: 41.7%; top: 0; bottom: 0;
+    z-index: 3;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(.4,0,.2,1);
+  }
+  .door-leaf.open {
+    /* Schwingt mit echter Perspektive nach innen weg (freie Kante fährt in
+       den Bus). Perspective als Funktion direkt in der transform-Kette
+       (statt als separate Property auf .door-group) -- zuverlässiger, weil
+       nicht von einem 3D-Rendering-Kontext eines Vorfahren abhängig. */
+    transform: perspective(400px) rotateY(72deg);
+  }
+  /* Rahmenfarbe + dünner Outline wie im Original-Artwork: ein warmer
+     Grau-Braun-Ton (nicht Schwarz) mit einer feinen dunklen Kontur, im
+     selben Comic-Stil wie der Rest des Busses. */
+  .door-frame-left {
+    position: absolute;
+    left: 0; width: 19.9%; top: 0; bottom: 0;
+    background: #4f4547;
+    border: 1px solid #171213;
+  }
+  .door-pane-left {
+    position: absolute;
+    left: 19.9%; right: 0; top: 0; bottom: 0;
+    background: #28303e;
+    border: 1px solid #171213;
+    border-radius: 3px 3px 0 0;
+  }
+
+  /* Rechte Seite: bleibt immer an Ort und Stelle. */
+  .door-static {
+    position: absolute;
+    left: 41.7%; width: 58.3%; top: 0; bottom: 0;
+    z-index: 2;
+  }
+  .door-frame-right {
+    position: absolute;
+    right: 0; width: 7.2%; top: 0; bottom: 0;
+    background: #4f4547;
+    border: 1px solid #171213;
+  }
+  .door-mullion {
+    position: absolute;
+    left: 0; width: 28.5%; top: 0; bottom: 0;
+    background: #4f4547;
+    border: 1px solid #171213;
+  }
+  .door-pane-right {
+    position: absolute;
+    left: 28.5%; width: 64.3%; top: 0; bottom: 0;
+    background: #4f4547;
+    border: 1px solid #171213;
+  }
+  .door-glass {
+    position: absolute;
+    left: 6%; right: 6%; top: 0; height: 39.4%;
+    background: #313a49;
+    border-radius: 4px 4px 0 0;
+  }
+  .door-ledge {
+    position: absolute;
+    left: 6%; right: 6%; top: 39.4%; height: 15.5%;
+    background: #b0aebb;
+  }
+  /* Kabinentür der Ausgabe-Box: deutlich gerundete Oberkante, wie im
+     Original ein kleines Hatch/Klapptür-Element statt einer schlichten
+     Ecke. */
+  .door-panel {
+    position: absolute;
+    left: 6%; right: 6%; top: 57.1%; bottom: 11.9%;
+    background: #5a4345;
+    border-radius: 45% 45% 3px 3px;
+  }
+  .door-vent-light {
+    position: absolute;
+    left: 18%; top: 8%; width: 44%; height: 34%;
+    background: #b6b4ba;
+  }
+  .door-vent-dark {
+    position: absolute;
+    left: 44%; top: 55%; width: 34%; height: 30%;
+    background: #171213;
+  }
 
   .wheel-well {
     position: absolute;
@@ -164,10 +504,15 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     left: 15%;
     transition: left 2.8s cubic-bezier(.25,.7,.3,1);
   }
+  /* Push-in Richtung Tür (scale 4.2 statt vorher scale 16 aufs Rasterbild)
+     -> genug Reise/Momentum, damit man das Reingehen spürt, bleibt aber
+     scharf statt zu Pixelmatsch zu werden. Läuft bewusst länger als der
+     Moment, bis das Dunkel-Portal startet (siehe runSequence()), damit der
+     Zoom erst eine Weile sichtbar ist, BEVOR der saubere Dunkel-Übergang
+     übernimmt -- sonst wirkt es nicht wie ein echtes Reingehen. */
   .bus-wrap.zoom {
-    transform: scale(7);
-    opacity: 0;
-    transition: transform 1.1s ease-in, opacity 1.1s ease-in;
+    transform: scale(4.2);
+    transition: transform 1.7s cubic-bezier(.4,0,.2,1);
   }
 
   /* Mobile: Der Bus soll nicht komplett auf den Screen passen, sondern die
@@ -177,7 +522,7 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
      Breiten-Basis, damit die Höhe unabhängig vom Geräte-Seitenverhältnis
      immer ~70vh bleibt (Bus-Bild-Seitenverhältnis 1400:472 ≈ 2.966:1,
      70vh * 2.966 ≈ 208vh Breite). Die Zielposition beim Ankommen wird per
-     calc() aus vw UND vh berechnet, damit die Bestelltür (41% der Busbreite,
+     calc() aus vw UND vh berechnet, damit die Tür (37.25% der Busbreite,
      selber Wert wie transform-origin) unabhängig vom Geräte-Seitenverhältnis
      mittig im Screen landet, bevor gezoomt wird. */
   @media (max-width: 640px) {
@@ -187,16 +532,38 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       left: -230vh;
       bottom: 12vh;
     }
-    .bus-wrap.arrived { left: calc(50vw - 85.28vh); }
+    .bus-wrap.arrived { left: calc(50vw - 77.48vh); }
+  }
+
+  /* Dunkel-Portal: reiner CSS-Gradient statt Raster-Zoom -> bleibt bei
+     jeder Größe scharf. Startet unsichtbar (clip-path-Kreis mit Radius 0)
+     exakt in der Türmitte (--door-x/--door-y werden per JS aus der
+     tatsächlichen Türposition gesetzt, siehe runSequence()) und wächst beim
+     Öffnen auf 150% Radius -> deckt den Screen unabhängig vom
+     Seitenverhältnis komplett ab, bevor der Willkommens-Screen erscheint. */
+  .entry-void {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background: radial-gradient(circle at var(--door-x, 40%) var(--door-y, 55%),
+                #12222f 0%, var(--ocean-deep) 55%, #06121c 100%);
+    clip-path: circle(0% at var(--door-x, 40%) var(--door-y, 55%));
+  }
+  .bus-loader.entering .entry-void {
+    clip-path: circle(150% at var(--door-x, 40%) var(--door-y, 55%));
+    transition: clip-path 1.1s cubic-bezier(.4, 0, .2, 1);
   }
 
   .loader-welcome {
     position: absolute;
     inset: 0;
-    z-index: 4;
+    z-index: 6;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 1.5rem;
     text-align: center;
     padding: 0 1.5rem;
     opacity: 0;
@@ -207,6 +574,23 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     font-weight: 900;
     letter-spacing: -0.01em;
     color: var(--foam);
+    margin: 0;
+  }
+  /* Gleiche weiße Pillen-Badge wie das Logo im Seiten-Footer (Kontakt.astro),
+     damit der Übergang vom Intro zur restlichen Seite stimmig wirkt. */
+  .loader-logo-badge {
+    background: var(--foam);
+    border-radius: var(--radius);
+    padding: 10px 24px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .loader-logo-img {
+    height: clamp(40px, 8vw, 56px);
+    width: auto;
+    object-fit: contain;
+    display: block;
   }
   .loader-welcome.visible {
     opacity: 1;
@@ -223,7 +607,17 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bus-wrap, .bus-loader.slide-out, .loader-welcome.visible { transition: none !important; }
+    .bus-wrap, .bus-loader.slide-out, .loader-welcome.visible,
+    .door-leaf, .bus-suspension.settle, .dust-puff.puff,
+    .loader-sun, .loader-cloud, .loader-gull, .loader-foam-line::after,
+    .bus-loader.atmosphere-hidden .loader-sun,
+    .bus-loader.atmosphere-hidden .loader-cloud,
+    .bus-loader.atmosphere-hidden .loader-gull,
+    .bus-loader.atmosphere-hidden .loader-foam-line,
+    .entry-void, .bus-loader.entering .entry-void {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 </style>
 
@@ -239,11 +633,16 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
 
     const loader = document.getElementById('bus-loader');
     const busWrap = document.getElementById('loaderBusWrap');
+    const suspension = document.getElementById('loaderSuspension');
     const wheelFront = document.getElementById('loaderWheelFront');
     const wheelBack = document.getElementById('loaderWheelBack');
     const wheelFrontImg = wheelFront?.querySelector('img') as HTMLElement | null;
     const wheelBackImg = wheelBack?.querySelector('img') as HTMLElement | null;
     const welcome = document.getElementById('loaderWelcome');
+    const dust = document.getElementById('loaderDust');
+    const doorLeaf = document.getElementById('loaderDoorLeaf');
+    const doorInterior = document.getElementById('loaderDoorInterior');
+    const entryVoid = document.getElementById('loaderEntryVoid');
 
     let rafId: number | null = null;
     let totalRotation = 0;
@@ -253,6 +652,10 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     // würde der berechnete Radumfang zu groß ausfallen und das Rad beim
     // Abrollen sichtbar rutschen statt physikalisch korrekt zu drehen.
     const WHEEL_TIRE_FILL_RATIO = 0.9208;
+
+    function wait(ms: number) {
+      return new Promise<void>((resolve) => setTimeout(resolve, ms));
+    }
 
     function finishIntro() {
       try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
@@ -287,11 +690,16 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
           const t = `rotate(${totalRotation}deg)`;
           wheelFrontImg!.style.transform = t;
           wheelBackImg!.style.transform = t;
+          // Dezenter Speed-Blur: proportional zur aktuellen Bildschirm-
+          // geschwindigkeit, klingt zum Stopp hin von selbst aus.
+          const blurPx = Math.min(2.2, Math.abs(deltaX) * 0.15);
+          busWrap!.style.filter = blurPx > 0.05 ? `blur(${blurPx}px)` : 'none';
         } else if (hasMoved) {
           stillFrames++;
         }
 
         if (hasMoved && stillFrames > 4) {
+          busWrap!.style.filter = 'none';
           onDone();
           return;
         }
@@ -300,40 +708,76 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       rafId = requestAnimationFrame(tick);
     }
 
-    function runSequence() {
-      if (!busWrap || !wheelFrontImg || !wheelBackImg) {
+    async function runSequence() {
+      if (!busWrap || !wheelFrontImg || !wheelBackImg || !suspension || !doorLeaf || !dust || !doorInterior || !entryVoid || !loader) {
         finishIntro();
         return;
       }
 
-      trackWheelRotation(() => {
-        // Bus zoomt zur Tür rein …
-        setTimeout(() => busWrap?.classList.add('zoom'), 500);
-        // … Zoom ist fertig (500ms Verzögerung + ~1.1s Zoom-Dauer) -> Willkommens-
-        // Screen blendet ein (~0.7s).
-        setTimeout(() => welcome?.classList.add('visible'), 1600);
-        // Bleibt ~1.5s stehen, dann fährt der ganze Screen (Text + Hintergrund
-        // zusammen) nach oben raus, während main gleichzeitig von unten
-        // reinfährt (html.intro-reveal, siehe global.css) -> Push-Übergang
-        // direkt in die Speisekarte statt Fade.
-        setTimeout(() => {
-          html.classList.remove('intro-active');
-          try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
-          loader?.classList.add('slide-out');
-          html.classList.add('intro-reveal');
-        }, 3800);
-        // intro-loading (steuert display:block) erst HIER entfernen, nachdem
-        // die Transform-Transition (0.9s) tatsächlich abgelaufen ist -> sonst
-        // würde der Loader vorher per display:none hart verschwinden.
-        setTimeout(() => {
-          loader?.remove();
-          html.classList.remove('intro-loading', 'intro-reveal');
-        }, 4800);
+      requestAnimationFrame(() => {
+        setTimeout(() => busWrap.classList.add('arrived'), 50);
       });
 
-      requestAnimationFrame(() => {
-        setTimeout(() => busWrap?.classList.add('arrived'), 50);
-      });
+      // Wartet, bis die Räder (physikalisch getrackt) tatsächlich stillstehen.
+      await new Promise<void>((resolve) => trackWheelRotation(resolve));
+
+      // Einfedern beim Stopp + kurzer Staubwirbel am Hinterrad.
+      suspension.classList.add('settle');
+      dust.classList.add('puff');
+      await wait(350);
+      suspension.classList.remove('settle');
+
+      // Kurzer Beat, bevor die Tür aufgeht.
+      await wait(250);
+
+      // Tür schwingt mit echter Perspektive nach innen auf (rotateY am
+      // linken Scharnier) -> der dunkle Innenraum dahinter wird kurz
+      // sichtbar, statt sofort wegzublenden.
+      doorLeaf.classList.add('open');
+      await wait(450);
+
+      // Dunkel-Portal exakt aus der Türmitte aufgehen lassen: Position der
+      // tatsächlichen Türöffnung (nicht der ganzen Türgruppe, die auch die
+      // starre Ausgabe-Box enthält) in Viewport-% umrechnen und als
+      // CSS-Variablen setzen -> funktioniert dadurch auf jeder
+      // Viewport-Größe inkl. Mobile exakt.
+      const doorRect = doorInterior.getBoundingClientRect();
+      const doorX = ((doorRect.left + doorRect.width / 2) / window.innerWidth) * 100;
+      const doorY = ((doorRect.top + doorRect.height * 0.5) / window.innerHeight) * 100;
+      loader.style.setProperty('--door-x', `${doorX}%`);
+      loader.style.setProperty('--door-y', `${doorY}%`);
+
+      // Push-in Richtung Tür fürs Momentum (bleibt scharf, kein Raster-Zoom
+      // mehr) …
+      busWrap.classList.add('zoom');
+      // … läuft erst eine Weile FÜR SICH, bevor das Dunkel-Portal startet --
+      // sonst sieht man den Zoom kaum und das "Reingehen" kommt nicht
+      // rüber. Erst wenn man das Reinfahren auf die Tür schon spürt, holt
+      // das Portal den Rest der Strecke.
+      await wait(600);
+      loader.classList.add('entering');
+      loader.classList.add('atmosphere-hidden');
+      // … Portal hat den Screen gefüllt (1.1s) -> Willkommens-Screen
+      // blendet auf sauberem dunklem Grund ein.
+      await wait(1100);
+      welcome?.classList.add('visible');
+
+      // Bleibt ~1.5s stehen, dann fährt der ganze Screen (Text + Hintergrund
+      // zusammen) nach oben raus, während main gleichzeitig von unten
+      // reinfährt (html.intro-reveal, siehe global.css) -> Push-Übergang
+      // direkt in die Speisekarte statt Fade.
+      await wait(1500);
+      html.classList.remove('intro-active');
+      try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
+      loader?.classList.add('slide-out');
+      html.classList.add('intro-reveal');
+
+      // intro-loading (steuert display:block) erst HIER entfernen, nachdem
+      // die Transform-Transition (0.9s) tatsächlich abgelaufen ist -> sonst
+      // würde der Loader vorher per display:none hart verschwinden.
+      await wait(950);
+      loader?.remove();
+      html.classList.remove('intro-loading', 'intro-reveal');
     }
 
     runSequence();
