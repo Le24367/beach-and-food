@@ -43,26 +43,50 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
 </noscript>
 
 <div id="bus-loader" class="bus-loader">
-  <div class="loader-sky"></div>
+  <!-- Szene-Wrapper: fasst Himmel, Strand UND Bus zusammen, damit beim
+       Türzoom die GANZE Umgebung mitskaliert statt nur der Bus isoliert --
+       sonst wirkt es, als würde der Bus wachsen/näherkommen, statt dass man
+       selbst auf ihn zugeht. Transform-Origin sitzt exakt auf der Tür
+       (--door-x/--door-y, per JS gesetzt), damit die Tür beim Skalieren
+       bildfest bleibt und alles andere davon wegzoomt -- wie eine echte
+       Vorwärtsbewegung der Kamera, nicht wie ein wachsendes Objekt. -->
+  <div class="loader-scene" id="loaderScene">
+    <div class="loader-sky"></div>
 
-  <!-- Atmosphäre: läuft in Dauerschleife unabhängig von der Bus-Sequenz,
-       damit die Szene schon lebendig wirkt, bevor überhaupt etwas fährt. -->
-  <div class="loader-sun" aria-hidden="true"></div>
-  <div class="loader-cloud cloud-1" aria-hidden="true"></div>
-  <div class="loader-cloud cloud-2" aria-hidden="true"></div>
-  <div class="loader-cloud cloud-3" aria-hidden="true"></div>
-  <svg class="loader-gull gull-1" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 8 Q6 2 12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-  </svg>
-  <svg class="loader-gull gull-2" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
-    <path d="M1 8 Q6 2 12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-  </svg>
+    <!-- Atmosphäre: läuft in Dauerschleife unabhängig von der Bus-Sequenz,
+         damit die Szene schon lebendig wirkt, bevor überhaupt etwas fährt. -->
+    <div class="loader-sun" aria-hidden="true"></div>
+    <div class="loader-cloud cloud-1" aria-hidden="true"></div>
+    <div class="loader-cloud cloud-2" aria-hidden="true"></div>
+    <div class="loader-cloud cloud-3" aria-hidden="true"></div>
+    <!-- Jede Möwe besteht aus zwei getrennten Flügel-Pfaden (statt einem
+         durchgehenden Strich), die beide um denselben Mittelpunkt (12,8)
+         rotieren -- das schlägt zuverlässig per klassischem CSS-Transform
+         (siehe .gull-wing), statt die SVG-Pfadform selbst zu animieren
+         (dafür ist Browser-Unterstützung inkonsistent). -->
+    <svg class="loader-gull gull-1" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
+      <path class="gull-wing gull-wing-left" d="M12 8 Q6 2 1 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+      <path class="gull-wing gull-wing-right" d="M12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    </svg>
+    <svg class="loader-gull gull-2" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
+      <path class="gull-wing gull-wing-left" d="M12 8 Q6 2 1 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+      <path class="gull-wing gull-wing-right" d="M12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    </svg>
+    <svg class="loader-gull gull-3" aria-hidden="true" viewBox="0 0 24 12" xmlns="http://www.w3.org/2000/svg">
+      <path class="gull-wing gull-wing-left" d="M12 8 Q6 2 1 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+      <path class="gull-wing gull-wing-right" d="M12 8 Q18 2 23 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+    </svg>
 
-  <div class="loader-beach" aria-hidden="true">
-    <div class="loader-foam-line" aria-hidden="true"></div>
-  </div>
+    <div class="loader-beach" aria-hidden="true">
+      <div class="loader-foam-line" aria-hidden="true"></div>
+    </div>
 
-  <div class="bus-wrap" id="loaderBusWrap">
+    <div class="bus-wrap" id="loaderBusWrap">
+    <!-- Bodenschatten, damit der Bus sichtbar auf dem Strandband steht statt
+         zu schweben -- liegt unter der Suspension (eigene Bounce-Klasse),
+         damit er beim Einfedern kurz mitreagiert statt starr zu bleiben. -->
+    <div class="bus-shadow" id="loaderBusShadow" aria-hidden="true"></div>
+
     <!-- Innerer Wrapper nur fürs Einfeder-Wippen beim Stopp (translateY/
          scaleY) — getrennt von .bus-wrap, das left (Anfahrt) und den
          Zoom/Fade zur Tür steuert, damit sich die Transitions nicht in die
@@ -102,6 +126,15 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       <!-- Kleiner Staubwirbel am Hinterrad, blitzt beim Ausfedern kurz auf. -->
       <div class="dust-puff" id="loaderDust" aria-hidden="true"></div>
 
+      <!-- Durchgehender Staubschweif, der nur während der Fahrt (Klasse
+           "driving" auf .bus-wrap) läuft -- gibt der Einfahrt mehr
+           Fahrtgefühl statt nur dem einen Puff beim Anhalten. -->
+      <div class="dust-trail" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
       <!-- Echte Einstiegstür direkt links neben der Bestellausgabe (~35-45%
            Busbreite, unterhalb des Logo-Schwungs). Liegt exakt über der ins
            Busbild gemalten Tür (schlichte Glasscheibe + Ausgabe-Box, von
@@ -131,6 +164,7 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- Dunkel-Portal: eine auflösungs-unabhängige dunkle Fläche, die per
@@ -203,13 +237,13 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       var(--sand-light);
   }
 
-  /* Cleaner Marken-Look: die illustrativen Landschafts-Deko-Elemente (Sonne,
-     Wolken, Möwen, Wellensaum) werden nicht mehr angezeigt -- der Hintergrund
-     soll wie die cleane Seite wirken, nicht wie eine gezeichnete Szene. Die
-     Regeln/Markup bleiben vorerst erhalten, falls die Deko zurück soll. */
+  /* Cleaner Marken-Look: Sonne, Wolken und der Wellensaum bleiben aus --
+     der Hintergrund soll überwiegend wie die cleane Seite wirken. Möwen
+     sind bewusst ausgenommen (siehe unten): der leere Himmel wirkte sonst
+     zu tot, ein paar fliegende Möwen beleben die Szene, ohne wie eine volle
+     Landschafts-Illustration zu wirken. */
   .loader-sun,
   .loader-cloud,
-  .loader-gull,
   .loader-foam-line {
     display: none !important;
   }
@@ -259,27 +293,91 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     to   { transform: translateX(125vw); }
   }
 
-  /* Kleine Möwen -- reiner Stroke-Pfad (kein Fill), gleiten schneller als
-     die Wolken durchs Bild und wippen dabei sanft auf und ab. */
+  /* Kleine Möwen -- reiner Stroke-Pfad (kein Fill). Fliegen bewusst NICHT
+     parallel in dieselbe Richtung (das wirkte wie drei Strichmännchen im
+     Gleichschritt), sondern auf sich kreuzenden Diagonalen in
+     unterschiedliche Richtungen -- eine steigt von unten links nach oben
+     rechts, eine sinkt von oben rechts nach unten links, eine quert steil.
+     Bleiben dabei komfortabel oberhalb des Strandbands (max. ~45vh), damit
+     sie nicht optisch durch Bus oder Strand "fliegen". */
   .loader-gull {
     position: absolute;
+    /* top/left: 0 -- die Flugbahnen unten steuern die Position komplett
+       selbst über translate() in vw/vh, ausgehend von der oberen linken
+       Ecke der Szene. */
+    top: 0;
+    left: 0;
     width: 34px;
     height: 17px;
     color: rgba(13,34,51,0.55);
     z-index: 1;
     pointer-events: none;
   }
-  .gull-1 { top: 20%; animation: gull-drift-1 17s linear infinite; animation-delay: -4s; }
-  .gull-2 { top: 32%; width: 24px; height: 12px; animation: gull-drift-2 22s linear infinite; animation-delay: -14s; }
-  @keyframes gull-drift-1 {
-    0%   { transform: translate(-10vw, 0); }
-    50%  { transform: translate(55vw, -1.4vw); }
-    100% { transform: translate(120vw, 0); }
+  /* Flügelschlag über klassisches CSS-Transform statt SVG-Pfadform-Animation
+     (letzteres hatte inkonsistente Browser-Unterstützung und kam beim Nutzer
+     nicht sichtbar an). Jeder Flügel ist ein eigener Pfad, der um den
+     gemeinsamen Körper-Mittelpunkt (12,8 -- exakt die Pivot-Koordinate aus
+     dem viewBox "0 0 24 12") rotiert: linker Flügel im Uhrzeigersinn, rechter
+     gegen den Uhrzeigersinn -> beide Spitzen senken sich synchron ab und
+     heben sich wieder, wie ein echter Flügelschlag. transform-box: view-box
+     sorgt dafür, dass transform-origin dieselben Koordinaten wie das "d"
+     nutzt (sonst würde je nach Browser die eigene Bounding-Box des Pfads
+     als Bezugspunkt gelten). */
+  .loader-gull .gull-wing {
+    transform-box: view-box;
+    transform-origin: 12px 8px;
   }
-  @keyframes gull-drift-2 {
-    0%   { transform: translate(-10vw, 0); }
-    50%  { transform: translate(60vw, 1.2vw); }
-    100% { transform: translate(130vw, 0); }
+  .loader-gull .gull-wing-left {
+    animation: gull-flap-left 0.42s ease-in-out infinite;
+  }
+  .loader-gull .gull-wing-right {
+    animation: gull-flap-right 0.42s ease-in-out infinite;
+  }
+  @keyframes gull-flap-left {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(26deg); }
+  }
+  @keyframes gull-flap-right {
+    0%, 100% { transform: rotate(0deg); }
+    50%      { transform: rotate(-26deg); }
+  }
+
+  .gull-1 {
+    animation: gull-path-1 16s linear infinite;
+    animation-delay: -3s;
+  }
+  .gull-1 .gull-wing { animation-duration: 0.4s; animation-delay: -0.1s; }
+  @keyframes gull-path-1 {
+    0%   { transform: translate(-10vw, 22vh) rotate(-10deg); }
+    50%  { transform: translate(55vw, -4vh) rotate(-6deg); }
+    100% { transform: translate(122vw, -22vh) rotate(-10deg); }
+  }
+
+  .gull-2 {
+    width: 26px;
+    height: 13px;
+    animation: gull-path-2 19s linear infinite;
+    animation-delay: -11s;
+  }
+  .gull-2 .gull-wing { animation-duration: 0.52s; animation-delay: -0.3s; }
+  @keyframes gull-path-2 {
+    0%   { transform: translate(112vw, -8vh) rotate(14deg); }
+    50%  { transform: translate(48vw, 16vh) rotate(10deg); }
+    100% { transform: translate(-16vw, 38vh) rotate(14deg); }
+  }
+
+  .gull-3 {
+    width: 22px;
+    height: 11px;
+    opacity: 0.8;
+    animation: gull-path-3 12s linear infinite;
+    animation-delay: -6s;
+  }
+  .gull-3 .gull-wing { animation-duration: 0.34s; animation-delay: -0.05s; }
+  @keyframes gull-path-3 {
+    0%   { transform: translate(-8vw, -4vh) rotate(18deg); }
+    50%  { transform: translate(52vw, 20vh) rotate(14deg); }
+    100% { transform: translate(116vw, 44vh) rotate(18deg); }
   }
 
   .loader-beach {
@@ -341,17 +439,58 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     100% { transform: translateX(350%); }
   }
 
+  /* Fasst Himmel, Strand und Bus zu einer Einheit zusammen, damit der
+     Türzoom die GESAMTE Szene von der Tür aus skaliert (siehe .zoom unten)
+     -- füllt immer exakt den Loader, unabhängig davon, ob gerade skaliert
+     wird oder nicht. transform-origin sitzt exakt auf der Tür (--door-x/
+     --door-y, per JS aus der echten Türposition gesetzt), damit die Tür
+     beim Skalieren bildfest bleibt. */
+  .loader-scene {
+    position: absolute;
+    inset: 0;
+    transform-origin: var(--door-x, 40%) var(--door-y, 55%);
+  }
+
   .bus-wrap {
     position: absolute;
-    left: -75%;
+    /* Etwas größer als zuvor (war 70%/1000px) -- füllt den sonst sehr leeren
+       oberen Himmelsbereich besser aus. left entsprechend weiter nach links
+       verschoben, damit der Bus bei größerer Breite weiterhin komplett
+       offscreen startet, statt schon einen Rand sichtbar zu zeigen. */
+    left: -82%;
     bottom: 15vh;
-    width: 70%;
-    max-width: 1000px;
+    width: 76%;
+    max-width: 1100px;
     z-index: 3;
-    transform-origin: 37.25% 55%;
-    will-change: left, transform, opacity, filter;
+    will-change: left, filter;
   }
   .bus-body { width: 100%; height: auto; display: block; }
+
+  /* Weicher Bodenschatten unter dem Bus -- ohne ihn wirkte der Bus, als würde
+     er über dem Strandband schweben statt fest darauf zu stehen. Liegt
+     unter der Suspension (z-index 0), reagiert aber über eine eigene Klasse
+     (shadow-settle, siehe Script) leicht mit, wenn der Bus beim Anhalten
+     einfedert. */
+  .bus-shadow {
+    position: absolute;
+    left: 10%;
+    right: 16%;
+    bottom: 1.5%;
+    height: 5.5%;
+    z-index: 0;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(6,18,28,0.4) 0%, rgba(6,18,28,0.2) 55%, transparent 78%);
+    filter: blur(2px);
+  }
+  .bus-shadow.shadow-settle {
+    animation: shadow-settle 0.42s cubic-bezier(.36,.07,.19,.97);
+  }
+  @keyframes shadow-settle {
+    0%   { transform: scaleX(1) scaleY(1); }
+    35%  { transform: scaleX(1.06) scaleY(0.88); }
+    65%  { transform: scaleX(0.98) scaleY(1.04); }
+    100% { transform: scaleX(1) scaleY(1); }
+  }
 
   .bus-suspension {
     position: relative;
@@ -387,6 +526,39 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     0%   { opacity: 0; transform: scale(0.5); }
     25%  { opacity: 0.7; }
     100% { opacity: 0; transform: scale(1.6); }
+  }
+
+  /* Staubschweif während der Fahrt: drei versetzt animierte Puffs, die nur
+     laufen, solange .bus-wrap die Klasse "driving" trägt (siehe Script) --
+     dadurch bleibt es exakt auf die eigentliche Fahrtstrecke begrenzt, statt
+     eine feste Animationsdauer erraten zu müssen. Die Puffs wandern relativ
+     zum Bus nach hinten (translateX negativ), wirken so wie ein Schweif, der
+     hinter dem fahrenden Bus zurückbleibt. */
+  .dust-trail {
+    position: absolute;
+    left: 60%;
+    bottom: 4%;
+    width: 8%;
+    padding-top: 8%;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .dust-trail span {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(214,201,173,0.5) 0%, rgba(214,201,173,0.18) 45%, transparent 75%);
+    opacity: 0;
+  }
+  .bus-wrap.driving .dust-trail span {
+    animation: dust-trail-puff 0.9s ease-out infinite;
+  }
+  .bus-wrap.driving .dust-trail span:nth-child(2) { animation-delay: 0.3s; }
+  .bus-wrap.driving .dust-trail span:nth-child(3) { animation-delay: 0.6s; }
+  @keyframes dust-trail-puff {
+    0%   { opacity: 0; transform: translateX(0) scale(0.4); }
+    20%  { opacity: 0.5; }
+    100% { opacity: 0; transform: translateX(-140%) scale(1.3); }
   }
 
   /* Türgruppe: exakt über der ins Busbild gemalten Tür (x ca. 492-636px von
@@ -531,13 +703,18 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     left: 15%;
     transition: left 2.8s cubic-bezier(.25,.7,.3,1);
   }
-  /* Push-in Richtung Tür (scale 4.2 statt vorher scale 16 aufs Rasterbild)
-     -> genug Reise/Momentum, damit man das Reingehen spürt, bleibt aber
-     scharf statt zu Pixelmatsch zu werden. Läuft bewusst länger als der
-     Moment, bis das Dunkel-Portal startet (siehe runSequence()), damit der
-     Zoom erst eine Weile sichtbar ist, BEVOR der saubere Dunkel-Übergang
-     übernimmt -- sonst wirkt es nicht wie ein echtes Reingehen. */
-  .bus-wrap.zoom {
+  /* Push-in Richtung Tür: skaliert die GANZE Szene (Himmel, Strand, Bus --
+     siehe .loader-scene) von der Tür aus, statt nur den Bus isoliert zu
+     vergrößern. So wächst nicht "der Bus auf einen zu", sondern die
+     gesamte Umgebung zieht am Betrachter vorbei -- fühlt sich an wie eine
+     echte Vorwärtsbewegung auf die Tür zu. transform-origin sitzt exakt auf
+     der Tür (--door-x/--door-y, per JS aus der echten Türposition gesetzt),
+     damit die Tür selbst beim Skalieren bildfest bleibt. Läuft bewusst
+     länger als der Moment, bis das Dunkel-Portal startet (siehe
+     runSequence()), damit der Zoom erst eine Weile sichtbar ist, BEVOR der
+     saubere Dunkel-Übergang übernimmt -- sonst wirkt es nicht wie ein
+     echtes Reingehen. */
+  .loader-scene.zoom {
     transform: scale(4.2);
     transition: transform 1.7s cubic-bezier(.4,0,.2,1);
   }
@@ -594,6 +771,9 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     text-align: center;
     padding: 0 1.5rem;
     opacity: 0;
+    /* Startet leicht verschoben/verkleinert -- ein reines Opacity-Fade
+       wirkte zu abrupt, die kleine Bewegung macht das Einblenden weicher. */
+    transform: translateY(14px) scale(0.98);
   }
   .loader-welcome h1 {
     font-family: 'Playfair Display', serif;
@@ -621,7 +801,8 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
   }
   .loader-welcome.visible {
     opacity: 1;
-    transition: opacity 0.7s ease-out;
+    transform: translateY(0) scale(1);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
   }
 
   /* Slide-out: der ganze Screen (Hintergrund + Willkommens-Text zusammen)
@@ -634,9 +815,10 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .bus-wrap, .bus-loader.slide-out, .loader-welcome.visible,
+    .bus-wrap, .loader-scene.zoom, .bus-loader.slide-out, .loader-welcome.visible,
     .door-leaf, .bus-suspension.settle, .dust-puff.puff,
-    .loader-sun, .loader-cloud, .loader-gull, .loader-foam-line::after,
+    .bus-shadow.shadow-settle, .dust-trail span,
+    .loader-sun, .loader-cloud, .loader-gull, .loader-gull .gull-wing, .loader-foam-line::after,
     .bus-loader.atmosphere-hidden .loader-sun,
     .bus-loader.atmosphere-hidden .loader-cloud,
     .bus-loader.atmosphere-hidden .loader-gull,
@@ -659,6 +841,7 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     html.classList.remove('intro-pending');
 
     const loader = document.getElementById('bus-loader');
+    const loaderScene = document.getElementById('loaderScene');
     const busWrap = document.getElementById('loaderBusWrap');
     const suspension = document.getElementById('loaderSuspension');
     const wheelFront = document.getElementById('loaderWheelFront');
@@ -670,6 +853,7 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     const doorLeaf = document.getElementById('loaderDoorLeaf');
     const doorInterior = document.getElementById('loaderDoorInterior');
     const entryVoid = document.getElementById('loaderEntryVoid');
+    const busShadow = document.getElementById('loaderBusShadow');
 
     let rafId: number | null = null;
     let totalRotation = 0;
@@ -736,23 +920,30 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     }
 
     async function runSequence() {
-      if (!busWrap || !wheelFrontImg || !wheelBackImg || !suspension || !doorLeaf || !dust || !doorInterior || !entryVoid || !loader) {
+      if (!busWrap || !loaderScene || !wheelFrontImg || !wheelBackImg || !suspension || !doorLeaf || !dust || !doorInterior || !entryVoid || !loader) {
         finishIntro();
         return;
       }
 
       requestAnimationFrame(() => {
-        setTimeout(() => busWrap.classList.add('arrived'), 50);
+        // "driving" läuft den Staubschweif, solange sich der Bus tatsächlich
+        // bewegt -- exakt an die echte Fahrtstrecke gekoppelt statt an eine
+        // geschätzte feste Dauer.
+        setTimeout(() => busWrap.classList.add('arrived', 'driving'), 50);
       });
 
       // Wartet, bis die Räder (physikalisch getrackt) tatsächlich stillstehen.
       await new Promise<void>((resolve) => trackWheelRotation(resolve));
+      busWrap.classList.remove('driving');
 
-      // Einfedern beim Stopp + kurzer Staubwirbel am Hinterrad.
+      // Einfedern beim Stopp + kurzer Staubwirbel am Hinterrad + der
+      // Bodenschatten federt kurz mit.
       suspension.classList.add('settle');
+      busShadow?.classList.add('shadow-settle');
       dust.classList.add('puff');
       await wait(350);
       suspension.classList.remove('settle');
+      busShadow?.classList.remove('shadow-settle');
 
       // Kurzer Beat, bevor die Tür aufgeht.
       await wait(250);
@@ -775,8 +966,9 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       loader.style.setProperty('--door-y', `${doorY}%`);
 
       // Push-in Richtung Tür fürs Momentum (bleibt scharf, kein Raster-Zoom
-      // mehr) …
-      busWrap.classList.add('zoom');
+      // mehr) -- skaliert die ganze Szene (.loaderScene), nicht nur den Bus,
+      // damit es sich wie eine Vorwärtsbewegung des Betrachters anfühlt …
+      loaderScene.classList.add('zoom');
       // … läuft erst eine Weile FÜR SICH, bevor das Dunkel-Portal startet --
       // sonst sieht man den Zoom kaum und das "Reingehen" kommt nicht
       // rüber. Erst wenn man das Reinfahren auf die Tür schon spürt, holt
