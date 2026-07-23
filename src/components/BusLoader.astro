@@ -200,8 +200,29 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
 
 <style>
   .bus-loader {
-    position: fixed;
-    inset: 0;
+    /* Bewusst position:absolute statt fixed: iOS Safari (bestätigt u.a. für
+       iOS 26) rendert fixed-Elemente grundsätzlich NICHT hinter den
+       transluzenten oberen/unteren Leisten -- völlig unabhängig von
+       viewport-fit=cover, das nur env(safe-area-inset-*) freischaltet, aber
+       dieses Fixed-Verhalten nicht überschreiben kann. Normaler (nicht
+       fixed) Dokument-Inhalt darf dagegen hinter die Leisten laufen -- genau
+       das nutzt der Rest der Seite bereits aus. Der Loader wird daher oben
+       im Dokument verankert (top/left/right statt inset) mit expliziter
+       Viewport-Höhe (dvh-Fallback-Kette). Kein Scroll-Risiko: html.intro-
+       active sperrt overflow bereits vollständig (siehe global.css) und die
+       Seite steht beim Laden ohnehin auf Scroll-Position 0. */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* 100lvh ("large viewport height") statt dvh: dvh würde mit der
+       Toolbar-Höhe mitschrumpfen/wachsen -- wir wollen bewusst IMMER die
+       größtmögliche Ausdehnung (Bildschirm komplett inkl. Bereich hinter den
+       Leisten), nicht die aktuell sichtbare Fläche. Etwas zu hoch ist
+       unkritisch (Scroll ist während des Intros ohnehin gesperrt), zu
+       niedrig würde die Speisekarte am unteren Rand durchschimmern lassen. */
+    height: 100vh;
+    height: 100lvh;
     z-index: 9999;
     overflow: hidden;
     background: var(--ocean-deep);
