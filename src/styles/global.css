@@ -75,6 +75,14 @@ html {
   overflow-x: hidden;
   /* Scrollbar verstecken – Firefox */
   scrollbar-width: none;
+  /* Explizite Hintergrundfarbe auf <html> selbst (nicht nur <body>): Safaris
+     Liquid-Glass-Einfärbung der transluzenten Leisten (iOS 26) greift direkt
+     die background-color von <html>/<body> ab -- nicht das, was in
+     verschachtelten Overlays wie dem BusLoader gerendert wird. Ohne
+     explizite Farbe fällt Safari auf einen harten weißen/schwarzen
+     "Fallback"-Balken zurück, egal wie gut der eigentliche Seiteninhalt
+     randfüllend gestaltet ist. */
+  background: var(--sand-light);
 }
 
 /* Scrollbar verstecken – Chrome / Safari / Edge */
@@ -109,6 +117,17 @@ html.intro-active body {
   height: 100lvh;
   touch-action: none;
   overscroll-behavior: none;
+}
+/* Root-Hintergrund während des Intros auf das dunkle Ozeanblau umstellen --
+   der BusLoader ist über den größten Teil seiner Laufzeit (Strandband unten,
+   dann komplett während Portal/Willkommens-Screen) überwiegend dunkel.
+   Safari sampelt für die Leisten-Einfärbung nur EINEN Root-Farbwert (siehe
+   Kommentar oben bei html) -- kann also nicht gleichzeitig oben hell/unten
+   dunkel exakt matchen, aber die dunkle Wahl passt für den weit größeren
+   Teil des Intros und behebt den auffälligsten Bruch (dunkler Loader-Boden
+   gegen harten hellen Leisten-Fallback). */
+html.intro-active {
+  background: var(--ocean-deep);
 }
 
 /* Übergang zur eigentlichen Seite: #page-reveal (Wrapper um main) steht
