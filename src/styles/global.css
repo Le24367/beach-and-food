@@ -98,26 +98,18 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Scroll-Lock während der Bus-Ladeanimation (BusLoader.astro setzt/entfernt
-   die Klasse auf <html>). Seite steht beim Laden ohnehin bei Scroll-Position
-   0 — overflow:hidden allein reicht, kein position:fixed-Trick nötig.
-   height bewusst über vh/lvh statt "100%": Eine Prozent-Höhe auf dem
-   Root-Element löst sich auf iOS Safari (bestätigt für iOS 26) auf die
-   KLEINE, sichere Viewport-Höhe auf (Bereich zwischen den transluzenten
-   Leisten) statt auf den vollen Bildschirm -- in Kombination mit
-   overflow:hidden entsteht dadurch eine Clip-Box, die den eigentlich
-   randfüllenden BusLoader (position:absolute, 100lvh, siehe BusLoader.astro)
-   trotzdem an der Leistenkante abschneidet. 100lvh bindet die Höhe direkt an
-   den Viewport statt an eine vererbte Prozentkette und bleibt damit auch bei
-   aktivem overflow:hidden randfüllend. */
-html.intro-active,
-html.intro-active body {
-  overflow: hidden !important;
-  height: 100vh;
-  height: 100lvh;
-  touch-action: none;
-  overscroll-behavior: none;
-}
+/* Scroll-Lock während der Bus-Ladeanimation: BEWUSST kein overflow:hidden
+   mehr auf <html>/<body> (siehe Git-Historie für den früheren Versuch).
+   Grund: iOS Safari (Liquid-Glass-Redesign, iOS 26) lässt Inhalt nur dann
+   hinter den transluzenten Leisten durchlaufen bzw. animieren, wenn die
+   Seite eine ganz normale, tatsächlich scrollbare Seite bleibt -- der Rest
+   dieser Website (kein overflow:hidden irgendwo) funktioniert deshalb schon
+   korrekt. overflow:hidden auf dem Root-Element schaltet die Seite dagegen
+   in einen "geclippten", nicht-scrollbaren Zustand, in dem Safari auf den
+   harten Fallback-Balken zurückfällt -- unabhängig davon, wie der Loader
+   selbst positioniert/dimensioniert ist. Das eigentliche Scroll-Lock
+   übernimmt jetzt BusLoader.astro per JS (touchmove/wheel preventDefault),
+   ohne die CSS-Scrollbarkeit der Seite selbst anzutasten. */
 /* Root-Hintergrund während des Intros auf das dunkle Ozeanblau umstellen --
    der BusLoader ist über den größten Teil seiner Laufzeit (Strandband unten,
    dann komplett während Portal/Willkommens-Screen) überwiegend dunkel.

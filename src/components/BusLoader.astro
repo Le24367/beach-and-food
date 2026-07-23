@@ -877,6 +877,25 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
   } else {
     html.classList.remove('intro-pending');
 
+    // Scroll-Lock per JS (touchmove/wheel preventDefault) statt CSS
+    // overflow:hidden auf <html>/<body> -- siehe global.css-Kommentar bei
+    // html.intro-active: overflow:hidden auf dem Root schaltet die Seite für
+    // iOS Safaris Liquid-Glass-Erkennung in einen "nicht scrollbaren"
+    // Zustand, wodurch die transluzenten Leisten nicht mehr hinter den
+    // Inhalt sehen und stattdessen einen harten Fallback-Balken zeigen. Die
+    // Seite bleibt so technisch scrollbar (steht aber ohnehin bei Position
+    // 0), nur die tatsächliche Scroll-Geste wird abgefangen.
+    function preventScroll(e: Event) { e.preventDefault(); }
+    function lockScroll() {
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+      window.addEventListener('wheel', preventScroll, { passive: false });
+    }
+    function unlockScroll() {
+      window.removeEventListener('touchmove', preventScroll);
+      window.removeEventListener('wheel', preventScroll);
+    }
+    lockScroll();
+
     const loader = document.getElementById('bus-loader');
     const loaderScene = document.getElementById('loaderScene');
     const busWrap = document.getElementById('loaderBusWrap');
@@ -907,6 +926,7 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
 
     function finishIntro() {
       try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
+      unlockScroll();
       html.classList.remove('intro-active');
       loader?.classList.add('slide-out');
       html.classList.add('intro-reveal');
@@ -1023,6 +1043,7 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       // reinfährt (html.intro-reveal, siehe global.css) -> Push-Übergang
       // direkt in die Speisekarte statt Fade.
       await wait(1500);
+      unlockScroll();
       html.classList.remove('intro-active');
       try { sessionStorage.setItem('baf_intro_played', '1'); } catch (e) {}
       loader?.classList.add('slide-out');
