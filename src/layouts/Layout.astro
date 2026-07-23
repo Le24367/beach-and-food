@@ -70,7 +70,13 @@ const jsonLd = {
     verhindert werden). maximum-scale bleibt bei 5, ein üblicher, unauffälliger
     Wert, der trotzdem echtes Zoomen für sehbeeinträchtigte Nutzer erlaubt.
   -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <!-- viewport-fit=cover: lässt fixed-position-Overlays (z.B. der BusLoader)
+       auf iOS bis unter die transparenten Safari-Leisten (oben/unten) reichen,
+       statt an deren Kante abrupt abzuschneiden. Aktiviert außerdem
+       env(safe-area-inset-*), das der BusLoader nutzt, um Bus/Text aus dem
+       Bereich der Leisten herauszuhalten, während der Hintergrund weiter bis
+       zum Bildschirmrand durchläuft. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />

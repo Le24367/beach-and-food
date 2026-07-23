@@ -383,7 +383,13 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
   .loader-beach {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 21vh;
+    /* + env(safe-area-inset-bottom): das Band selbst bleedet weiterhin bis
+       zum echten Bildschirmrand durch (kein harter Schnitt an der
+       transparenten unteren Safari-Leiste, siehe viewport-fit=cover in
+       Layout.astro) -- nur die sichtbare Oberkante wandert um den Inset nach
+       oben, siehe auch .bus-wrap unten, das im selben Maß mitwandert, damit
+       Bus und Bandkante weiterhin zusammenpassen. */
+    height: calc(21vh + env(safe-area-inset-bottom, 0px));
     min-height: 158px;
     /* "Boden"-Band, auf dem der Bus steht -- greift das Signatur-Motiv der
        Seite auf: tiefes Ozeanblau (--ocean-deep) mit weichem Radial-Glow wie
@@ -458,7 +464,10 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
        verschoben, damit der Bus bei größerer Breite weiterhin komplett
        offscreen startet, statt schon einen Rand sichtbar zu zeigen. */
     left: -82%;
-    bottom: 15vh;
+    /* + env(safe-area-inset-bottom): hält den Bus im selben Maß über der
+       Bandkante wie .loader-beach oben mitwächst -- auf Desktop ist der
+       Inset 0px, also folgenlos. */
+    bottom: calc(15vh + env(safe-area-inset-bottom, 0px));
     width: 76%;
     max-width: 1100px;
     z-index: 3;
@@ -734,7 +743,10 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
       width: 208vh;
       max-width: none;
       left: -230vh;
-      bottom: 12vh;
+      /* + env(safe-area-inset-bottom): hebt den Bus aus dem Bereich der
+         unteren Safari-Leiste/Home-Indicator heraus, im selben Maß, wie
+         .loader-beach oben mitwächst. */
+      bottom: calc(12vh + env(safe-area-inset-bottom, 0px));
     }
     .bus-wrap.arrived { left: calc(50vw - 77.48vh); }
   }
@@ -769,7 +781,11 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     justify-content: center;
     gap: 1.5rem;
     text-align: center;
-    padding: 0 1.5rem;
+    /* Safe-Area-Puffer oben/unten: hält "Willkommen bei" + Logo auf sehr
+       kurzen/breiten Viewports (z.B. iPhone quer) von den transparenten
+       Safari-Leisten fern -- der Screen ist ohnehin flex-zentriert, das
+       Padding wirkt nur als Mindestabstand zu den Rändern. */
+    padding: calc(env(safe-area-inset-top, 0px) + 1rem) 1.5rem calc(env(safe-area-inset-bottom, 0px) + 1rem);
     opacity: 0;
     /* Startet leicht verschoben/verkleinert -- ein reines Opacity-Fade
        wirkte zu abrupt, die kleine Bewegung macht das Einblenden weicher. */
