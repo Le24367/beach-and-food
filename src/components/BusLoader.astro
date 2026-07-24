@@ -878,13 +878,8 @@ import wheelBackWebp from '../assets/bus/wheel-back.webp'
     html.classList.remove('intro-pending');
 
     // Scroll-Lock per JS (touchmove/wheel preventDefault) statt CSS
-    // overflow:hidden auf <html>/<body> -- siehe global.css-Kommentar bei
-    // html.intro-active: overflow:hidden auf dem Root schaltet die Seite für
-    // iOS Safaris Liquid-Glass-Erkennung in einen "nicht scrollbaren"
-    // Zustand, wodurch die transluzenten Leisten nicht mehr hinter den
-    // Inhalt sehen und stattdessen einen harten Fallback-Balken zeigen. Die
-    // Seite bleibt so technisch scrollbar (steht aber ohnehin bei Position
-    // 0), nur die tatsächliche Scroll-Geste wird abgefangen.
+    // overflow:hidden auf <html>/<body> -- die Seite bleibt so technisch
+    // scrollbar, nur die tatsächliche Nutzer-Scroll-Geste wird abgefangen.
     function preventScroll(e: Event) { e.preventDefault(); }
     function lockScroll() {
       window.addEventListener('touchmove', preventScroll, { passive: false });
