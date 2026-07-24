@@ -8,10 +8,10 @@
   Hinweis: @fontsource unterstützt font-display über den Dateipfad nicht direkt.
   Wir überschreiben es daher per @font-face unterhalb der Imports.
 */
-@import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
-@import '@fontsource/dm-sans/600.css';
-@import '@fontsource/playfair-display/700.css';
+@import '@fontsource/source-sans-pro/400.css';
+@import '@fontsource/source-sans-pro/600.css';
+@import '@fontsource/source-sans-pro/700.css';
+@import '@fontsource/libre-baskerville/700.css';
 
 /*
   font-display: swap für alle importierten Webfonts erzwingen.
@@ -20,32 +20,43 @@
   Die src-Pfade entsprechen exakt den Astro-Build-Ausgaben von @fontsource.
 */
 @font-face {
-  font-family: 'DM Sans';
+  font-family: 'Source Sans Pro';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2') format('woff2');
+  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-400-normal.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('@fontsource/dm-sans/files/dm-sans-latin-500-normal.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'DM Sans';
+  font-family: 'Source Sans Pro';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('@fontsource/dm-sans/files/dm-sans-latin-600-normal.woff2') format('woff2');
+  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-600-normal.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Playfair Display';
+  font-family: 'Source Sans Pro';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2') format('woff2');
+  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Libre Baskerville';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@fontsource/libre-baskerville/files/libre-baskerville-latin-700-normal.woff2') format('woff2');
+}
+/*
+  Metrisch grober Fallback für Libre Baskerville: verhindert einen zu
+  auffälligen Sprung (CLS) zwischen Systemfont und Webfont während des
+  Ladens. Nutzt eine lokal vorhandene Serife als Basis -- die exakten
+  ascent/descent/size-adjust-Werte der Produktivseite kennen wir nicht,
+  daher bewusst ohne fabrizierte Override-Zahlen.
+*/
+@font-face {
+  font-family: 'Libre Baskerville Fallback';
+  src: local('Times New Roman'), local('Times'), local('Georgia');
 }
 
 :root {
@@ -91,7 +102,7 @@ html::-webkit-scrollbar {
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   background: var(--sand-light);
   color: var(--text);
   overflow-x: hidden;
@@ -157,7 +168,7 @@ html.intro-loading.intro-reveal #page-reveal {
 }
 
 h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif;
 }
 
 img {

@@ -7,7 +7,7 @@
  *      → Browser lädt CSS parallel zum HTML-Parse statt danach
  *      → Beseitigt "Render-blocking"-Warnung in Lighthouse
  *
- *   2. Font-Preload-Tags für DM Sans 400, DM Sans 600, Playfair Display 700
+ *   2. Font-Preload-Tags für Source Sans Pro 400, Source Sans Pro 600, Libre Baskerville 700
  *      → Fonts werden parallel zum CSS geladen statt sequenziell danach
  *
  * Beide Schritte lesen die Datei-Hashes direkt aus dist/_astro/,
@@ -58,9 +58,9 @@ cssFiles.forEach(({ name, size }) =>
 
 // ── 2. Font-Dateien finden ────────────────────────────────────────────────────
 const PRIORITY_FONTS = [
-  'dm-sans-latin-400-normal',
-  'dm-sans-latin-600-normal',
-  'playfair-display-latin-700-normal',
+  'source-sans-pro-latin-400-normal',
+  'source-sans-pro-latin-600-normal',
+  'libre-baskerville-latin-700-normal',
 ]
 
 const fontFiles = allFiles.filter(f => f.endsWith('.woff2'))
