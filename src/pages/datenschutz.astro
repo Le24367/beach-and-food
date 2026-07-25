@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro'
 import Navbar from '../components/Navbar.astro'
+import LegalValue from '../components/LegalValue.astro'
 import { getLegal, getSiteSettings } from '../lib/sanity'
 import { CONTACT } from '../lib/config'
 
@@ -25,7 +26,7 @@ const email = settings?.contact?.email ?? CONTACT.email
         <h2>1. Verantwortlicher</h2>
         <p>
           Verantwortlich für die Datenverarbeitung auf dieser Website ist:<br />
-          {legal.companyName}<br />
+          <LegalValue value={legal.companyName} missing={legal.missingFields.includes('companyName')} /><br />
           {legal.address}<br />
           E-Mail: <a href={`mailto:${email}`}>{email}</a>
         </p>

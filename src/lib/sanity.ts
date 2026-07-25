@@ -161,6 +161,11 @@ export interface ResolvedLinks {
   maps: string
 }
 
+export const LEGAL_REQUIRED_FIELDS = [
+  'companyName', 'managingDirector', 'registerCourt', 'registerNumber', 'vatId',
+] as const
+export type LegalRequiredField = typeof LEGAL_REQUIRED_FIELDS[number]
+
 export interface ResolvedLegal {
   // Bestehende Felder — unverändert, damit Layout.astro/Kontakt.astro
   // ohne Anpassung weiterlaufen.
@@ -174,66 +179,102 @@ export interface ResolvedLegal {
   registerCourt: string
   registerNumber: string
   vatId: string
+  // FIX: Vorher fiel eine fehlende Sanity-Angabe stillschweigend auf einen
+  // Platzhaltertext ("... ⚠️ BITTE PRÜFEN") zurück, der im Impressum wie ein
+  // echter (nur seltsam formatierter) Wert aussah -- leicht zu übersehen.
+  // Jetzt weiß der Aufrufer explizit, welche Felder NICHT aus Sanity kommen,
+  // und kann sie in der UI unmissverständlich als "fehlt" markieren statt
+  // den Platzhaltertext als Wert auszugeben.
+  missingFields: LegalRequiredField[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Queries
 // ─────────────────────────────────────────────────────────────────────────────
 
+// FIX: Genau wie bei getSiteSettings() -- Angebot.astro (Speisekarten-Karten
+// + Modal) und der neue /menu.json-Endpunkt (agentisches Browsing) fragen
+// dieselben drei Queries ab. Modul-Level-Cache statt doppelter Requests pro
+// Build.
+let menuCategoriesPromise: Promise<MenuCategory[]> | null = null
+let menuSubCategoriesPromise: Promise<MenuSubCategory[]> | null = null
+let menuItemsPromise: Promise<MenuItem[]> | null = null
+
 export async function getMenuCategories(): Promise<MenuCategory[]> {
-  return publicClient.fetch(
-    `*[_type == "menuCategory" && active == true] | order(order asc) {
-      _id, title, description, image, emoji, badge, order, active
-    }`
-  )
+  if (!menuCategoriesPromise) {
+    menuCategoriesPromise = publicClient.fetch(
+      `*[_type == "menuCategory" && active == true] | order(order asc) {
+        _id, title, description, image, emoji, badge, order, active
+      }`
+    )
+  }
+  return menuCategoriesPromise
 }
 
 export async function getMenuSubCategories(): Promise<MenuSubCategory[]> {
-  return publicClient.fetch(
-    `*[_type == "menuSubCategory" && active == true] | order(order asc) {
-      _id,
-      title,
-      description,
-      image,
-      emoji,
-      "categoryId": category._ref,
-      order,
-      active
-    }`
-  )
+  if (!menuSubCategoriesPromise) {
+    menuSubCategoriesPromise = publicClient.fetch(
+      `*[_type == "menuSubCategory" && active == true] | order(order asc) {
+        _id,
+        title,
+        description,
+        image,
+        emoji,
+        "categoryId": category._ref,
+        order,
+        active
+      }`
+    )
+  }
+  return menuSubCategoriesPromise
 }
 
 export async function getMenuItems(): Promise<MenuItem[]> {
-  return publicClient.fetch(
-    `*[_type == "menuItem" && active == true] | order(order asc) {
-      _id,
-      title,
-      "categoryId": category._ref,
-      "subCategoryId": subCategory._ref,
-      price,
-      description,
-      image,
-      emoji,
-      badges,
-      order,
-      active
-    }`
-  )
+  if (!menuItemsPromise) {
+    menuItemsPromise = publicClient.fetch(
+      `*[_type == "menuItem" && active == true] | order(order asc) {
+        _id,
+        title,
+        "categoryId": category._ref,
+        "subCategoryId": subCategory._ref,
+        price,
+        description,
+        image,
+        emoji,
+        badges,
+        order,
+        active
+      }`
+    )
+  }
+  return menuItemsPromise
 }
 
+// FIX: Layout, Navbar (via getLinks), Bestellen, UeberUns und Kontakt (via
+// getLegal + direkt) riefen bisher alle unabhängig voneinander dieselbe
+// siteSettings-Query auf -- bis zu 7 identische Sanity-Requests fuer eine
+// einzige Seite. Das Ergebnis ist innerhalb eines Build-Laufs unveraenderlich
+// (SSG, kein Request-Kontext), daher genuegt ein simpler Modul-Level-Cache:
+// der erste Aufruf fetcht, alle weiteren -- auch die indirekten ueber
+// getLinks()/getLegal() -- bekommen dieselbe Promise zurueck.
+let siteSettingsPromise: Promise<SiteSettings | null> | null = null
+
 export async function getSiteSettings(): Promise<SiteSettings | null> {
-  return publicClient.fetch(
-    `*[_type == "siteSettings" && _id == "siteSettings"][0] {
-      address,
-      contact,
-      openingHours,
-      seasonNote,
-      youtubeId,
-      paymentMethods,
-      links,
-      legal
-    }`
-  )
+  if (!siteSettingsPromise) {
+    siteSettingsPromise = publicClient.fetch(
+      `*[_type == "siteSettings" && _id == "siteSettings"][0] {
+        address,
+        contact,
+        openingHours,
+        seasonNote,
+        youtubeId,
+        paymentMethods,
+        links,
+        legal
+      }`
+    )
+  }
+  return siteSettingsPromise
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -252,7 +293,7 @@ export async function getLinks(): Promise<ResolvedLinks> {
 
 export async function getLegal(): Promise<ResolvedLegal> {
   const { SITE, CONTACT, LEGAL } = await import('./config')
-  const fallback: ResolvedLegal = {
+  const fallback = {
     owner:            CONTACT.owner,
     address:          CONTACT.address,
     siteName:         SITE.name,
@@ -265,8 +306,10 @@ export async function getLegal(): Promise<ResolvedLegal> {
   }
   try {
     const settings = await getSiteSettings()
-    return { ...fallback, ...settings?.legal }
+    const legal = settings?.legal
+    const missingFields = LEGAL_REQUIRED_FIELDS.filter((key) => !legal?.[key])
+    return { ...fallback, ...legal, missingFields }
   } catch {
-    return fallback
+    return { ...fallback, missingFields: [...LEGAL_REQUIRED_FIELDS] }
   }
 }

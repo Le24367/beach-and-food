@@ -28,8 +28,87 @@ const addressLocality  = addr?.zip?.replace(/^\d+\s*/, '') || 'Neukirchen'
 const postalCodeMatch  = addr?.zip?.match(/^\d+/)
 const postalCode       = postalCodeMatch?.[0] ?? '23779'
 
-const canonicalUrl = SITE.url
+// FIX: canonicalUrl zeigte bisher immer auf SITE.url (die Startseite) --
+// auf /impressum, /datenschutz und der 404-Seite stand dadurch derselbe
+// canonical-Link wie auf der Startseite im <head>, was Google als
+// "diese Seiten sind Duplikate der Startseite" liest. Jetzt aus dem
+// tatsächlichen Pfad abgeleitet; SITE.url bleibt separat für JSON-LD
+// (dort ist die Domain-Wurzel, nicht die Unterseite, korrekt).
+const canonicalUrl = new URL(Astro.url.pathname, SITE.url).toString()
 const ogImage = `${SITE.url}/og-image.jpg`
+
+// Öffnungszeiten für JSON-LD: dieselbe Quelle wie Kontakt.astro (Sanity mit
+// Vorrang, sonst derselbe Fallback), damit sich beide nie widersprechen.
+const openingHours = settings?.openingHours ?? [
+  { _key: 'mo-do', days: 'Mo – Do', hours: 'Geschlossen', closed: true },
+  { _key: 'fr-so', days: 'Fr – So', hours: '11:30 – 20:00', closed: false },
+]
+
+// "Mo – Do" / "Fr – So" -> ['Monday', ..., 'Thursday'] etc. Die Reihenfolge
+// hier ist zugleich die Woche selbst -- ein Bereich wird als Ausschnitt
+// daraus gelesen, kein Wrap-around nötig, da "So" (Sonntag) immer das Ende
+// der Liste ist.
+//
+// Das "days"-Feld ist Freitext im Sanity-Studio -- die echten Werte weichen
+// vom hier hinterlegten Fallback ab (z.B. "Montag-Sonntag" statt "Mo – So").
+// DAY_ALIASES deckt deshalb sowohl Abkürzungen als auch ausgeschriebene
+// deutsche Tagesnamen ab, case-insensitiv.
+const DAY_ORDER = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const
+const DAY_NAMES: Record<string, string> = {
+  Mo: 'Monday', Di: 'Tuesday', Mi: 'Wednesday', Do: 'Thursday',
+  Fr: 'Friday', Sa: 'Saturday', So: 'Sunday',
+}
+const DAY_ALIASES: Record<string, typeof DAY_ORDER[number]> = {
+  mo: 'Mo', montag: 'Mo',
+  di: 'Di', dienstag: 'Di',
+  mi: 'Mi', mittwoch: 'Mi',
+  do: 'Do', donnerstag: 'Do',
+  fr: 'Fr', freitag: 'Fr',
+  sa: 'Sa', samstag: 'Sa', sonnabend: 'Sa',
+  so: 'So', sonntag: 'So',
+}
+
+// Erlaubt außerdem kommagetrennte Listen aus Einzeltagen/Bereichen
+// ("Fr, Sa, So"), falls das im Studio irgendwann so eingetragen wird.
+function parseDayRange(days: string): string[] {
+  const result: string[] = []
+  for (const segment of days.split(',')) {
+    const tokens = segment.split(/[–—-]/).map((s) => DAY_ALIASES[s.trim().toLowerCase()]).filter(Boolean)
+    if (tokens.length === 1) {
+      result.push(DAY_NAMES[tokens[0]])
+    } else if (tokens.length === 2) {
+      const startIdx = DAY_ORDER.indexOf(tokens[0])
+      const endIdx = DAY_ORDER.indexOf(tokens[1])
+      if (startIdx !== -1 && endIdx >= startIdx) {
+        result.push(...DAY_ORDER.slice(startIdx, endIdx + 1).map((d) => DAY_NAMES[d]))
+      }
+    }
+  }
+  return [...new Set(result)]
+}
+
+function parseHourRange(hours: string): { opens: string; closes: string } | null {
+  const match = hours.match(/(\d{1,2}[:.]\d{2})\s*[–-]\s*(\d{1,2}[:.]\d{2})/)
+  if (!match) return null
+  return { opens: match[1].replace('.', ':'), closes: match[2].replace('.', ':') }
+}
+
+// Google zeigt ein "Jetzt geöffnet"/"Geschlossen"-Badge im Suchergebnis nur,
+// wenn openingHoursSpecification vorhanden ist -- geschlossene Tage werden
+// hier bewusst weggelassen (die Spezifikation beschreibt NUR Öffnungszeiten,
+// nicht ihr Gegenteil).
+const openingHoursSpecification = openingHours.flatMap((entry) => {
+  if (entry.closed) return []
+  const dayOfWeek = parseDayRange(entry.days)
+  const time = parseHourRange(entry.hours)
+  if (dayOfWeek.length === 0 || !time) return []
+  return [{
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": dayOfWeek,
+    "opens": time.opens,
+    "closes": time.closes,
+  }]
+})
 
 // JSON-LD: LocalBusiness + FoodEstablishment
 const jsonLd = {
@@ -37,8 +116,8 @@ const jsonLd = {
   "@type": ["FoodEstablishment", "LocalBusiness"],
   "name": "Beach and Food",
   "description": description,
-  "url": canonicalUrl,
-  "logo": `${canonicalUrl}/logo/logo.jpeg`,
+  "url": SITE.url,
+  "logo": `${SITE.url}/logo/logo.jpeg`,
   "image": ogImage,
   "telephone": telephone,
   "email": email,
@@ -56,6 +135,7 @@ const jsonLd = {
     "latitude": 54.337045,
     "longitude": 11.071475
   },
+  ...(openingHoursSpecification.length > 0 ? { openingHoursSpecification } : {}),
   "sameAs": [
     "https://www.instagram.com/beachandfood"
   ]
@@ -109,6 +189,9 @@ const jsonLd = {
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Beach and Food – Foodtruck am Sütel-Strand" />
   <meta property="og:locale" content="de_DE" />
   <meta property="og:site_name" content="Beach and Food" />
 
@@ -117,6 +200,7 @@ const jsonLd = {
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:image:alt" content="Beach and Food – Foodtruck am Sütel-Strand" />
 
   <!-- JSON-LD Strukturierte Daten -->
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

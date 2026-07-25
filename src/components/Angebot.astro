@@ -2,6 +2,7 @@
 import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from '../lib/sanity'
 import type { MenuCategory, MenuItem, MenuSubCategory } from '../lib/sanity'
 import imageMapRaw from '../generated/image-map.json'
+import { buildMenuJsonLd } from '../lib/menu'
 
 const imageMap: Record<string, { thumb: string; card: string; full: string }> = imageMapRaw as any
 
@@ -118,9 +119,21 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     badges: p.badges ?? [],
   }
 }
+
+// schema.org/Menu-Strukturdaten: dieselben Produktdaten, die weiter unten
+// nur als rohes JSON im Modal-Script stecken (erst nach Klick im DOM
+// sichtbar), landen hier zusätzlich als Menu/MenuSection/MenuItem im
+// statischen HTML -- maschinenlesbar für Google Rich Results und für
+// Agenten, die die Seite lesen statt Klicks auszuführen. Aufbau geteilt mit
+// /menu.json (siehe src/lib/menu.ts), damit es nur eine Quelle der Wahrheit
+// fuer diese Struktur gibt.
+const menuJsonLd = await buildMenuJsonLd()
 ---
 
 <section class="angebot" id="angebot">
+  {menuJsonLd.hasMenuSection.length > 0 && (
+    <script type="application/ld+json" set:html={JSON.stringify(menuJsonLd)} />
+  )}
   <div class="container">
     <div class="section-head reveal">
       <span class="section-label">Speisekarte</span>

@@ -271,31 +271,40 @@ const seasonNote = settings?.seasonNote
 }
 </style>
 
-<script is:inline>
-(function () {
-  var LAT = 54.337045
-  var LNG = 11.071475
-  var initialized = false
+<script>
+  // FIX: Leaflet kam bisher vom jsDelivr-CDN (externe Domain, eigener
+  // DNS/TLS-Handshake). Jetzt als npm-Abhaengigkeit lokal gebuendelt und per
+  // dynamic import() nachgeladen -- das Lazy-Loading-Verhalten (erst beim
+  // Scrollen in den Sichtbereich) bleibt exakt gleich, nur ohne fremde Domain.
+  //
+  // WICHTIG: "?url" statt eines normalen CSS-Imports -- ein normaler
+  // `import 'leaflet/dist/leaflet.css'` (auch dynamisch) laesst Vite
+  // automatisch ein <link rel="stylesheet"> in JEDE Seite injizieren, die
+  // dieses Script einbindet, komplett unabhaengig davon, ob initMap() je
+  // aufgerufen wird -- das wuerde das Lazy-Loading auf CSS-Ebene aushebeln.
+  // Mit "?url" bekommen wir nur die aufgeloeste Datei-URL als String und
+  // haengen das Stylesheet selbst erst hier in initMap() ein.
+  import leafletCssUrl from 'leaflet/dist/leaflet.css?url'
 
-  function loadLeaflet(callback) {
-    var link = document.createElement('link')
-    link.rel  = 'stylesheet'
-    link.href = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css'
-    link.crossOrigin = ''
-    document.head.appendChild(link)
+  const LAT = 54.337045
+  const LNG = 11.071475
+  let initialized = false
 
-    var script = document.createElement('script')
-    script.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js'
-    script.crossOrigin = ''
-    script.onload = callback
-    document.head.appendChild(script)
-  }
-
-  function initMap() {
-    if (initialized || typeof L === 'undefined') return
+  async function initMap() {
+    if (initialized) return
     initialized = true
 
-    var map = L.map('leaflet-map', {
+    if (!document.querySelector(`link[href="${leafletCssUrl}"]`)) {
+      const cssLink = document.createElement('link')
+      cssLink.rel = 'stylesheet'
+      cssLink.href = leafletCssUrl
+      document.head.appendChild(cssLink)
+    }
+
+    const leafletModule = await import('leaflet')
+    const L: any = (leafletModule as any).default ?? leafletModule
+
+    const map = L.map('leaflet-map', {
       center: [LAT, LNG],
       zoom: 15,
       scrollWheelZoom: false,
@@ -307,31 +316,30 @@ const seasonNote = settings?.seasonNote
       maxZoom: 19,
     }).addTo(map)
 
-    var icon = L.divIcon({
+    const icon = L.divIcon({
       html: '<div class="map-pin-box" style="background:#1A3A4A;color:#F4A820;font-size:11px;font-weight:700;font-family:sans-serif;padding:6px 10px;border-radius:8px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.3);position:relative;">📍 Beach and Food<div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid #1A3A4A;"></div></div>',
       className: 'leaflet-pin-clean',
       iconSize: [130, 40],
       iconAnchor: [65, 40],
     })
 
-    L.marker([LAT, LNG], { icon: icon }).addTo(map)
+    L.marker([LAT, LNG], { icon }).addTo(map)
   }
 
-  var mapEl = document.getElementById('leaflet-map')
-  if (!mapEl) return
-
-  if ('IntersectionObserver' in window) {
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          observer.disconnect()
-          loadLeaflet(initMap)
-        }
-      })
-    }, { rootMargin: '200px' })
-    observer.observe(mapEl)
-  } else {
-    loadLeaflet(initMap)
+  const mapEl = document.getElementById('leaflet-map')
+  if (mapEl) {
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            observer.disconnect()
+            initMap()
+          }
+        })
+      }, { rootMargin: '200px' })
+      observer.observe(mapEl)
+    } else {
+      initMap()
+    }
   }
-})()
 </script>

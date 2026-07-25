@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro'
 import Navbar from '../components/Navbar.astro'
+import LegalValue from '../components/LegalValue.astro'
 import { getLegal, getSiteSettings } from '../lib/sanity'
 import { CONTACT } from '../lib/config'
 
@@ -9,6 +10,7 @@ const settings = await getSiteSettings().catch(() => null)
 
 const email     = settings?.contact?.email     ?? CONTACT.email
 const telephone = settings?.contact?.telephone ?? CONTACT.telephone
+const missing = (field: typeof legal.missingFields[number]) => legal.missingFields.includes(field)
 ---
 
 <Layout
@@ -25,14 +27,14 @@ const telephone = settings?.contact?.telephone ?? CONTACT.telephone
       <section>
         <h2>Anbieter</h2>
         <p>
-          {legal.companyName}<br />
+          <LegalValue value={legal.companyName} missing={missing('companyName')} /><br />
           {legal.address}
         </p>
       </section>
 
       <section>
         <h2>Vertreten durch</h2>
-        <p>{legal.managingDirector}</p>
+        <p><LegalValue value={legal.managingDirector} missing={missing('managingDirector')} /></p>
       </section>
 
       <section>
@@ -47,8 +49,8 @@ const telephone = settings?.contact?.telephone ?? CONTACT.telephone
         <h2>Registereintrag</h2>
         <p>
           Eintragung im Handelsregister.<br />
-          Registergericht: {legal.registerCourt}<br />
-          Registernummer: {legal.registerNumber}
+          Registergericht: <LegalValue value={legal.registerCourt} missing={missing('registerCourt')} /><br />
+          Registernummer: <LegalValue value={legal.registerNumber} missing={missing('registerNumber')} />
         </p>
       </section>
 
@@ -56,14 +58,14 @@ const telephone = settings?.contact?.telephone ?? CONTACT.telephone
         <h2>Umsatzsteuer-ID</h2>
         <p>
           Umsatzsteuer-Identifikationsnummer gemäß § 27a Umsatzsteuergesetz:<br />
-          {legal.vatId}
+          <LegalValue value={legal.vatId} missing={missing('vatId')} />
         </p>
       </section>
 
       <section>
         <h2>Verantwortlich für den Inhalt</h2>
         <p>
-          {legal.managingDirector}<br />
+          <LegalValue value={legal.managingDirector} missing={missing('managingDirector')} /><br />
           {legal.address}
         </p>
       </section>
