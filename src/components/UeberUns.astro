@@ -40,29 +40,6 @@ const slides: GallerySlide[] =
       <div class="uu-content reveal">
         <span class="section-label">Über uns</span>
         <h2>Vom kleinen Anhänger zum Foodtruck 2.0.</h2>
-        <div class="timeline">
-          <div class="tl-item">
-            <div class="tl-year">2014</div>
-            <div class="tl-text">
-              <strong>Die Anfänge.</strong> Mit einem kleinen Imbissanhänger begonnen —
-              und von Anfang an mit Qualität und Frische überzeugt.
-            </div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-year">2020</div>
-            <div class="tl-text">
-              <strong>Eine neue Dimension.</strong> Ein umgebauter Linienbus, speziell auf
-              uns zugeschnitten — mit Indoorbereich für unsere Gäste. Einzigartig.
-            </div>
-          </div>
-          <div class="tl-item">
-            <div class="tl-year">2024</div>
-            <div class="tl-text">
-              <strong>Digital angekommen.</strong> Online-Bestellung, Self-Order-Terminals
-              und Abholnummern auf Bildschirmen.
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="uu-image reveal" style="transition-delay:0.15s">
@@ -105,6 +82,76 @@ const slides: GallerySlide[] =
       </div>
     </div>
 
+    <!--
+      Schlangen-Timeline: volle Breite, geschlängelter SVG-Pfad mit einer
+      Kehre auf der rechten Seite. Zwei getrennte Markup-Varianten
+      (Desktop-Schlange vs. Mobile-Vertikale), aber EIN gemeinsamer
+      Scroll-Fortschritt treibt beide gleichzeitig an (initSnakeTimeline
+      im Script unten) — nur die CSS-Sichtbarkeit wechselt per Breakpoint.
+      pathLength="1" normiert die Pfadlänge, damit stroke-dashoffset direkt
+      mit dem 0..1-Scroll-Fortschritt arbeiten kann (kein getTotalLength()).
+    -->
+    <div class="uu-timeline-snake reveal" id="uu-timeline" style="transition-delay:0.2s">
+      <div class="snake-desktop" aria-hidden="true">
+        <svg class="snake-svg" viewBox="0 0 1200 700" preserveAspectRatio="none">
+          <path class="snake-track" d="M 60 110 C 246.7 103.3 450 78.3 620 90 C 790 101.7 990 145 1080 180 C 1170 215 1180 273.3 1160 300 C 1140 326.7 1060 328.3 960 340 C 860 351.7 670 360 560 370 C 450 380 368.3 390 300 400 C 231.7 410 181.7 420 150 430 C 118.3 440 120 448.3 110 460 C 100 471.7 83.3 483.3 90 500 C 96.7 516.7 106.7 541.7 150 560 C 193.3 578.3 275 596.7 350 610 C 425 623.3 558.3 625 600 640 C 641.7 655 600 680 600 700" />
+          <path class="snake-draw" pathLength="1" d="M 60 110 C 246.7 103.3 450 78.3 620 90 C 790 101.7 990 145 1080 180 C 1170 215 1180 273.3 1160 300 C 1140 326.7 1060 328.3 960 340 C 860 351.7 670 360 560 370 C 450 380 368.3 390 300 400 C 231.7 410 181.7 420 150 430 C 118.3 440 120 448.3 110 460 C 100 471.7 83.3 483.3 90 500 C 96.7 516.7 106.7 541.7 150 560 C 193.3 578.3 275 596.7 350 610 C 425 623.3 558.3 625 600 640 C 641.7 655 600 680 600 700" />
+        </svg>
+        <!--
+          Node-Position (data-snake-x/y, in SVG-Viewbox-Einheiten) UND der
+          Scroll-Schwellenwert, ab dem der Node erscheint, werden beide zur
+          Laufzeit aus der tatsächlichen Pfadgeometrie berechnet (siehe
+          initSnakeTimeline im Script). Kein Hand-Errechnen von %-Werten
+          mehr nötig, wenn sich der Pfad ändert.
+        -->
+        <div class="snake-node snake-node--left" data-snake-x="60" data-snake-y="110">
+          <span class="snake-dot"></span>
+          <div class="snake-card">
+            <div class="snake-year">2014</div>
+            <p class="snake-text"><strong>Die Anfänge.</strong> Mit einem kleinen Imbissanhänger begonnen — und von Anfang an mit Qualität und Frische überzeugt.</p>
+          </div>
+        </div>
+        <div class="snake-node snake-node--right" data-snake-x="1160" data-snake-y="300">
+          <span class="snake-dot"></span>
+          <div class="snake-card">
+            <div class="snake-year">2020</div>
+            <p class="snake-text"><strong>Eine neue Dimension.</strong> Ein umgebauter Linienbus, speziell auf uns zugeschnitten — mit Indoorbereich für unsere Gäste. Einzigartig.</p>
+          </div>
+        </div>
+        <div class="snake-node snake-node--left snake-node--current" data-snake-x="110" data-snake-y="460">
+          <span class="snake-dot"></span>
+          <div class="snake-card">
+            <div class="snake-year">2024</div>
+            <p class="snake-text"><strong>Digital angekommen.</strong> Online-Bestellung, Self-Order-Terminals und Abholnummern auf Bildschirmen.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="snake-mobile">
+        <svg class="snake-svg-mobile" viewBox="0 0 60 620" preserveAspectRatio="none" aria-hidden="true">
+          <path class="snake-track" d="M 30 20 C 55 140 5 200 30 320 C 55 440 5 500 30 620" />
+          <path class="snake-draw" pathLength="1" d="M 30 20 C 55 140 5 200 30 320 C 55 440 5 500 30 620" />
+        </svg>
+        <div class="snake-mobile-list">
+          <div class="snake-mobile-item" data-snake-threshold="0">
+            <span class="snake-dot"></span>
+            <div class="snake-year">2014</div>
+            <p class="snake-text"><strong>Die Anfänge.</strong> Mit einem kleinen Imbissanhänger begonnen — und von Anfang an mit Qualität und Frische überzeugt.</p>
+          </div>
+          <div class="snake-mobile-item" data-snake-threshold="0.5">
+            <span class="snake-dot"></span>
+            <div class="snake-year">2020</div>
+            <p class="snake-text"><strong>Eine neue Dimension.</strong> Ein umgebauter Linienbus, speziell auf uns zugeschnitten — mit Indoorbereich für unsere Gäste. Einzigartig.</p>
+          </div>
+          <div class="snake-mobile-item" data-snake-threshold="1">
+            <span class="snake-dot"></span>
+            <div class="snake-year">2024</div>
+            <p class="snake-text"><strong>Digital angekommen.</strong> Online-Bestellung, Self-Order-Terminals und Abholnummern auf Bildschirmen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="uu-video reveal" style="transition-delay:0.25s">
       <div class="video-label">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#FF0000"><path d="M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 002.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/><polygon fill="white" points="9.75,15.5 15.5,12 9.75,8.5"/></svg>
@@ -126,12 +173,12 @@ const slides: GallerySlide[] =
           height="720"
           class="yt-thumbnail"
         />
-        <button class="yt-play-btn" aria-label="Video abspielen" tabindex="-1">
+        <span class="yt-play-btn" aria-hidden="true">
           <svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true">
             <path d="M66.52 7.74c-.78-2.93-2.49-5.41-5.42-6.19C55.79.13 34 0 34 0S12.21.13 6.9 1.55c-2.93.78-4.63 3.26-5.42 6.19C.06 13.05 0 24 0 24s.06 10.95 1.48 16.26c.78 2.93 2.49 5.41 5.42 6.19C12.21 47.87 34 48 34 48s21.79-.13 27.1-1.55c2.93-.78 4.64-3.26 5.42-6.19C67.94 34.95 68 24 68 24s-.06-10.95-1.48-16.26z" fill="#f00"/>
             <path d="M45 24 27 14v20" fill="#fff"/>
           </svg>
-        </button>
+        </span>
         <div class="yt-consent-note">
           Mit Klick auf Play wird eine Verbindung zu YouTube hergestellt.
           <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Datenschutz</a>
@@ -141,7 +188,7 @@ const slides: GallerySlide[] =
 
     <div class="uu-badges reveal" style="transition-delay:0.35s">
       <div class="badge-card">
-        <div class="bc-number">167°C</div>
+        <div class="bc-number bc-heat" data-countup="167" data-suffix="°C">167°C</div>
         <div class="bc-label">Frittiertemperatur</div>
         <div class="bc-sub">Alles andere ist Wissenschaft.</div>
       </div>
@@ -208,26 +255,123 @@ const slides: GallerySlide[] =
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 900;
   line-height: 1.1;
-  margin-bottom: 3rem;
+  margin-bottom: 0;
 }
-.timeline { display: flex; flex-direction: column; gap: 2.5rem; }
-.tl-item { display: flex; gap: 1.5rem; align-items: flex-start; }
-.tl-year {
-  min-width: 52px;
+
+/* ── Schlangen-Timeline ──────────────────────────────────────────────
+   Volle Breite, unter .uu-grid. Zwei Markup-Varianten (Desktop-Schlange
+   mit SVG-Pfad + absolut positionierten Nodes / Mobile-vertikale Liste),
+   nur eine ist per Breakpoint sichtbar. Der Scroll-Fortschritt (0..1)
+   wird von initSnakeTimeline() im Script berechnet und treibt sowohl
+   stroke-dashoffset der Pfade als auch die .active-Klasse der Nodes. */
+.uu-timeline-snake {
+  margin: 5rem 0 0.5rem;
+  position: relative;
+}
+.snake-svg, .snake-svg-mobile { display: block; width: 100%; height: 100%; overflow: visible; }
+.snake-track { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 3; stroke-linecap: round; }
+.snake-draw {
+  fill: none;
+  stroke: var(--sun);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+/* -- Desktop -- */
+.snake-desktop { position: relative; height: 700px; }
+.snake-desktop .snake-svg { position: absolute; inset: 0; }
+.snake-node { position: absolute; width: 0; height: 0; }
+.snake-dot {
+  position: absolute; left: 0; top: 0;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--sun);
+  border: 3px solid var(--ocean-deep);
+  box-shadow: 0 0 0 4px rgba(244,168,32,0.18);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.snake-node.active .snake-dot { transform: translate(-50%, -50%) scale(1); }
+
+/* Letzter Punkt = "aktuellster" Eintrag: dezenter Puls-Ring markiert ihn
+   zusätzlich zur abwärts auslaufenden Linie als Endpunkt/Gegenwart. */
+.snake-node--current .snake-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--sun);
+  opacity: 0;
+}
+.snake-node--current.active .snake-dot::after {
+  animation: snakeCurrentPulse 2.2s ease-out 0.6s infinite;
+}
+@keyframes snakeCurrentPulse {
+  0%   { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .snake-node--current .snake-dot::after { animation: none; }
+}
+
+.snake-card {
+  position: absolute;
+  width: 280px;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.snake-node.active .snake-card { opacity: 1; }
+.snake-node--left .snake-card {
+  left: 0; top: 50%;
+  transform: translate(0, -50%) translateX(-8px);
+  margin-left: 22px;
+}
+.snake-node--left.active .snake-card { transform: translate(0, -50%) translateX(0); }
+.snake-node--right .snake-card {
+  right: 0; top: 50%;
+  transform: translate(0, -50%) translateX(8px);
+  margin-right: 22px;
+  text-align: right;
+}
+.snake-node--right.active .snake-card { transform: translate(0, -50%) translateX(0); }
+.snake-year {
   font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--sun);
-  padding-top: 0.15rem;
+  margin-bottom: 0.3rem;
 }
-.tl-text {
-  font-size: 1rem;
-  color: rgba(255,255,255,0.75);
-  line-height: 1.75;
-  border-left: 2px solid rgba(232,93,58,0.5);
-  padding-left: 1.2rem;
+.snake-text { font-size: 0.95rem; color: rgba(255,255,255,0.75); line-height: 1.65; }
+.snake-text strong { color: var(--foam); }
+
+/* -- Mobile -- */
+.snake-mobile { display: none; position: relative; }
+.snake-svg-mobile { position: absolute; left: 4px; top: 0; width: 32px; height: 100%; }
+.snake-mobile-list { display: flex; flex-direction: column; gap: 2.5rem; padding-left: 3.2rem; }
+.snake-mobile-item { position: relative; }
+.snake-mobile-item .snake-dot {
+  left: -3.2rem; top: 0.3rem;
+  transform: translate(-50%, 0) scale(0);
 }
-.tl-text strong { color: var(--foam); }
+.snake-mobile-item.active .snake-dot { transform: translate(-50%, 0) scale(1); }
+.snake-mobile-item .snake-year { margin-bottom: 0.2rem; }
+.snake-mobile-item .snake-text {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.snake-mobile-item.active .snake-text { opacity: 1; transform: translateX(0); }
+
+@media (max-width: 900px) {
+  .snake-desktop { display: none; }
+  .snake-mobile { display: block; }
+  .uu-timeline-snake { margin: 3rem 0 4rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snake-dot, .snake-card, .snake-mobile-item .snake-text { transition: none !important; }
+}
 
 .uu-image {
   border-radius: var(--radius-lg);
@@ -327,7 +471,7 @@ const slides: GallerySlide[] =
   transform: scale(1.3);
 }
 
-.uu-video { margin-bottom: 5rem; }
+.uu-video { margin-bottom: 5rem; display: flex; flex-direction: column; align-items: center; }
 .video-label {
   display: inline-flex;
   align-items: center;
@@ -342,7 +486,9 @@ const slides: GallerySlide[] =
 .video-wrapper {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%;
+  max-width: 640px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: #000;
@@ -407,6 +553,19 @@ const slides: GallerySlide[] =
 }
 .badge-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-3px); }
 .bc-number { font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif; font-size: 2.4rem; font-weight: 900; color: var(--coral); line-height: 1.1; margin-bottom: 0.3rem; }
+
+/* Signatur-Wert 167°C: dezentes, warmes Hitze-Flimmern (Glow-Puls). */
+.bc-heat {
+  animation: heatShimmer 2.6s ease-in-out infinite;
+  will-change: text-shadow, filter;
+}
+@keyframes heatShimmer {
+  0%, 100% { text-shadow: 0 0 0 rgba(244,168,32,0); filter: brightness(1); }
+  50%      { text-shadow: 0 0 14px rgba(244,168,32,0.55), 0 0 4px rgba(232,93,58,0.4); filter: brightness(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bc-heat { animation: none; }
+}
 .bc-icon { font-size: 2rem; margin-bottom: 0.3rem; }
 .bc-label { font-size: 0.9rem; font-weight: 600; color: var(--foam); margin-bottom: 0.2rem; }
 .bc-sub { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
@@ -552,4 +711,133 @@ const slides: GallerySlide[] =
   }
 
   document.querySelectorAll('.carousel').forEach(initCarousel)
+
+  // Count-up: zählt Zahlen mit [data-countup] beim Sichtbarwerden von 0 hoch.
+  // Bei reduced-motion bleibt der bereits im HTML stehende Endwert stehen.
+  function initCountUp() {
+    const els = Array.from(document.querySelectorAll<HTMLElement>('[data-countup]'))
+    if (els.length === 0) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        const el = entry.target as HTMLElement
+        obs.unobserve(el)
+        const target = parseInt(el.dataset.countup ?? '0', 10)
+        const suffix = el.dataset.suffix ?? ''
+        const prefix = el.dataset.prefix ?? ''
+        const duration = 1100
+        const start = performance.now()
+        const step = (now: number) => {
+          const p = Math.min((now - start) / duration, 1)
+          const eased = 1 - Math.pow(1 - p, 3) // ease-out-cubic
+          el.textContent = `${prefix}${Math.round(eased * target)}${suffix}`
+          if (p < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+      })
+    }, { threshold: 0.4 })
+
+    els.forEach((el) => io.observe(el))
+  }
+
+  initCountUp()
+
+  // Schlangen-Timeline: scroll-gekoppeltes Zeichnen (scrubbt vor & zurück).
+  // Ein gemeinsamer Fortschritt (0..1) treibt sowohl die Desktop- als auch
+  // die Mobile-Variante an — nur eine davon ist per CSS-Breakpoint sichtbar,
+  // aber beide bleiben synchron, falls sich die Fensterbreite ändert.
+  //
+  // Desktop-Node-Position UND ihr Scroll-Schwellenwert werden zur Laufzeit
+  // aus der tatsächlichen Pfadgeometrie (data-snake-x/y + getPointAtLength)
+  // berechnet, statt von Hand geschätzte %/Schwellenwerte zu pflegen — der
+  // Pfad ist die einzige "Quelle der Wahrheit" und lässt sich gefahrlos
+  // weiter anpassen, ohne dass Nodes verrutschen oder zu früh/spät poppen.
+  function initSnakeTimeline() {
+    const wrap = document.getElementById('uu-timeline')
+    if (!wrap) return
+
+    const desktopSvg   = wrap.querySelector<SVGSVGElement>('.snake-desktop .snake-svg')
+    const desktopDraw  = wrap.querySelector<SVGPathElement>('.snake-desktop .snake-draw')
+    const desktopNodes = Array.from(wrap.querySelectorAll<HTMLElement>('.snake-desktop .snake-node'))
+    const mobileDraw   = wrap.querySelector<SVGPathElement>('.snake-mobile .snake-draw')
+    const mobileItems  = Array.from(wrap.querySelectorAll<HTMLElement>('.snake-mobile-item'))
+
+    const drawPaths = [desktopDraw, mobileDraw].filter((p): p is SVGPathElement => !!p)
+    if (drawPaths.length === 0) return
+
+    // Node-Position aus data-snake-x/y (Viewbox-Einheiten) in % umrechnen,
+    // und je Node den Pfad-Fortschritt (0..1) finden, bei dem die Linie ihr
+    // am nächsten kommt (Abtastung entlang der echten Pfadlänge).
+    const desktopThresholds: number[] = desktopNodes.map(() => 0)
+    if (desktopDraw && desktopSvg) {
+      const vb = desktopSvg.viewBox.baseVal
+      const vbW = vb && vb.width  > 0 ? vb.width  : 1200
+      const vbH = vb && vb.height > 0 ? vb.height : 500
+      const totalLen = desktopDraw.getTotalLength()
+      const steps = 300
+
+      desktopNodes.forEach((node, i) => {
+        const x = parseFloat(node.dataset.snakeX ?? '0')
+        const y = parseFloat(node.dataset.snakeY ?? '0')
+        node.style.left = `${(x / vbW) * 100}%`
+        node.style.top  = `${(y / vbH) * 100}%`
+
+        let best = 0
+        let bestDist = Infinity
+        for (let s = 0; s <= steps; s++) {
+          const len = (s / steps) * totalLen
+          const pt = desktopDraw.getPointAtLength(len)
+          const dx = pt.x - x
+          const dy = pt.y - y
+          const d = dx * dx + dy * dy
+          if (d < bestDist) { bestDist = d; best = s / steps }
+        }
+        desktopThresholds[i] = best
+      })
+    }
+    const mobileThresholds = mobileItems.map((el) => parseFloat(el.dataset.snakeThreshold ?? '0'))
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduceMotion) {
+      drawPaths.forEach((p) => { p.style.strokeDashoffset = '0' })
+      desktopNodes.forEach((n) => n.classList.add('active'))
+      mobileItems.forEach((n) => n.classList.add('active'))
+      return
+    }
+
+    let ticking = false
+
+    function update() {
+      ticking = false
+      const rect = wrap!.getBoundingClientRect()
+      const vh = window.innerHeight
+      // Bewusst NUR an die Oberkante gekoppelt (nicht an rect.height): bei
+      // einer hohen Sektion würde ein höhenabhängiger Endpunkt bedeuten,
+      // dass man fast die komplette Sektion durchscrollen muss, bevor der
+      // letzte Punkt erscheint. Stattdessen läuft der Fortschritt über ein
+      // FESTES Scroll-Fenster, während die Oberkante von 85% auf 15% der
+      // Viewport-Höhe wandert — unabhängig davon, wie lang die Sektion ist.
+      const start = vh * 0.85 // Fortschritt beginnt, wenn Oberkante hier ankommt
+      const end = vh * 0.15   // Fortschritt = 1, wenn Oberkante hier ankommt
+      const raw = (start - rect.top) / (start - end)
+      const progress = Math.min(Math.max(raw, 0), 1)
+
+      drawPaths.forEach((p) => { p.style.strokeDashoffset = String(1 - progress) })
+      desktopNodes.forEach((n, i) => n.classList.toggle('active', progress >= desktopThresholds[i]))
+      mobileItems.forEach((n, i) => n.classList.toggle('active', progress >= mobileThresholds[i]))
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(update) }
+    }, { passive: true })
+    window.addEventListener('resize', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(update) }
+    })
+
+    update()
+  }
+
+  initSnakeTimeline()
 </script>

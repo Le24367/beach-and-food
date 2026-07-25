@@ -23,6 +23,10 @@ import Kontakt from '../components/Kontakt.astro';
        Bus-Loader-Übergang (siehe global.css, html.intro-loading). -->
   <div id="page-reveal">
     <main>
+      <!-- Persistente, visuell versteckte h1: sichtbare Sektionen nutzen alle
+           <h2>, die einzige <h1> im BusLoader wird nach dem Intro entfernt.
+           Für SEO & Dokument-Outline braucht die Seite dauerhaft eine h1. -->
+      <h1 class="sr-only">Beach and Food – Foodtruck 2.0 am Sütel-Strand</h1>
       <Angebot />
       <Bestellen />
       <UeberUns />

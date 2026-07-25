@@ -90,8 +90,8 @@ try {
           </a>
           <a href={links.voucher} target="_blank" rel="noopener" class="btn-gift">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
-              <path class="gift-box-body" d="M4 12h16v10H4z" stroke-linejoin="round"/>
-              <line class="gift-box-body" x1="12" y1="22" x2="12" y2="12"/>
+              <path d="M4 12h16v10H4z" stroke-linejoin="round"/>
+              <line x1="12" y1="22" x2="12" y2="12"/>
               <g class="gift-lid">
                 <rect x="2" y="7" width="20" height="5" stroke-linejoin="round"/>
                 <line x1="12" y1="12" x2="12" y2="7"/>
@@ -116,7 +116,7 @@ try {
         </div>
       </div>
       <div class="bc-right">
-        <div class="phone-mockup">
+        <div class="phone-mockup" aria-hidden="true">
           <div class="phone-screen">
             <div class="pm-header">
               <div class="pm-logo">
@@ -144,7 +144,7 @@ try {
                   <span class="pm-name">Fischbrötchen</span>
                   <span class="pm-sub">Klassiker</span>
                 </div>
-                <button class="pm-add">+</button>
+                <span class="pm-add">+</span>
               </div>
               <div class="pm-item">
                 <span class="pm-emoji">🍟</span>
@@ -152,7 +152,7 @@ try {
                   <span class="pm-name">Pommes frites</span>
                   <span class="pm-sub">167°C</span>
                 </div>
-                <button class="pm-add">+</button>
+                <span class="pm-add">+</span>
               </div>
               <div class="pm-item">
                 <span class="pm-emoji">🌭</span>
@@ -160,10 +160,10 @@ try {
                   <span class="pm-name">Currywurst</span>
                   <span class="pm-sub">Hausgemacht</span>
                 </div>
-                <button class="pm-add">+</button>
+                <span class="pm-add">+</span>
               </div>
             </div>
-            <a href={links.order} target="_blank" rel="noopener" class="pm-cta">
+            <a href={links.order} target="_blank" rel="noopener" class="pm-cta" tabindex="-1">
               <span class="pm-cta-label">Jetzt bestellen</span>
               <span class="btn-truck-lane" aria-hidden="true">
                 <svg class="btn-truck" viewBox="0 0 42 26" width="38" height="23" xmlns="http://www.w3.org/2000/svg">
@@ -222,12 +222,12 @@ try {
               <p class="sp-hint">▶ Klicken zum Abspielen</p>
             </div>
 
-            <button class="sp-play-btn" aria-label="Song auf Spotify abspielen" tabindex="-1">
+            <span class="sp-play-btn" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
                 <circle cx="12" cy="12" r="12" fill="#1DB954"/>
                 <polygon fill="white" points="9.5,7 18,12 9.5,17"/>
               </svg>
-            </button>
+            </span>
           </div>
 
           <p class="sp-consent">
@@ -326,7 +326,6 @@ try {
 .btn-icon-static { display: inline-flex; }
 .btn-primary:hover .btn-icon-static { animation: btnIconFade 1.6s ease forwards; }
 
-.btn-label {}
 .btn-primary:hover .btn-label { animation: btnLabelFade 1.6s ease forwards; }
 
 @keyframes btnLabelFade {
@@ -440,7 +439,6 @@ try {
   padding: 0.6rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;
   position: relative; overflow: hidden;
 }
-.pm-cta-label {}
 .pm-cta:hover .pm-cta-label { animation: btnLabelFade 1.6s ease forwards; }
 .pm-cta:hover .btn-truck { animation: btnTruckDrive 1.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards; }
 .pm-cta:hover .btn-truck .bt-package-group { animation: btnPackageDrop 1.6s ease forwards; }
@@ -517,7 +515,8 @@ try {
 .sp-hint { font-size: 0.72rem; color: rgba(255,255,255,0.3); }
 .sp-play-btn {
   flex-shrink: 0;
-  background: none; border: none; cursor: pointer; padding: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 4px;
   transition: transform 0.2s;
 }
 .spotify-facade:hover .sp-play-btn { transform: scale(1.12); }

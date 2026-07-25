@@ -223,3 +223,20 @@ a {
 .reveal.visible {
   will-change: auto;
 }
+
+/*
+  Screenreader-only: visuell versteckt, aber für Screenreader und
+  Dokument-Outline vorhanden. Wird u.a. für die persistente <h1> der
+  Startseite genutzt (die sichtbaren Sektionen nutzen alle <h2>).
+*/
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
