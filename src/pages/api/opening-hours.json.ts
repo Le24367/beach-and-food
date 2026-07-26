@@ -33,6 +33,15 @@ import { getGoogleOpeningHours } from '../../lib/google-places'
 
 export const prerender = false
 
+// Öffentliche, nicht-sensible Daten (dieselben Öffnungszeiten, die eh im
+// JSON-LD und im Live-Status-Badge landen) -- permissiver CORS-Header,
+// damit der "Zeiten über Google API fetchen"-Button im Sanity Studio
+// (andere Origin) diese Route aufrufen darf.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+}
+
 export const GET: APIRoute = async () => {
   // import.meta.env deckt sowohl lokale .env-Dateien als auch die Vercel
   // Project Env Vars ab (Vercel injiziert sie zur Build-/Laufzeit genauso
@@ -53,6 +62,9 @@ export const GET: APIRoute = async () => {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': cacheControl,
+      ...CORS_HEADERS,
     },
   })
 }
+
+export const OPTIONS: APIRoute = async () => new Response(null, { status: 204, headers: CORS_HEADERS })

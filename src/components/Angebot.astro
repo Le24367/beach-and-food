@@ -1,8 +1,8 @@
 ﻿---
-import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from '../lib/sanity'
-import type { MenuCategory, MenuItem, MenuSubCategory } from '../lib/sanity'
+import { urlFor } from '../lib/sanity'
+import type { MenuCategory, MenuItem } from '../lib/sanity'
 import imageMapRaw from '../generated/image-map.json'
-import { buildMenuJsonLd } from '../lib/menu'
+import { buildMenuJsonLd, getMenuData } from '../lib/menu'
 
 const imageMap: Record<string, { thumb: string; card: string; full: string }> = imageMapRaw as any
 
@@ -14,19 +14,11 @@ function localOrRemote(sanityUrl: string, mode: 'thumb' | 'card' | 'full'): stri
   return entry.full
 }
 
-let items: MenuCategory[] = []
-let menuItems: MenuItem[] = []
-let subCategories: MenuSubCategory[] = []
-
-try {
-  ;[items, menuItems, subCategories] = await Promise.all([
-    getMenuCategories(),
-    getMenuItems(),
-    getMenuSubCategories(),
-  ])
-} catch (e) {
-  console.warn('[Angebot] Sanity nicht erreichbar, Fallback wird verwendet.', e)
-}
+// Primär igetnow, Sanity-Fallback -- siehe getMenuData() in lib/menu.ts.
+const menuData = await getMenuData()
+let items: MenuCategory[] = menuData.categories
+const menuItems = menuData.menuItems
+const subCategories = menuData.subCategories
 
 if (items.length === 0) {
   items = [
@@ -101,20 +93,27 @@ const popupData = items.map(cat => {
 })
 
 function mapProduct(p: MenuItem, cat: MenuCategory) {
-  const sanityThumbUrl = p.image
-    ? urlFor(p.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
-    : null
-  const sanityFullUrl = p.image
-    ? urlFor(p.image).width(900).quality(80).auto('format').url()
-    : null
+  // igetnow liefert bereits fertige, absolute Bild-URLs (siehe imageUrls in
+  // lib/igetnow.ts) -- nur Sanity-Items brauchen den urlFor()/image-map-Umweg.
+  let imgThumb: string | null = null
+  let imgFull: string | null = null
+  if (p.imageUrls) {
+    imgThumb = p.imageUrls.thumb
+    imgFull  = p.imageUrls.full
+  } else if (p.image) {
+    const sanityThumbUrl = urlFor(p.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
+    const sanityFullUrl  = urlFor(p.image).width(900).quality(80).auto('format').url()
+    imgThumb = localOrRemote(sanityThumbUrl, 'thumb')
+    imgFull  = localOrRemote(sanityFullUrl,  'full')
+  }
 
   return {
     id: p._id,
     title: p.title,
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
-    imgThumb: sanityThumbUrl ? localOrRemote(sanityThumbUrl, 'thumb') : null,
-    imgFull:  sanityFullUrl  ? localOrRemote(sanityFullUrl,  'full')  : null,
+    imgThumb,
+    imgFull,
     emoji: p.emoji ?? null,
     badges: p.badges ?? [],
   }
@@ -152,7 +151,13 @@ const menuJsonLd = await buildMenuJsonLd()
         let cardImgUrl: string | null = null
         let medImgUrl:  string | null = null
         let fullImgUrl: string | null = null
-        if (item.image) {
+        if (item.imageUrls) {
+          // igetnow liefert nur feste Breitenstufen, keine exakte 634x362-
+          // Zwischengröße wie Sanity -- medImgUrl bleibt hier leer, das
+          // srcset unten filtert leere Eintraege einfach raus.
+          cardImgUrl = item.imageUrls.card
+          fullImgUrl = item.imageUrls.full
+        } else if (item.image) {
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
           const entry = imageMap[sanityFUrl]
           if (entry) {

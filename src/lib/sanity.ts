@@ -64,11 +64,22 @@ export function urlFor(source: SanityImageSource) {
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Vorab aufgelöste Bild-URLs (statt eines Sanity-Image-Refs) -- gesetzt,
+// wenn die Kategorie/das Item von igetnow statt Sanity kommt (siehe
+// lib/igetnow.ts). Rendering-Code prüft immer zuerst imageUrls, bevor er
+// auf image + urlFor() zurückfällt.
+export interface ResolvedImageUrls {
+  thumb: string
+  card: string
+  full: string
+}
+
 export interface MenuCategory {
   _id: string
   title: string
   description: string
   image?: SanityImageSource
+  imageUrls?: ResolvedImageUrls
   emoji?: string
   badge?: {
     label?: string
@@ -84,6 +95,7 @@ export interface MenuSubCategory {
   title: string
   description?: string
   image?: SanityImageSource
+  imageUrls?: ResolvedImageUrls
   emoji?: string
   categoryId: string
   order: number
@@ -98,6 +110,7 @@ export interface MenuItem {
   price: number
   description?: string
   image?: SanityImageSource
+  imageUrls?: ResolvedImageUrls
   emoji?: string
   badges?: { label: string; color: string }[]
   order: number

@@ -1,14 +1,14 @@
 /**
  * menu.ts
  *
- * schema.org/Menu-Aufbau aus den Sanity-Speisekarten-Daten -- ausgelagert
- * aus Angebot.astro, damit dieselbe Struktur an zwei Stellen ohne doppelte
- * Logik verwendet werden kann:
- *   1. Angebot.astro:  JSON-LD <script> im Seiten-<head> (Rich Results)
+ * Speisekarten-Daten fuer zwei Konsumenten, beide ueber getMenuData():
+ *   1. Angebot.astro:  Kacheln + Modal, sowie JSON-LD <script> im Seiten-<head>
  *   2. /menu.json:      maschinenlesbarer Endpunkt fuer Agenten, die die
  *                        Seite lesen statt Klicks auszufuehren
  */
 import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from './sanity'
+import type { MenuCategory, MenuItem, MenuSubCategory } from './sanity'
+import { getIgetnowMenu } from './igetnow'
 import { SITE } from './config'
 import imageMapRaw from '../generated/image-map.json'
 
@@ -22,39 +22,75 @@ function localOrRemote(sanityUrl: string, mode: 'thumb' | 'card' | 'full'): stri
   return entry.full
 }
 
-export async function buildMenuJsonLd() {
-  let items: Awaited<ReturnType<typeof getMenuCategories>> = []
-  let menuItems: Awaited<ReturnType<typeof getMenuItems>> = []
-  let subCategories: Awaited<ReturnType<typeof getMenuSubCategories>> = []
+export interface MenuData {
+  categories: MenuCategory[]
+  menuItems: MenuItem[]
+  subCategories: MenuSubCategory[]
+  source: 'igetnow' | 'sanity'
+}
 
-  try {
-    ;[items, menuItems, subCategories] = await Promise.all([
-      getMenuCategories(),
-      getMenuItems(),
-      getMenuSubCategories(),
-    ])
-  } catch (e) {
-    console.warn('[menu] Sanity nicht erreichbar.', e)
+// Primärquelle Sanity -- wird über den "Daten von igetnow übernehmen"-Button
+// im Sanity Studio synchron gehalten, editierbar (z.B. ein manuell
+// gesetztes Kategoriebild via imageOverride, siehe lib/igetnow.ts), und ist
+// damit die Quelle, die auch tatsächlich live gehen soll. Der Live-Fetch
+// direkt von igetnow bleibt nur als Notfall-Fallback -- z.B. bevor der
+// allererste Import je gelaufen ist, oder falls Sanity komplett down ist.
+// Modul-Level-Cache wie bei den Sanity-Getters: EIN Fetch pro Build-Lauf,
+// auch wenn sowohl Angebot.astro als auch /menu.json aufrufen.
+let menuDataPromise: Promise<MenuData> | null = null
+
+export async function getMenuData(): Promise<MenuData> {
+  if (!menuDataPromise) {
+    menuDataPromise = (async () => {
+      try {
+        const [categories, menuItems, subCategories] = await Promise.all([
+          getMenuCategories(),
+          getMenuItems(),
+          getMenuSubCategories(),
+        ])
+        if (categories.length > 0) {
+          return { categories, menuItems, subCategories, source: 'sanity' as const }
+        }
+        console.warn('[menu] Sanity lieferte keine Kategorien, Notfall-Fallback auf igetnow.')
+      } catch (e) {
+        console.warn('[menu] Sanity nicht erreichbar, Notfall-Fallback auf igetnow.', e)
+      }
+
+      try {
+        const { categories, items, subCategories } = await getIgetnowMenu()
+        return { categories, menuItems: items, subCategories, source: 'igetnow' as const }
+      } catch (e) {
+        console.warn('[menu] igetnow (Notfall-Fallback) ebenfalls nicht erreichbar.', e)
+        return { categories: [], menuItems: [], subCategories: [], source: 'sanity' as const }
+      }
+    })()
   }
+  return menuDataPromise
+}
+
+// Bild-URL fuers JSON-LD: igetnow-Items bringen bereits fertige, absolute
+// URLs in imageUrls.full mit (siehe lib/igetnow.ts) -- kein urlFor()/
+// localOrRemote()-Umweg noetig, der ist nur fuer Sanity-Bild-Refs da.
+function jsonLdImage(p: MenuItem): string | undefined {
+  if (p.imageUrls) return p.imageUrls.full
+  if (!p.image) return undefined
+  const sanityImgUrl = urlFor(p.image).width(900).quality(80).auto('format').url()
+  const localImg = localOrRemote(sanityImgUrl, 'full')
+  return localImg.startsWith('/') ? `${SITE.url}${localImg}` : localImg
+}
+
+export async function buildMenuJsonLd() {
+  const { categories: items, menuItems, subCategories } = await getMenuData()
 
   function subCatsForCategory(categoryId: string) {
     return subCategories.filter(s => s.categoryId === categoryId)
   }
 
-  // Bild-URL fuer JSON-LD: localOrRemote() gibt nur dann einen lokalen Pfad
-  // ("/product-images/...") zurueck, wenn image-map.json (aus fetch-images.js)
-  // einen Treffer hat -- sonst kommt die bereits absolute Sanity-CDN-URL
-  // unveraendert zurueck. Nur den lokalen Fall mit SITE.url voranstellen,
-  // sonst entsteht "https://www.beachandfood.dehttps://cdn.sanity.io/...".
   function schemaMenuItems(categoryId: string, subCategoryId?: string) {
     return menuItems
       .filter(p => p.categoryId === categoryId && (subCategoryId ? p.subCategoryId === subCategoryId : !p.subCategoryId))
       .map(p => {
-        const sanityImgUrl = p.image ? urlFor(p.image).width(900).quality(80).auto('format').url() : null
-        const localImg = sanityImgUrl ? localOrRemote(sanityImgUrl, 'full') : null
-        const absoluteImg = localImg
-          ? (localImg.startsWith('/') ? `${SITE.url}${localImg}` : localImg)
-          : undefined
+        const absoluteImg = jsonLdImage(p)
         return {
           '@type': 'MenuItem',
           name: p.title,

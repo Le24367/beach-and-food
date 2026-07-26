@@ -18,8 +18,10 @@ export interface StructuredHours {
 // Reihenfolge ist zugleich die Woche selbst -- ein Bereich wird als
 // Ausschnitt daraus gelesen, kein Wrap-around nötig, da "So" (Sonntag)
 // immer das Ende der Liste ist.
-const DAY_ORDER = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const
-const DAY_NAMES: Record<string, string> = {
+// Exportiert, weil lib/hours-export.ts (Google -> Sanity-Freitext, die
+// Gegenrichtung zu parseOpeningHours() hier) dieselbe Zuordnung braucht.
+export const DAY_ORDER = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] as const
+export const DAY_NAMES: Record<string, string> = {
   Mo: 'Monday', Di: 'Tuesday', Mi: 'Wednesday', Do: 'Thursday',
   Fr: 'Friday', Sa: 'Saturday', So: 'Sunday',
 }
