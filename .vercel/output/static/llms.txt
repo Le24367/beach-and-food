@@ -1,0 +1,26 @@
+# Beach and Food
+
+> Foodtruck 2.0 direkt am Sütel-Strand (Campingplatz Sütel, 23779 Neukirchen): Fischbrötchen, Currywurst, Pommes und kalte Drinks, bei exakt 167°C frittiert. Ein umgebauter Linienbus mit Indoor-Sitzbereich, Self-Order-Terminals und Online-Vorbestellung.
+
+Saisonbetrieb. Aktuelle Öffnungszeiten stehen strukturiert im JSON-LD (`LocalBusiness` → `openingHoursSpecification`) auf der Startseite und sind damit jederzeit maschinenlesbar aktuell — dieser Text wird nicht bei jeder Änderung neu gebaut.
+
+## Seiten
+
+- [Startseite](https://www.beachandfood.de/): Speisekarte, Online-Bestellen, Über uns, Kontakt & Anfahrt
+- [Speisekarte](https://www.beachandfood.de/#angebot): alle Kategorien und Gerichte mit Preisen
+- [Kontakt & Anfahrt](https://www.beachandfood.de/#kontakt): Adresse, Öffnungszeiten, Karte
+- [Impressum](https://www.beachandfood.de/impressum)
+- [Datenschutzerklärung](https://www.beachandfood.de/datenschutz)
+
+## Für Agenten / strukturierte Daten
+
+- Speisekarte als JSON (Name, Preis, Beschreibung, Bild je Gericht): [/menu.json](https://www.beachandfood.de/menu.json)
+- Dieselbe Speisekarte zusätzlich als `schema.org/Menu`-JSON-LD im `<head>` der Startseite
+- Adresse, Geokoordinaten, Telefon und Öffnungszeiten als `schema.org/LocalBusiness` + `FoodEstablishment`-JSON-LD im `<head>` jeder Seite
+
+## Bestellen & Kontakt
+
+- Online bestellen: https://igetnow.com/KWFQC
+- Gutschein kaufen: https://www.bon-bon.de/gutschein/beach-and-food/?popup
+- E-Mail: info@beachandfood.de
+- Adresse: Campingplatz Sütel, Sütel-Strand, 23779 Neukirchen

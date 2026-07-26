@@ -1,0 +1,16 @@
+[
+  {
+    "src": "/gallery-images/07f4575e450c-gallery-sm.webp",
+    "srcset": "/gallery-images/07f4575e450c-gallery-sm.webp 560w, /gallery-images/24b05c1b1c46-gallery-lg.webp 860w",
+    "sizes": "(max-width: 480px) 100vw, (max-width: 900px) 100vw, 50vw",
+    "alt": "Das ist nur ein test",
+    "caption": "Testbild"
+  },
+  {
+    "src": "/gallery-images/b7109547d5c7-gallery-sm.webp",
+    "srcset": "/gallery-images/b7109547d5c7-gallery-sm.webp 560w, /gallery-images/f23e598b72b5-gallery-lg.webp 860w",
+    "sizes": "(max-width: 480px) 100vw, (max-width: 900px) 100vw, 50vw",
+    "alt": "Testbild",
+    "caption": "Porsche 911 GT3"
+  }
+]

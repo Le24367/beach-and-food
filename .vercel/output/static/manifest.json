@@ -1,0 +1,52 @@
+{
+  "name": "Beach and Food",
+  "short_name": "Beach & Food",
+  "description": "Fischbrötchen, Currywurst & Pommes direkt am Sütel-Strand. Bei exakt 167°C, täglich frisch.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D2233",
+  "theme_color": "#1A3A4A",
+  "orientation": "portrait-primary",
+  "lang": "de",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.jpg",
+      "sizes": "1200x630",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Beach and Food – Foodtruck am Sütel-Strand"
+    }
+  ],
+  "categories": ["food", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Jetzt bestellen",
+      "short_name": "Bestellen",
+      "description": "Online vorbestellen bei Beach and Food",
+      "url": "https://igetnow.com/KWFQC",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Speisekarte",
+      "short_name": "Karte",
+      "description": "Unsere aktuelle Speisekarte ansehen",
+      "url": "/#angebot",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

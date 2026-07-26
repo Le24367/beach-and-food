@@ -27,8 +27,12 @@ import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from '
 import { join, resolve, relative } from 'path'
 
 const ROOT      = resolve(process.cwd())
-const ASTRO_DIR = join(ROOT, 'dist', '_astro')
-const DIST_DIR  = join(ROOT, 'dist')
+// Seit @astrojs/vercel v10 baut Astro Client-Assets nach dist/client/
+// (Client/Server-Split wegen der SSR-Route /api/opening-hours.json) statt
+// wie vorher direkt nach dist/. Vorher zeigte dies auf dist/_astro, was den
+// Build lokal wie auf Vercel mit "dist/_astro nicht gefunden" abbrechen ließ.
+const DIST_DIR  = join(ROOT, 'dist', 'client')
+const ASTRO_DIR = join(DIST_DIR, '_astro')
 
 // ── Vorab-Checks ──────────────────────────────────────────────────────────────
 if (!existsSync(ASTRO_DIR)) {

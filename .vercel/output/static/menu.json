@@ -1,0 +1,364 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Menu",
+  "name": "Speisekarte – Beach and Food",
+  "url": "https://www.beachandfood.de/#angebot",
+  "hasMenuSection": [
+    {
+      "@type": "MenuSection",
+      "name": "FOODCLASSICS",
+      "description": "Die Beach and Food Klassiker",
+      "hasMenuSection": [
+        {
+          "@type": "MenuSection",
+          "name": "Die Beach and Food Klassiker ",
+          "hasMenuItem": [
+            {
+              "@type": "MenuItem",
+              "name": "Salzbrenner Bratwurst",
+              "description": "120g \"Thüringer Art\"",
+              "image": "https://www.beachandfood.de/product-images/428bec00a42c-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "4.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Salzbr. Schinkengriller",
+              "description": "112g leicht angeräuchert und deftig knackig",
+              "image": "https://www.beachandfood.de/product-images/066a5959286a-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "4.90",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Rindsbratwurst",
+              "description": "150g mit zarter Currynote",
+              "image": "https://www.beachandfood.de/product-images/ace309baf120-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "5.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Beach Currywurst",
+              "description": "mit original Beach and Food Currysauce",
+              "image": "https://www.beachandfood.de/product-images/d722c9df124e-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "5.70",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Chillikraut Currywurst",
+              "description": "Beach and Food Currywurst mit hausgemachten scharfen Sauerkraut und unserer neuen SRI LANKA\nCurrymischung",
+              "image": "https://www.beachandfood.de/product-images/8068465dbe00-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "7.90",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Mix-Mango Currywurst",
+              "description": "Beach Currywurst mit Mangosalsa verfeinert",
+              "image": "https://www.beachandfood.de/product-images/238ea3fc923d-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "7.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Foodtruck Currywurst",
+              "description": "Beach Currywurst mit hausgemachten Gurkentopping, knackigen Röstzwiebeln und Senf - ACHTUNG:\nGeschmacksexplosion!",
+              "image": "https://www.beachandfood.de/product-images/2beeb670e186-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "8.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Beach Currywurst Special",
+              "description": "Beach Currywurst mit knackigen Röstzwiebeln ",
+              "image": "https://www.beachandfood.de/product-images/835b28c187ee-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "6.30",
+                "priceCurrency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "@type": "MenuSection",
+          "name": "NEU - Saftige Schweinebauchwürfel",
+          "hasMenuItem": [
+            {
+              "@type": "MenuItem",
+              "name": "Currybauch",
+              "description": "Saftige Schweinebauchwürfel mit der Original Beach and Food Currysauce",
+              "image": "https://www.beachandfood.de/product-images/8b2a941e7d7c-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "8.70",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Foodtruck Schweinebauch",
+              "description": "Saftiger Curry Bauch mit hausgemachten Gurkentopping, knackigen Röstzwiebeln und Senf - ACHTUNG: Geschmacksexplosion!",
+              "image": "https://www.beachandfood.de/product-images/239e13bc6156-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "11.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Mix-Mango Schweinebauch",
+              "description": "Saftige Schweinebauchwürfel mit Original Beach and Food Currysauce mit Mangosalsa verfeinert",
+              "offers": {
+                "@type": "Offer",
+                "price": "10.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Chillikraut Schweinebauch",
+              "description": "Saftiger Curry Bauch mit hausgemachten scharfen Sauerkraut und unserer neuen SRI LANKA\nCurrymischung",
+              "image": "https://www.beachandfood.de/product-images/2a7962bc390b-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "10.90",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Curry Bauch Special",
+              "description": "Saftige Schweinebauchwürfel mit Original Beach and Food Currysauce und knackigen Röstzwiebeln",
+              "image": "https://www.beachandfood.de/product-images/32c2ff3567dd-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "9.30",
+                "priceCurrency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "@type": "MenuSection",
+          "name": "Die Beach and Food Metzgerfrikadellen",
+          "hasMenuItem": [
+            {
+              "@type": "MenuItem",
+              "name": "Metzgerfrikadelle",
+              "description": "120g mit reinem Schweinefleisch und groben Zwiebeln  ",
+              "image": "https://www.beachandfood.de/product-images/1a7dbb8939ad-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "4.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Mango Frikadelle",
+              "description": "Metzgerfrikadelle mit Mangosalsa verfeinert",
+              "image": "https://www.beachandfood.de/product-images/02cf08ddc937-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "7.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Beach Frikadelle",
+              "description": "Unsere Metzgerfrikadelle mit der Original Beach and Food Currysauce und Currypulver",
+              "image": "https://www.beachandfood.de/product-images/02cf08ddc937-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "5.70",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Frikadelle Special",
+              "description": "Unsere Metzgerfrikadelle mit Ketchup, Mayonnaise und knackigen Röstzwiebeln",
+              "image": "https://www.beachandfood.de/product-images/e53b29cc3388-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "6.50",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Chillikraut Frikadelle",
+              "description": "Metzgerfrikadelle mit hausgemachten scharfen Sauerkraut, Beach and Food Currysauce und SRI LANKA Currymischung",
+              "image": "https://www.beachandfood.de/product-images/5ad8028704b9-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "7.90",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Foodtruck Frikadelle",
+              "description": "Metzgerfrikadelle mit hausgemachten Gurkentopping, Beach and Food Currysauce, Röstzwiebeln und\nSenf",
+              "image": "https://www.beachandfood.de/product-images/5dc61f4bffd1-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "8.50",
+                "priceCurrency": "EUR"
+              }
+            }
+          ]
+        },
+        {
+          "@type": "MenuSection",
+          "name": "Satt Fleisch gibts hier Fisch",
+          "hasMenuItem": [
+            {
+              "@type": "MenuItem",
+              "name": "Backfischfilet",
+              "description": "ca. 150g paniertes Alaska Seelachsfilet, frittiert (Backfisch)",
+              "image": "https://www.beachandfood.de/product-images/06ee6501ba56-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "6.00",
+                "priceCurrency": "EUR"
+              }
+            },
+            {
+              "@type": "MenuItem",
+              "name": "Fischfrikadelle",
+              "description": "1 panierte Fischfrikadelle, frittiert",
+              "image": "https://www.beachandfood.de/product-images/9c4feed1a526-full.webp",
+              "offers": {
+                "@type": "Offer",
+                "price": "2.80",
+                "priceCurrency": "EUR"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Pommes Frites",
+      "description": "167°. Eine Zahl, die man schmeckt.",
+      "hasMenuItem": [
+        {
+          "@type": "MenuItem",
+          "name": "Chillikraut Pommes",
+          "description": "Pommes frites mit hausgemachten scharfen Sauerkraut, Curryketchup und SRI LANKA Currymischung",
+          "image": "https://www.beachandfood.de/product-images/32e93981c211-full.webp",
+          "offers": {
+            "@type": "Offer",
+            "price": "6.50",
+            "priceCurrency": "EUR"
+          }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Pommes Frittes",
+          "description": "unsere Beach and Food Pommes frites, nach unseren Standards immer frisch frittiert.",
+          "image": "https://www.beachandfood.de/product-images/7b36e19f48ff-full.webp",
+          "offers": {
+            "@type": "Offer",
+            "price": "3.50",
+            "priceCurrency": "EUR"
+          }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Beach Pommes",
+          "description": "Pommes frites mit Sauce nach Wahl und knackigen Röstzwiebeln",
+          "image": "https://www.beachandfood.de/product-images/3e1344dec204-full.webp",
+          "offers": {
+            "@type": "Offer",
+            "price": "4.90",
+            "priceCurrency": "EUR"
+          }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Marokko Fritten",
+          "description": "Beach and Food Fritten mit unserer neuen Fritte's Onionsoos, knackigen Röstzwiebeln und Marokko\nCurry",
+          "image": "https://www.beachandfood.de/product-images/cc2a0f9f8369-full.webp",
+          "offers": {
+            "@type": "Offer",
+            "price": "6.50",
+            "priceCurrency": "EUR"
+          }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "NO KISS! Fritten",
+          "description": "Original Beach and Food Pommes frites, nach dem frittieren im hausgemachten Knoblauch-Kräuter-Öl geschwenkt, inkl. 1x Sauce nach Wahl - danach gilt \"küssen auf eigene Gefahr\"",
+          "offers": {
+            "@type": "Offer",
+            "price": "5.90",
+            "priceCurrency": "EUR"
+          }
+        },
+        {
+          "@type": "MenuItem",
+          "name": "Foodtruck Pommes",
+          "description": "Pommes frites mit hausgemachten Gurkentopping, Currysauce, knackigen Röstzwiebeln und Senf",
+          "image": "https://www.beachandfood.de/product-images/11005f47ff04-full.webp",
+          "offers": {
+            "@type": "Offer",
+            "price": "6.90",
+            "priceCurrency": "EUR"
+          }
+        }
+      ]
+    },
+    {
+      "@type": "MenuSection",
+      "name": "Fischbrötchen",
+      "description": "Leckere Fischbrötchen und so",
+      "hasMenuSection": [
+        {
+          "@type": "MenuSection",
+          "name": "Klassische Fischbrötchen",
+          "description": "mit Salatblatt, Gurke und roten Zwiebeln",
+          "hasMenuItem": [
+            {
+              "@type": "MenuItem",
+              "name": "Bratheringsfilet",
+              "offers": {
+                "@type": "Offer",
+                "price": "5.00",
+                "priceCurrency": "EUR"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
