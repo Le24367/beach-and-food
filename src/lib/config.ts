@@ -12,11 +12,14 @@ export const SITE = {
 } as const
 
 export const LINKS = {
-  order:   'https://igetnow.com/KWFQC',
-  voucher: 'https://www.bon-bon.de/gutschein/beach-and-food/?popup',
-  whatsapp:'https://wa.me/4915164652760',
-  spotify: 'https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n',
-  maps:    'https://maps.google.com/?q=Campingplatz+Sütel+Neukirchen',
+  order:     'https://igetnow.com/KWFQC',
+  voucher:   'https://www.bon-bon.de/gutschein/beach-and-food/?popup',
+  whatsapp:  'https://wa.me/4915164652760',
+  spotify:   'https://open.spotify.com/playlist/37i9dQZF1DX4dyzvuaRJ0n',
+  maps:      'https://maps.google.com/?q=Campingplatz+Sütel+Neukirchen',
+  // Dieselbe URL stand bisher schon hart im JSON-LD (Layout.astro,
+  // "sameAs") -- hier zentral, damit beide Stellen nie auseinanderlaufen.
+  instagram: 'https://www.instagram.com/beach_and_food',
 } as const
 
 export const CONTACT = {

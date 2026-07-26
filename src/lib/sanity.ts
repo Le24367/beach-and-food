@@ -139,6 +139,7 @@ export interface SiteSettings {
     voucher?: string
     spotify?: string
     whatsapp?: string
+    instagram?: string
   }
   legal?: {
     companyName?: string
@@ -159,6 +160,7 @@ export interface ResolvedLinks {
   whatsapp: string
   spotify: string
   maps: string
+  instagram: string
 }
 
 export const LEGAL_REQUIRED_FIELDS = [

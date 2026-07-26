@@ -2,6 +2,7 @@
 import { getSiteSettings } from '../lib/sanity'
 import type { SiteSettings } from '../lib/sanity'
 import { LINKS, CONTACT, SITE } from '../lib/config'
+import OpeningStatus from './OpeningStatus.astro'
 
 let settings: SiteSettings | null = null
 try {
@@ -55,16 +56,27 @@ const seasonNote = settings?.seasonNote
             <div>
               <div class="k-label">Öffnungszeiten</div>
               <div class="k-val">
-                {openingHours.map((entry, i) => (
-                  <span>
-                    <span class={entry.closed ? 'closed' : 'open'}>
-                      {entry.days}: {entry.hours}
+                <!--
+                  id wird von OpeningStatus.astro's Client-Script genutzt:
+                  liefert /api/opening-hours.json live Daten von Google,
+                  wird dieser Block per JS durch Googles weekday_text
+                  ersetzt. Bis dahin (und falls der Live-Abruf fehlschlägt)
+                  steht hier die Sanity-Freitext-Version als Fallback --
+                  bereits serverseitig gerendert, kein Layout-Sprung.
+                -->
+                <div id="opening-hours-list">
+                  {openingHours.map((entry, i) => (
+                    <span>
+                      <span class={entry.closed ? 'closed' : 'open'}>
+                        {entry.days}: {entry.hours}
+                      </span>
+                      {i < openingHours.length - 1 && <br/>}
                     </span>
-                    {i < openingHours.length - 1 && <br/>}
-                  </span>
-                ))}
-                {seasonNote && <><br/><span class="season-note">{seasonNote}</span></>}
+                  ))}
+                </div>
+                {seasonNote && <span class="season-note">{seasonNote}</span>}
               </div>
+              <OpeningStatus openingHours={openingHours} />
             </div>
           </div>
           <div class="k-item">

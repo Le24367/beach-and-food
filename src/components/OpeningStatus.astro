@@ -1,0 +1,137 @@
+---
+// Live-Status "Jetzt geöffnet" / "Geschlossen, öffnet ...". Die eigentliche
+// Berechnung läuft im Browser (siehe <script> unten), weil "jetzt" von der
+// tatsächlichen Uhrzeit des Seitenaufrufs abhängt, nicht vom Build-Zeitpunkt.
+// Serverseitig wird hier nur die Freitext-zu-Struktur-Umwandlung erledigt
+// (dieselbe wie fürs JSON-LD in Layout.astro, siehe lib/hours.ts).
+import { parseOpeningHours } from '../lib/hours'
+import type { OpeningHoursEntry } from '../lib/sanity'
+
+export interface Props {
+  openingHours: OpeningHoursEntry[]
+}
+const { openingHours } = Astro.props
+const structured = parseOpeningHours(openingHours)
+---
+
+{structured.length > 0 && (
+  <div class="opening-status" id="opening-status" data-hours={JSON.stringify(structured)} aria-live="polite" hidden>
+    <span class="os-dot" aria-hidden="true"></span>
+    <span class="os-text"></span>
+  </div>
+)}
+
+<style>
+.opening-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.6rem;
+}
+.opening-status[hidden] { display: none; }
+.os-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.opening-status.is-open .os-dot {
+  background: #2D8B4E;
+  animation: os-pulse 2.2s ease-out infinite;
+}
+.opening-status.is-open .os-text { color: #2D8B4E; }
+.opening-status.is-closed .os-dot { background: var(--coral); }
+.opening-status.is-closed .os-text { color: var(--text-muted); }
+@keyframes os-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(45,139,78,0.35); }
+  70%  { box-shadow: 0 0 0 6px rgba(45,139,78,0); }
+  100% { box-shadow: 0 0 0 0 rgba(45,139,78,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .opening-status.is-open .os-dot { animation: none; }
+}
+</style>
+
+
+<script>
+  import { computeOpenStatus, type HoursEntry } from '../lib/opening-status-client'
+
+  // Antwortform von /api/opening-hours.json (siehe lib/google-places.ts) --
+  // hier nur clientseitig, kein Zugriff auf Server-Env noetig.
+  interface GoogleHoursResponse {
+    ok: boolean
+    periods?: HoursEntry[]
+    weekdayText?: string[]
+  }
+
+  const el = document.getElementById('opening-status')
+  if (el) {
+    try {
+      // Sanity-basierte Daten aus dem Astro-Frontmatter -- sofort verfuegbar,
+      // kein Warten auf einen Netzwerk-Request. Wird unten durch die
+      // Google-Antwort ersetzt, sobald/falls die eintrifft.
+      let entries: HoursEntry[] = JSON.parse(el.dataset.hours ?? '[]')
+
+      const render = () => {
+        if (entries.length === 0) return
+        const status = computeOpenStatus(entries)
+        const text = status.open
+          ? `Jetzt geöffnet — bis ${status.closesAt} Uhr`
+          : status.nextOpenWhen
+            ? `Geschlossen — öffnet ${status.nextOpenWhen} um ${status.nextOpenAt} Uhr`
+            : 'Aktuell geschlossen'
+        el.classList.toggle('is-open', status.open)
+        el.classList.toggle('is-closed', !status.open)
+        const textEl = el.querySelector('.os-text')
+        if (textEl) textEl.textContent = text
+        el.removeAttribute('hidden')
+      }
+
+      render()
+      // Neu berechnen, wenn der Tab wieder aktiv wird (z.B. nach langer
+      // Inaktivitaet ueber eine Öffnungszeit hinweg) -- kein Dauer-Timer
+      // noetig fuer eine so dezente Statusanzeige. Unconditional registriert,
+      // auch falls "entries" gerade noch leer ist -- die Google-Antwort
+      // unten kann "entries" ja noch mit Inhalt fuellen.
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) render()
+      })
+
+      // Live-Öffnungszeiten von Google nachladen. Läuft unabhängig vom
+      // obigen Sanity-Fallback -- schlägt der Fetch fehl (kein API-Key
+      // hinterlegt, Google nicht erreichbar, Kontingent aufgebraucht o.ä.),
+      // bleibt einfach die Sanity-Version stehen. Kein Fehler wird dem
+      // Besucher angezeigt.
+      fetch('/api/opening-hours.json')
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: GoogleHoursResponse | null) => {
+          if (!data || !data.ok || !data.periods || data.periods.length === 0) return
+
+          entries = data.periods
+          render()
+
+          if (data.weekdayText && data.weekdayText.length > 0) {
+            const listEl = document.getElementById('opening-hours-list')
+            if (listEl) {
+              listEl.replaceChildren(
+                ...data.weekdayText.flatMap((line, i) => {
+                  const span = document.createElement('span')
+                  span.textContent = line
+                  return i < data.weekdayText!.length - 1 ? [span, document.createElement('br')] : [span]
+                })
+              )
+            }
+          }
+        })
+        .catch(() => {
+          // Netzwerkfehler o.ae. -- bewusst leise, Sanity-Fallback bleibt sichtbar.
+        })
+    } catch (e) {
+      // Ungueltiges JSON o.ae. -- Badge bleibt einfach versteckt (hidden),
+      // kein kaputter Zustand sichtbar.
+    }
+  }
+</script>
