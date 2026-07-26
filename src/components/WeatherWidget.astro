@@ -174,25 +174,62 @@ const structuredHours = parseOpeningHours(openingHours)
     return data
   }
 
+  // Antwortform von /api/opening-hours.json, siehe lib/google-places.ts --
+  // hier nur clientseitig, kein Zugriff auf Server-Env noetig (analog zu
+  // OpeningStatus.astro).
+  interface GoogleHoursResponse {
+    ok: boolean
+    periods?: HoursEntry[]
+  }
+
   const el = document.getElementById('weather-widget')
   if (el) {
+    // Sanity-basierte Daten aus dem Astro-Frontmatter -- sofort verfuegbar.
+    // Wird unten durch die Google-Antwort ersetzt, sobald/falls die eintrifft.
     let hoursEntries: HoursEntry[] = []
     try {
       hoursEntries = JSON.parse(el.dataset.hours ?? '[]')
     } catch {}
 
+    let weatherData: WeatherData | null = null
+
+    // Rendert nur, wenn das Wetter schon geladen ist -- hoursEntries kann
+    // sich danach noch (durch die Google-Antwort) aendern, dann wird hier
+    // einfach neu gerendert, das Widget bleibt aber bis zum ersten
+    // erfolgreichen Wetter-Load hidden wie bisher.
+    const render = () => {
+      if (!weatherData) return
+      const { icon, text } = buildMessage(weatherData.code, weatherData.temp, hoursEntries)
+      const iconEl = el.querySelector('.ww-icon')
+      const textEl = el.querySelector('.ww-text')
+      if (iconEl) iconEl.textContent = icon
+      if (textEl) textEl.textContent = text
+      el.removeAttribute('hidden')
+    }
+
     loadWeather()
       .then((data) => {
-        const { icon, text } = buildMessage(data.code, data.temp, hoursEntries)
-        const iconEl = el.querySelector('.ww-icon')
-        const textEl = el.querySelector('.ww-text')
-        if (iconEl) iconEl.textContent = icon
-        if (textEl) textEl.textContent = text
-        el.removeAttribute('hidden')
+        weatherData = data
+        render()
       })
       .catch(() => {
         // Wetterdienst nicht erreichbar -- Widget bleibt versteckt (hidden),
         // kein kaputter/leerer Zustand sichtbar.
+      })
+
+    // Live-Öffnungszeiten von Google nachladen -- laeuft unabhaengig vom
+    // Wetter-Load. Schlaegt der Fetch fehl (kein API-Key, Google nicht
+    // erreichbar, Kontingent aufgebraucht o.ae.), bleibt einfach die
+    // Sanity-Version stehen, kein Fehler wird dem Besucher angezeigt.
+    fetch('/api/opening-hours.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: GoogleHoursResponse | null) => {
+        if (!data || !data.ok || !data.periods || data.periods.length === 0) return
+        hoursEntries = data.periods
+        render()
+      })
+      .catch(() => {
+        // Netzwerkfehler o.ae. -- bewusst leise, Sanity-Fallback bleibt bestehen.
       })
   }
 </script>
