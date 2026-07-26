@@ -4,3 +4,5 @@ dist/
 .astro/
 public/product-images/
 src/generated/image-map.json
+.vercel
+.env*
