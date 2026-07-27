@@ -109,21 +109,28 @@ const slides: GallerySlide[] =
           <span class="snake-dot"></span>
           <div class="snake-card">
             <div class="snake-year">2014</div>
-            <p class="snake-text"><strong>Die Anfänge.</strong> Mit einem kleinen Imbissanhänger losgelegt — mehr brauchten wir nicht.</p>
+            <p class="snake-text"><strong>Die Anfänge.</strong> 2014 mit einem kleinen, geliehenen Imbissanhänger gestartet — die Qualität hat euch trotzdem überzeugt.</p>
+          </div>
+        </div>
+        <div class="snake-node snake-node--left" data-snake-x="620" data-snake-y="90">
+          <span class="snake-dot"></span>
+          <div class="snake-card">
+            <div class="snake-year">2015</div>
+            <p class="snake-text"><strong>Neuer Wagen.</strong> Größer, ganz auf uns zugeschnitten — dazu neue Kreationen rund um Wurst und Pommes. Qualität und Frische blieben, wie sie waren.</p>
           </div>
         </div>
         <div class="snake-node snake-node--right" data-snake-x="1160" data-snake-y="300">
           <span class="snake-dot"></span>
           <div class="snake-card">
             <div class="snake-year">2020</div>
-            <p class="snake-text"><strong>Der Bus kam dazu.</strong> Umgebaut, mit Indoorbereich — für die Schietwetter-Tage am Strand.</p>
+            <p class="snake-text"><strong>Der Bus kam dazu.</strong> Der Foodtruck 2.0 — ein umgebauter Linienbus, extra für uns gebaut — bringt seitdem einen Indoorbereich für die Schietwetter-Tage am Strand.</p>
           </div>
         </div>
         <div class="snake-node snake-node--left snake-node--current" data-snake-x="110" data-snake-y="460">
           <span class="snake-dot"></span>
           <div class="snake-card">
             <div class="snake-year">2024</div>
-            <p class="snake-text"><strong>Digital angekommen.</strong> Online-Bestellung, Self-Order-Terminals und Abholnummern auf Bildschirmen.</p>
+            <p class="snake-text"><strong>Digital angekommen.</strong> Bestellen und bezahlen per Handy, zwei Self-Order-Terminals, Abholnummern auf Bildschirmen und Bezahlen per QR-Code.</p>
           </div>
         </div>
       </div>
@@ -137,17 +144,22 @@ const slides: GallerySlide[] =
           <div class="snake-mobile-item" data-snake-threshold="0">
             <span class="snake-dot"></span>
             <div class="snake-year">2014</div>
-            <p class="snake-text"><strong>Die Anfänge.</strong> Mit einem kleinen Imbissanhänger losgelegt — mehr brauchten wir nicht.</p>
+            <p class="snake-text"><strong>Die Anfänge.</strong> 2014 mit einem kleinen, geliehenen Imbissanhänger gestartet — die Qualität hat euch trotzdem überzeugt.</p>
           </div>
-          <div class="snake-mobile-item" data-snake-threshold="0.5">
+          <div class="snake-mobile-item" data-snake-threshold="0.33">
+            <span class="snake-dot"></span>
+            <div class="snake-year">2015</div>
+            <p class="snake-text"><strong>Neuer Wagen.</strong> Größer, ganz auf uns zugeschnitten — dazu neue Kreationen rund um Wurst und Pommes. Qualität und Frische blieben, wie sie waren.</p>
+          </div>
+          <div class="snake-mobile-item" data-snake-threshold="0.66">
             <span class="snake-dot"></span>
             <div class="snake-year">2020</div>
-            <p class="snake-text"><strong>Der Bus kam dazu.</strong> Umgebaut, mit Indoorbereich — für die Schietwetter-Tage am Strand.</p>
+            <p class="snake-text"><strong>Der Bus kam dazu.</strong> Der Foodtruck 2.0 — ein umgebauter Linienbus, extra für uns gebaut — bringt seitdem einen Indoorbereich für die Schietwetter-Tage am Strand.</p>
           </div>
           <div class="snake-mobile-item" data-snake-threshold="1">
             <span class="snake-dot"></span>
             <div class="snake-year">2024</div>
-            <p class="snake-text"><strong>Digital angekommen.</strong> Online-Bestellung, Self-Order-Terminals und Abholnummern auf Bildschirmen.</p>
+            <p class="snake-text"><strong>Digital angekommen.</strong> Bestellen und bezahlen per Handy, zwei Self-Order-Terminals, Abholnummern auf Bildschirmen und Bezahlen per QR-Code.</p>
           </div>
         </div>
       </div>
@@ -293,17 +305,39 @@ const slides: GallerySlide[] =
 .snake-node { position: absolute; width: 0; height: 0; }
 .snake-dot {
   position: absolute; left: 0; top: 0;
-  width: 14px; height: 14px; border-radius: 50%;
+  width: 20px; height: 20px; border-radius: 50%;
   background: var(--sun);
   border: 3px solid var(--ocean-deep);
-  box-shadow: 0 0 0 4px rgba(244,168,32,0.18);
+  box-shadow: 0 0 0 5px rgba(244,168,32,0.18);
   transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.65s cubic-bezier(0.34, 1.9, 0.5, 1);
 }
 .snake-node.active .snake-dot { transform: translate(-50%, -50%) scale(1); }
 
-/* Letzter Punkt = "aktuellster" Eintrag: dezenter Puls-Ring markiert ihn
-   zusätzlich zur abwärts auslaufenden Linie als Endpunkt/Gegenwart. */
+/* Einmaliger "Lande"-Blitz bei JEDEM Node beim Aktivieren -- macht den
+   Moment, in dem ein Punkt erscheint, spürbarer als nur die Dot-Bounce.
+   Läuft über ::before, damit es nicht mit dem dauerhaften Puls-Ring des
+   --current-Nodes (::after) kollidiert; retriggert bei jedem aktiv/inaktiv-
+   Wechsel, weil das Scrubbing rückwärts/vorwärts erneut durch den
+   Schwellenwert läuft. */
+.snake-dot::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--sun);
+  opacity: 0;
+}
+.snake-node.active .snake-dot::before {
+  animation: snakeLandFlash 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes snakeLandFlash {
+  0%   { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+/* Letzter Punkt = "aktuellster" Eintrag: zusätzlich dauerhaft dezenter
+   Puls-Ring markiert ihn als Endpunkt/Gegenwart. */
 .snake-node--current .snake-dot::after {
   content: '';
   position: absolute;
@@ -320,25 +354,26 @@ const slides: GallerySlide[] =
   100% { transform: scale(2.1); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .snake-node--current .snake-dot::after { animation: none; }
+  .snake-node--current .snake-dot::after,
+  .snake-dot::before { animation: none; }
 }
 
 .snake-card {
   position: absolute;
   width: 280px;
   opacity: 0;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.5s ease 0.15s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
 }
 .snake-node.active .snake-card { opacity: 1; }
 .snake-node--left .snake-card {
   left: 0; top: 50%;
-  transform: translate(0, -50%) translateX(-8px);
+  transform: translate(0, -50%) translateX(-16px);
   margin-left: 22px;
 }
 .snake-node--left.active .snake-card { transform: translate(0, -50%) translateX(0); }
 .snake-node--right .snake-card {
   right: 0; top: 50%;
-  transform: translate(0, -50%) translateX(8px);
+  transform: translate(0, -50%) translateX(16px);
   margin-right: 22px;
   text-align: right;
 }
@@ -363,11 +398,14 @@ const slides: GallerySlide[] =
   transform: translate(-50%, 0) scale(0);
 }
 .snake-mobile-item.active .snake-dot { transform: translate(-50%, 0) scale(1); }
+.snake-mobile-item.active .snake-dot::before {
+  animation: snakeLandFlash 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
 .snake-mobile-item .snake-year { margin-bottom: 0.2rem; }
 .snake-mobile-item .snake-text {
   opacity: 0;
-  transform: translateX(-8px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateX(-16px);
+  transition: opacity 0.5s ease 0.15s, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
 }
 .snake-mobile-item.active .snake-text { opacity: 1; transform: translateX(0); }
 
