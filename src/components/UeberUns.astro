@@ -93,6 +93,15 @@ const slides: GallerySlide[] =
       mit dem 0..1-Scroll-Fortschritt arbeiten kann (kein getTotalLength()).
     -->
     <div class="uu-timeline-snake reveal" id="uu-timeline" style="transition-delay:0.2s">
+      <!--
+        Pin-Wrapper: hoher Runway (Desktop only), damit .snake-desktop per
+        position:sticky während des Scrollens stehen bleibt und die
+        Zeichnen-Animation über eine deutlich längere Scroll-Strecke abläuft,
+        statt im bisherigen kurzen 0.7-Viewport-Fenster (initSnakeTimeline im
+        Script berechnet den Fortschritt bei Desktop-Breite jetzt aus diesem
+        Wrapper statt aus der Bounding-Box von .snake-desktop selbst).
+      -->
+      <div class="snake-desktop-pin" id="snake-desktop-pin">
       <div class="snake-desktop" aria-hidden="true">
         <svg class="snake-svg" viewBox="0 0 1200 700" preserveAspectRatio="none">
           <path class="snake-track" d="M 60 110 C 246.7 103.3 450 78.3 620 90 C 790 101.7 990 145 1080 180 C 1170 215 1180 273.3 1160 300 C 1140 326.7 1060 328.3 960 340 C 860 351.7 670 360 560 370 C 450 380 368.3 390 300 400 C 231.7 410 181.7 420 150 430 C 118.3 440 120 448.3 110 460 C 100 471.7 83.3 483.3 90 500 C 96.7 516.7 106.7 541.7 150 560 C 193.3 578.3 275 596.7 350 610 C 425 623.3 558.3 625 600 640 C 641.7 655 600 680 600 700" />
@@ -133,6 +142,7 @@ const slides: GallerySlide[] =
             <p class="snake-text"><strong>Digital angekommen.</strong> Bestellen und bezahlen per Handy, zwei Self-Order-Terminals, Abholnummern auf Bildschirmen und Bezahlen per QR-Code.</p>
           </div>
         </div>
+      </div>
       </div>
 
       <div class="snake-mobile">
@@ -236,15 +246,20 @@ const slides: GallerySlide[] =
 .ueber-uns .uu-card {
   background-color: var(--ocean-deep);
   /* Schiefer-Textur wie im Footer -- gleicher dunkler Schleier, damit beide
-     dunklen Sektionen dieselbe Material-Sprache teilen. clip-path/overflow
-     schneiden die Textur automatisch auf die diagonale Kartenform zu. */
+     dunklen Sektionen dieselbe Material-Sprache teilen. clip-path allein
+     schneidet die Textur automatisch auf die diagonale Kartenform zu
+     (koordinaten liegen ohnehin innerhalb der Box, kein overflow nötig). */
   background-image:
     linear-gradient(rgba(13,34,51,0.8), rgba(13,34,51,0.8)),
     var(--slate-texture);
   background-repeat: repeat;
   padding: 8rem max(1.5rem, calc((100vw - 1200px) / 2 + 1.5rem));
   position: relative;
-  overflow: hidden;
+  /* KEIN overflow:hidden hier -- würde die .snake-desktop-Sticky-Pin-
+     Animation weiter unten kaputt machen (overflow != visible auf einem
+     Vorfahren bricht position:sticky, das Element würde sich dann relativ
+     zu dieser Box statt zum Viewport "festhalten"). clip-path allein
+     übernimmt die komplette visuelle Begrenzung auf die diagonale Form. */
   clip-path: polygon(0 4%, 100% 0%, 100% 96%, 0% 100%);
 }
 .ueber-uns::before {
@@ -300,7 +315,28 @@ const slides: GallerySlide[] =
 }
 
 /* -- Desktop -- */
-.snake-desktop { position: relative; height: 700px; }
+/* Hoher Runway: .snake-desktop bleibt darin per JS-Pin (siehe
+   initSnakeTimeline) stehen, solange man durch .snake-desktop-pin
+   scrollt -- die Zeichnen-Animation bekommt dadurch eine deutlich
+   längere, ruhigere Scroll-Strecke statt im alten kurzen Fenster
+   durchzurauschen. Höhe als Vielfaches von vh, nicht fix, damit die
+   gefühlte Scroll-Geschwindigkeit auf jedem Bildschirm gleich bleibt.
+
+   KEIN position:sticky hier: html/body haben sitework overflow-x:hidden
+   (Scrollbar-Verstecken-Trick), was overflow-y computed automatisch auf
+   "auto" kippt (CSS-Spec-Regel bei gemischten overflow-x/y-Werten) --
+   das macht html/body zum offiziellen Scroll-Container und bricht
+   position:sticky für alle Nachfahren, egal wie tief verschachtelt.
+   initSnakeTimeline() baut das Pin-Verhalten deshalb per JS nach
+   (fixed/absolute je nach Scroll-Position statt sticky). */
+.snake-desktop-pin { position: relative; height: 260vh; }
+.snake-desktop {
+  position: relative;
+  height: 700px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .snake-desktop-pin { height: auto; }
+}
 .snake-desktop .snake-svg { position: absolute; inset: 0; }
 .snake-node { position: absolute; width: 0; height: 0; }
 .snake-dot {
@@ -410,7 +446,7 @@ const slides: GallerySlide[] =
 .snake-mobile-item.active .snake-text { opacity: 1; transform: translateX(0); }
 
 @media (max-width: 900px) {
-  .snake-desktop { display: none; }
+  .snake-desktop-pin { display: none; height: auto; }
   .snake-mobile { display: block; }
   .uu-timeline-snake { margin: 3rem 0 4rem; }
 }
@@ -804,11 +840,15 @@ const slides: GallerySlide[] =
     const wrap = document.getElementById('uu-timeline')
     if (!wrap) return
 
+    const desktopEl    = wrap.querySelector<HTMLElement>('.snake-desktop')
     const desktopSvg   = wrap.querySelector<SVGSVGElement>('.snake-desktop .snake-svg')
     const desktopDraw  = wrap.querySelector<SVGPathElement>('.snake-desktop .snake-draw')
     const desktopNodes = Array.from(wrap.querySelectorAll<HTMLElement>('.snake-desktop .snake-node'))
+    const pinWrap      = wrap.querySelector<HTMLElement>('.snake-desktop-pin')
+    const PIN_TOP = 96 // px, entspricht --top: 6rem, lässt die feste Navbar frei
     const mobileDraw   = wrap.querySelector<SVGPathElement>('.snake-mobile .snake-draw')
     const mobileItems  = Array.from(wrap.querySelectorAll<HTMLElement>('.snake-mobile-item'))
+    const mobileQuery  = window.matchMedia('(max-width: 900px)')
 
     const drawPaths = [desktopDraw, mobileDraw].filter((p): p is SVGPathElement => !!p)
     if (drawPaths.length === 0) return
@@ -857,22 +897,64 @@ const slides: GallerySlide[] =
 
     function update() {
       ticking = false
-      const rect = wrap!.getBoundingClientRect()
-      const vh = window.innerHeight
-      // Bewusst NUR an die Oberkante gekoppelt (nicht an rect.height): bei
-      // einer hohen Sektion würde ein höhenabhängiger Endpunkt bedeuten,
-      // dass man fast die komplette Sektion durchscrollen muss, bevor der
-      // letzte Punkt erscheint. Stattdessen läuft der Fortschritt über ein
-      // FESTES Scroll-Fenster, während die Oberkante von 85% auf 15% der
-      // Viewport-Höhe wandert — unabhängig davon, wie lang die Sektion ist.
-      const start = vh * 0.85 // Fortschritt beginnt, wenn Oberkante hier ankommt
-      const end = vh * 0.15   // Fortschritt = 1, wenn Oberkante hier ankommt
-      const raw = (start - rect.top) / (start - end)
-      const progress = Math.min(Math.max(raw, 0), 1)
 
-      drawPaths.forEach((p) => { p.style.strokeDashoffset = String(1 - progress) })
-      desktopNodes.forEach((n, i) => n.classList.toggle('active', progress >= desktopThresholds[i]))
-      mobileItems.forEach((n, i) => n.classList.toggle('active', progress >= mobileThresholds[i]))
+      // Desktop: Fortschritt kommt aus dem hohen .snake-desktop-pin-Runway.
+      // .snake-desktop wird dabei per JS "gepinnt" (fixed/absolute je nach
+      // Scroll-Position, siehe Kommentar bei .snake-desktop-pin oben --
+      // natives position:sticky funktioniert hier nicht) -- dadurch läuft
+      // die Zeichnen-Animation über eine deutlich längere, ruhigere
+      // Scroll-Strecke statt im alten kurzen 0.7-Viewport-Fenster.
+      if (!mobileQuery.matches && pinWrap) {
+        const pinRect = pinWrap.getBoundingClientRect()
+        const vh = window.innerHeight
+        const scrollable = pinRect.height - vh
+        const raw = scrollable > 0 ? -pinRect.top / scrollable : 0
+        const progress = Math.min(Math.max(raw, 0), 1)
+
+        if (desktopEl) {
+          if (pinRect.top > 0) {
+            // Runway noch nicht erreicht -- normaler Fluss oben im Wrapper.
+            desktopEl.style.position = 'relative'
+            desktopEl.style.top = ''
+            desktopEl.style.bottom = ''
+            desktopEl.style.left = ''
+            desktopEl.style.width = ''
+          } else if (pinRect.bottom <= vh) {
+            // Runway durchgescrollt -- unten im Wrapper parken, damit der
+            // Übergang zurück in den normalen Fluss nahtlos ist.
+            desktopEl.style.position = 'absolute'
+            desktopEl.style.top = ''
+            desktopEl.style.bottom = '0'
+            desktopEl.style.left = '0'
+            desktopEl.style.width = '100%'
+          } else {
+            // Mittendrin -- am Viewport fixiert, Navbar bleibt frei.
+            desktopEl.style.position = 'fixed'
+            desktopEl.style.top = `${PIN_TOP}px`
+            desktopEl.style.bottom = ''
+            desktopEl.style.left = `${pinRect.left}px`
+            desktopEl.style.width = `${pinRect.width}px`
+          }
+        }
+
+        if (desktopDraw) desktopDraw.style.strokeDashoffset = String(1 - progress)
+        desktopNodes.forEach((n, i) => n.classList.toggle('active', progress >= desktopThresholds[i]))
+      }
+
+      // Mobile: unverändert das bisherige feste Scroll-Fenster (kein Pin --
+      // Scroll-Jacking auf Touch-Geräten fühlt sich schnell falsch an, und
+      // die einfache vertikale Liste braucht keine lange Bühne).
+      if (mobileQuery.matches) {
+        const rect = wrap!.getBoundingClientRect()
+        const vh = window.innerHeight
+        const start = vh * 0.85
+        const end = vh * 0.15
+        const raw = (start - rect.top) / (start - end)
+        const progress = Math.min(Math.max(raw, 0), 1)
+
+        if (mobileDraw) mobileDraw.style.strokeDashoffset = String(1 - progress)
+        mobileItems.forEach((n, i) => n.classList.toggle('active', progress >= mobileThresholds[i]))
+      }
     }
 
     window.addEventListener('scroll', () => {
