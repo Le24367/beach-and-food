@@ -24,6 +24,13 @@ interface ImportMetaEnv {
   // Siehe .env.example für Anleitung, wie man an beide Werte kommt.
   readonly GOOGLE_PLACES_API_KEY: string  // Google Cloud Console → API-Key mit "Places API" freigeschaltet
   readonly GOOGLE_PLACE_ID:       string  // Place ID des Google-Business-Eintrags
+
+  // ── Cron-Absicherung — nur serverseitig ──────────────────────────
+  // Schützt /api/cron/refresh-opening-hours vor fremden Aufrufen. Vercel
+  // schickt diesen Wert automatisch als Authorization-Header mit, wenn
+  // die Env-Var im Projekt gesetzt ist. Optional -- ohne Wert läuft die
+  // Route ungeschützt.
+  readonly CRON_SECRET?: string
 }
 
 interface ImportMeta {

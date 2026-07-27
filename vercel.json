@@ -8,5 +8,11 @@
       "source": "/menu.json",
       "headers": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/refresh-opening-hours",
+      "schedule": "0 6 * * *"
+    }
   ]
 }
