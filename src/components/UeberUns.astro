@@ -1,5 +1,6 @@
 ---
 import { getSiteSettings } from '../lib/sanity'
+import slateTexture from '../assets/textures/slate-stone.webp'
 
 const settings = await getSiteSettings().catch(() => null)
 
@@ -33,7 +34,7 @@ const slides: GallerySlide[] =
     : [{ src: '/images/ueberuns/placeholder.jpg', alt: 'Beach and Food', caption: null }];
 ---
 <section class="ueber-uns" id="ueber-uns">
-  <div class="uu-card">
+  <div class="uu-card" style={`--slate-texture: url(${slateTexture.src})`}>
   <div class="container">
 
     <div class="uu-grid">
@@ -221,7 +222,14 @@ const slides: GallerySlide[] =
   z-index: 1;
 }
 .ueber-uns .uu-card {
-  background: var(--ocean-deep);
+  background-color: var(--ocean-deep);
+  /* Schiefer-Textur wie im Footer -- gleicher dunkler Schleier, damit beide
+     dunklen Sektionen dieselbe Material-Sprache teilen. clip-path/overflow
+     schneiden die Textur automatisch auf die diagonale Kartenform zu. */
+  background-image:
+    linear-gradient(rgba(13,34,51,0.8), rgba(13,34,51,0.8)),
+    var(--slate-texture);
+  background-repeat: repeat;
   padding: 8rem max(1.5rem, calc((100vw - 1200px) / 2 + 1.5rem));
   position: relative;
   overflow: hidden;

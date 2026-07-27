@@ -3,6 +3,7 @@ import { getSiteSettings } from '../lib/sanity'
 import type { SiteSettings } from '../lib/sanity'
 import { LINKS, CONTACT, SITE } from '../lib/config'
 import OpeningStatus from './OpeningStatus.astro'
+import slateTexture from '../assets/textures/slate-stone.webp'
 
 let settings: SiteSettings | null = null
 try {
@@ -108,7 +109,7 @@ const seasonNote = settings?.seasonNote
   </div>
 </section>
 
-<footer class="footer">
+<footer class="footer" style={`--slate-texture: url(${slateTexture.src})`}>
   <div class="container footer-inner">
     <div class="footer-logo">
       <picture>
@@ -214,7 +215,17 @@ const seasonNote = settings?.seasonNote
 }
 
 /* ---- FOOTER ---- */
-.footer { background: var(--ocean-deep); padding: 4rem 0 2.5rem; }
+.footer {
+  background-color: var(--ocean-deep);
+  /* Schiefer-Textur unter einem gleichmäßigen dunklen Schleier -- der
+     Schleier hält den Kontrast der Footer-Links/Legal-Texte auf dem
+     bisherigen Niveau, unabhängig von hellen/dunklen Stellen im Foto. */
+  background-image:
+    linear-gradient(rgba(13,34,51,0.8), rgba(13,34,51,0.8)),
+    var(--slate-texture);
+  background-repeat: repeat;
+  padding: 4rem 0 2.5rem;
+}
 .footer-inner { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; text-align: center; }
 .footer-logo {
   background: #ffffff;

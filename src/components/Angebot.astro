@@ -3,6 +3,7 @@ import { urlFor, getShowPrices } from '../lib/sanity'
 import type { MenuCategory, MenuItem } from '../lib/sanity'
 import imageMapRaw from '../generated/image-map.json'
 import { buildMenuJsonLd, getMenuData } from '../lib/menu'
+import woodTexture from '../assets/textures/wood-plank.webp'
 
 const showPrices = await getShowPrices()
 
@@ -131,7 +132,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 const menuJsonLd = await buildMenuJsonLd()
 ---
 
-<section class="angebot" id="angebot">
+<section class="angebot" id="angebot" style={`--wood-texture: url(${woodTexture.src})`}>
   {menuJsonLd.hasMenuSection.length > 0 && (
     <script type="application/ld+json" set:html={JSON.stringify(menuJsonLd)} />
   )}
@@ -549,7 +550,17 @@ const menuJsonLd = await buildMenuJsonLd()
 </script>
 
 <style>
-.angebot { padding: 6rem 0 8rem; background: var(--sand-light); }
+.angebot {
+  padding: 6rem 0 8rem;
+  background-color: var(--sand-light);
+  /* Holz-Textur unter einem hellen Creme-Schleier -- mattiert Richtung des
+     bisherigen Cremetons, damit Section-Header-Text lesbar bleibt und sich
+     die weißen Menu-Karten klar vom Hintergrund abheben. */
+  background-image:
+    linear-gradient(rgba(251,244,230,0.55), rgba(251,244,230,0.55)),
+    var(--wood-texture);
+  background-repeat: repeat;
+}
 .section-head { text-align: center; margin-bottom: 4rem; }
 .section-label {
   display: inline-block;
@@ -566,8 +577,12 @@ const menuJsonLd = await buildMenuJsonLd()
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 1.5rem; }
 
 .menu-card {
-  background: #fff; border-radius: 20px; overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.07); box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  /* Leicht warmes Weiß statt reinem #fff, plus ein weicher, warmgetönter
+     Schatten (statt reinem Schwarz) -- lässt die Karte auf der Holz-Textur
+     "aufliegen" statt wie ein hart ausgeschnittener Aufkleber zu wirken. */
+  background: #FFFEFB; border-radius: 20px; overflow: hidden;
+  border: 1px solid rgba(61,38,20,0.08);
+  box-shadow: 0 16px 40px rgba(61,38,20,0.16), 0 2px 8px rgba(61,38,20,0.08);
   cursor: pointer; text-align: left; padding: 0; width: 100%; font-family: inherit;
   /*
     transition-delay kommt aus --reveal-delay (gesetzt per Inline-Style).
@@ -592,7 +607,7 @@ const menuJsonLd = await buildMenuJsonLd()
 */
 .menu-card:hover {
   transform: translateY(-8px) scale(1.01);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.13);
+  box-shadow: 0 26px 60px rgba(61,38,20,0.22), 0 4px 12px rgba(61,38,20,0.12);
   transition-delay: 0s;
 }
 .menu-card:hover .card-img { transform: scale(1.06); }

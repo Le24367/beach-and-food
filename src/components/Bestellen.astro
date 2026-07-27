@@ -2,6 +2,8 @@
 import { getLinks, getSiteSettings } from '../lib/sanity'
 import type { PaymentMethod } from '../lib/sanity'
 import WeatherWidget from './WeatherWidget.astro'
+import woodTexture from '../assets/textures/wood-plank.webp'
+import slateTexture from '../assets/textures/slate-stone.webp'
 
 const [links, settings] = await Promise.all([
   getLinks(),
@@ -69,7 +71,7 @@ try {
 }
 ---
 
-<section class="bestellen" id="bestellen">
+<section class="bestellen" id="bestellen" style={`--wood-texture: url(${woodTexture.src})`}>
   <div class="container">
     <div class="bestellen-card reveal">
       <div class="bc-left">
@@ -195,8 +197,8 @@ try {
   </div>
 </section>
 
-<section class="vibes" id="vibes">
-  <div class="vibes-card">
+<section class="vibes" id="vibes" style={`--wood-texture: url(${woodTexture.src})`}>
+  <div class="vibes-card" style={`--slate-texture: url(${slateTexture.src})`}>
     <div class="container">
       <div class="vibes-inner reveal">
         <span class="section-label" style="color: var(--sun)">Beach Vibes</span>
@@ -319,7 +321,17 @@ try {
 
 <style>
 /* ── BESTELLEN ── */
-.bestellen { padding: 7rem 0; background: var(--sand-light); }
+.bestellen {
+  padding: 7rem 0;
+  background-color: var(--sand-light);
+  /* Setzt die Holz-Textur aus der Angebot-Sektion direkt fort -- derselbe
+     Creme-Schleier, damit der Übergang zwischen den beiden Sektionen nicht
+     wieder hart wirkt. Läuft in .vibes weiter unten aus. */
+  background-image:
+    linear-gradient(rgba(251,244,230,0.55), rgba(251,244,230,0.55)),
+    var(--wood-texture);
+  background-repeat: repeat;
+}
 .bestellen-card {
   background: var(--ocean); border-radius: 2rem; padding: 4rem;
   display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;
@@ -476,9 +488,29 @@ try {
 }
 
 /* ── VIBES ── */
-.vibes { padding: 7rem 0; background: transparent; position: relative; z-index: 1; }
+.vibes {
+  padding: 7rem 0;
+  /* Letzte Holz-Sektion: derselbe Schleier wie in .angebot/.bestellen oben,
+     aber von 55% auf 100% Deckkraft auslaufend -- die Textur blendet über
+     die Sektion aus und ist am unteren Rand komplett verdeckt, statt hart
+     abzuschneiden. Danach (Über-uns/Footer) läuft die Seite mit Schiefer
+     weiter, kein Holz mehr. */
+  background-color: var(--sand-light);
+  background-image:
+    linear-gradient(rgba(251,244,230,0.55) 0%, rgba(251,244,230,0.55) 40%, rgba(251,244,230,1) 100%),
+    var(--wood-texture);
+  background-repeat: repeat;
+  position: relative;
+  z-index: 1;
+}
 .vibes .vibes-card {
-  background: var(--ocean-deep);
+  background-color: var(--ocean-deep);
+  /* Gleicher Schiefer-Schleier wie Footer/Über-uns-Karte -- alle dunklen
+     Flächen der Seite teilen jetzt dieselbe Material-Textur statt Flächenfarbe. */
+  background-image:
+    linear-gradient(rgba(13,34,51,0.8), rgba(13,34,51,0.8)),
+    var(--slate-texture);
+  background-repeat: repeat;
   padding: 6rem max(1.5rem, calc((100vw - 1200px) / 2 + 1.5rem));
   clip-path: polygon(0 0%, 100% 4%, 100% 100%, 0% 96%);
 }
