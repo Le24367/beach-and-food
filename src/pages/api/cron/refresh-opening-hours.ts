@@ -51,12 +51,18 @@ export const GET: APIRoute = async ({ request }) => {
   const entries = groupOpeningHours(result.periods)
 
   try {
-    await serverClient.patch('siteSettings').set({ openingHours: entries }).commit()
-    // Denselben "Webseite live schalten"-Mechanismus antriggern wie der
-    // manuelle Studio-Button (schemaTypes/deploy.tsx + actions/deployAction.tsx
-    // im Studio-Repo) -- ohne das bliebe die Live-Seite auf altem Stand.
-    await serverClient.createIfNotExists({ _id: 'deploy', _type: 'deploy' })
-    await serverClient.patch('deploy').set({ lastDeploy: new Date().toISOString() }).commit()
+    // Alles in EINER Transaktion -- siteSettings-Patch + Deploy-Trigger
+    // (schemaTypes/deploy.tsx + actions/deployAction.tsx im Studio-Repo)
+    // zusammen committen, nicht als getrennte Aufrufe. Getrennte commit()s
+    // wurden von Sanitys Webhook live beobachtet als mehrere unabhängige
+    // Schreibvorgänge gewertet -- führte zu mehreren ausgelösten Vercel-
+    // Builds pro Lauf statt einem.
+    await serverClient
+      .transaction()
+      .patch('siteSettings', (p) => p.set({ openingHours: entries }))
+      .createIfNotExists({ _id: 'deploy', _type: 'deploy' })
+      .patch('deploy', (p) => p.set({ lastDeploy: new Date().toISOString() }))
+      .commit()
   } catch (e) {
     return new Response(
       JSON.stringify({

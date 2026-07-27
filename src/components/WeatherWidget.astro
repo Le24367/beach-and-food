@@ -174,10 +174,10 @@ const structuredHours = parseOpeningHours(openingHours)
     return data
   }
 
-  // Antwortform von /api/opening-hours.json, siehe lib/google-places.ts --
-  // hier nur clientseitig, kein Zugriff auf Server-Env noetig (analog zu
-  // OpeningStatus.astro).
-  interface GoogleHoursResponse {
+  // Antwortform von /api/current-opening-hours.json -- liest denselben
+  // Sanity-Stand wie OpeningStatus.astro (siehe dort für Details), kein
+  // eigener Google-Call mehr hier.
+  interface CurrentHoursResponse {
     ok: boolean
     periods?: HoursEntry[]
   }
@@ -217,19 +217,18 @@ const structuredHours = parseOpeningHours(openingHours)
         // kein kaputter/leerer Zustand sichtbar.
       })
 
-    // Live-Öffnungszeiten von Google nachladen -- laeuft unabhaengig vom
-    // Wetter-Load. Schlaegt der Fetch fehl (kein API-Key, Google nicht
-    // erreichbar, Kontingent aufgebraucht o.ae.), bleibt einfach die
-    // Sanity-Version stehen, kein Fehler wird dem Besucher angezeigt.
-    fetch('/api/opening-hours.json')
+    // Aktuellen Sanity-Stand nachladen -- laeuft unabhaengig vom Wetter-
+    // Load. Schlaegt der Fetch fehl, bleibt einfach der schon angezeigte
+    // Stand stehen, kein Fehler wird dem Besucher angezeigt.
+    fetch('/api/current-opening-hours.json')
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: GoogleHoursResponse | null) => {
+      .then((data: CurrentHoursResponse | null) => {
         if (!data || !data.ok || !data.periods || data.periods.length === 0) return
         hoursEntries = data.periods
         render()
       })
       .catch(() => {
-        // Netzwerkfehler o.ae. -- bewusst leise, Sanity-Fallback bleibt bestehen.
+        // Netzwerkfehler o.ae. -- bewusst leise, angezeigter Stand bleibt bestehen.
       })
   }
 </script>

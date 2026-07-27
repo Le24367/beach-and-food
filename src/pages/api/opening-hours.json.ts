@@ -2,9 +2,19 @@
  * /api/opening-hours.json
  *
  * Server-Endpunkt, der die Öffnungszeiten live von der Google Places API
- * (Place Details, Feld "opening_hours") holt -- die Seite selbst muss dafür
- * NICHT neu gebaut werden, ändert sich der Google-Eintrag, spiegelt sich
- * das binnen des Cache-Fensters unten automatisch wider.
+ * (Place Details, Feld "opening_hours") holt.
+ *
+ * WICHTIG: wird NICHT mehr vom Live-"Jetzt geöffnet"-Badge auf der Seite
+ * genutzt (siehe /api/current-opening-hours.json.ts dafür, liest Sanity
+ * statt Google -- Konsistenz-Fix, damit Badge und täglicher Cron nie
+ * auseinanderlaufen). Diese Route hier bleibt für zwei echte Google-
+ * Live-Verbraucher bestehen: den "Zeiten über Google API fetchen"-Button
+ * im Sanity Studio (tools/importGoogleHours.ts) und den täglichen Cron
+ * (api/cron/refresh-opening-hours.ts nutzt allerdings getGoogleOpeningHours()
+ * direkt statt über HTTP, aus demselben lib/google-places.ts).
+ *
+ * Ändert sich der Google-Eintrag, spiegelt sich das binnen des Cache-
+ * Fensters unten automatisch wider, ohne dass die Seite neu gebaut wird.
  *
  * WICHTIG: "export const prerender = false" ist hier zwingend -- ohne das
  * würde Astro (output: 'static', Astro-Default) diese Route beim Build

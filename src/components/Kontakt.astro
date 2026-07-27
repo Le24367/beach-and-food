@@ -57,12 +57,12 @@ const seasonNote = settings?.seasonNote
               <div class="k-label">Öffnungszeiten</div>
               <div class="k-val">
                 <!--
-                  id wird von OpeningStatus.astro's Client-Script genutzt:
-                  liefert /api/opening-hours.json live Daten von Google,
-                  wird dieser Block per JS durch Googles weekday_text
-                  ersetzt. Bis dahin (und falls der Live-Abruf fehlschlägt)
-                  steht hier die Sanity-Freitext-Version als Fallback --
-                  bereits serverseitig gerendert, kein Layout-Sprung.
+                  Direkt serverseitig aus Sanity gerendert, kein Layout-
+                  Sprung. Wird NICHT mehr per JS überschrieben (früher mit
+                  Googles weekday_text) -- OpeningStatus.astro's Client-
+                  Script liest inzwischen selbst denselben Sanity-Stand
+                  (siehe /api/current-opening-hours.json), es gibt also nur
+                  noch diese eine Quelle für den Text hier.
                 -->
                 <div id="opening-hours-list">
                   {openingHours.map((entry, i) => (

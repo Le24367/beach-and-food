@@ -59,12 +59,13 @@ const structured = parseOpeningHours(openingHours)
 <script>
   import { computeOpenStatus, type HoursEntry } from '../lib/opening-status-client'
 
-  // Antwortform von /api/opening-hours.json (siehe lib/google-places.ts) --
-  // hier nur clientseitig, kein Zugriff auf Server-Env noetig.
-  interface GoogleHoursResponse {
+  // Antwortform von /api/current-opening-hours.json -- liest denselben
+  // Sanity-Stand, den auch der taegliche Cron (api/cron/refresh-opening-hours.ts)
+  // dort hinschreibt, kein eigener Google-Call hier. Dadurch kann dieser
+  // Badge nie von dem abweichen, was Cron/Studio-Button zuletzt gesetzt haben.
+  interface CurrentHoursResponse {
     ok: boolean
     periods?: HoursEntry[]
-    weekdayText?: string[]
   }
 
   const el = document.getElementById('opening-status')
@@ -100,34 +101,20 @@ const structured = parseOpeningHours(openingHours)
         if (!document.hidden) render()
       })
 
-      // Live-Öffnungszeiten von Google nachladen. Läuft unabhängig vom
-      // obigen Sanity-Fallback -- schlägt der Fetch fehl (kein API-Key
-      // hinterlegt, Google nicht erreichbar, Kontingent aufgebraucht o.ä.),
-      // bleibt einfach die Sanity-Version stehen. Kein Fehler wird dem
-      // Besucher angezeigt.
-      fetch('/api/opening-hours.json')
+      // Aktuellen Sanity-Stand nachladen -- normalerweise identisch zu den
+      // oben schon serverseitig gerenderten "entries", schliesst nur die
+      // kurze Luecke zwischen einer Sanity-Aenderung und dem naechsten
+      // Rebuild. Schlaegt der Fetch fehl, bleibt einfach der schon
+      // angezeigte Stand stehen, kein Fehler wird dem Besucher angezeigt.
+      fetch('/api/current-opening-hours.json')
         .then((res) => (res.ok ? res.json() : null))
-        .then((data: GoogleHoursResponse | null) => {
+        .then((data: CurrentHoursResponse | null) => {
           if (!data || !data.ok || !data.periods || data.periods.length === 0) return
-
           entries = data.periods
           render()
-
-          if (data.weekdayText && data.weekdayText.length > 0) {
-            const listEl = document.getElementById('opening-hours-list')
-            if (listEl) {
-              listEl.replaceChildren(
-                ...data.weekdayText.flatMap((line, i) => {
-                  const span = document.createElement('span')
-                  span.textContent = line
-                  return i < data.weekdayText!.length - 1 ? [span, document.createElement('br')] : [span]
-                })
-              )
-            }
-          }
         })
         .catch(() => {
-          // Netzwerkfehler o.ae. -- bewusst leise, Sanity-Fallback bleibt sichtbar.
+          // Netzwerkfehler o.ae. -- bewusst leise, angezeigter Stand bleibt sichtbar.
         })
     } catch (e) {
       // Ungueltiges JSON o.ae. -- Badge bleibt einfach versteckt (hidden),
