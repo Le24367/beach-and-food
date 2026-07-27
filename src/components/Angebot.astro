@@ -1,8 +1,10 @@
 ﻿---
-import { urlFor } from '../lib/sanity'
+import { urlFor, getShowPrices } from '../lib/sanity'
 import type { MenuCategory, MenuItem } from '../lib/sanity'
 import imageMapRaw from '../generated/image-map.json'
 import { buildMenuJsonLd, getMenuData } from '../lib/menu'
+
+const showPrices = await getShowPrices()
 
 const imageMap: Record<string, { thumb: string; card: string; full: string }> = imageMapRaw as any
 
@@ -110,7 +112,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   return {
     id: p._id,
     title: p.title,
-    price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
+    price: showPrices ? p.price?.toFixed(2).replace('.', ',') + ' EUR' : null,
     description: p.description ?? null,
     imgThumb,
     imgFull,
@@ -399,11 +401,13 @@ const menuJsonLd = await buildMenuJsonLd()
 
         body.appendChild(inner)
 
-        const footer = createEl('div', 'mpi-footer')
-        const price  = createEl('span', 'mpi-price')
-        setText(price, p.price)
-        footer.appendChild(price)
-        body.appendChild(footer)
+        if (p.price) {
+          const footer = createEl('div', 'mpi-footer')
+          const price  = createEl('span', 'mpi-price')
+          setText(price, p.price)
+          footer.appendChild(price)
+          body.appendChild(footer)
+        }
 
         item.appendChild(body)
         li.appendChild(item)

@@ -6,7 +6,7 @@
  *   2. /menu.json:      maschinenlesbarer Endpunkt fuer Agenten, die die
  *                        Seite lesen statt Klicks auszufuehren
  */
-import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from './sanity'
+import { getMenuCategories, getMenuItems, getMenuSubCategories, getShowPrices, urlFor } from './sanity'
 import type { MenuCategory, MenuItem, MenuSubCategory } from './sanity'
 import { getIgetnowMenu } from './igetnow'
 import { SITE } from './config'
@@ -81,6 +81,7 @@ function jsonLdImage(p: MenuItem): string | undefined {
 
 export async function buildMenuJsonLd() {
   const { categories: items, menuItems, subCategories } = await getMenuData()
+  const showPrices = await getShowPrices()
 
   function subCatsForCategory(categoryId: string) {
     return subCategories.filter(s => s.categoryId === categoryId)
@@ -96,11 +97,13 @@ export async function buildMenuJsonLd() {
           name: p.title,
           ...(p.description ? { description: p.description } : {}),
           ...(absoluteImg ? { image: absoluteImg } : {}),
-          offers: {
-            '@type': 'Offer',
-            price: p.price.toFixed(2),
-            priceCurrency: 'EUR',
-          },
+          ...(showPrices ? {
+            offers: {
+              '@type': 'Offer',
+              price: p.price.toFixed(2),
+              priceCurrency: 'EUR',
+            },
+          } : {}),
         }
       })
   }

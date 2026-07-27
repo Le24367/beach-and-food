@@ -146,6 +146,7 @@ export interface SiteSettings {
   openingHours: OpeningHoursEntry[]
   seasonNote?: string
   youtubeId?: string
+  showPrices?: boolean
   paymentMethods?: PaymentMethod[]
   links?: {
     order?: string
@@ -283,6 +284,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
         openingHours,
         seasonNote,
         youtubeId,
+        showPrices,
         paymentMethods,
         links,
         legal
@@ -295,6 +297,18 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Feld ist optional (ältere/leere siteSettings-Dokumente kennen es noch
+// nicht) -- default true, sonst würden Preise überall verschwinden, bevor
+// im Studio überhaupt jemand das Feld gesehen/gesetzt hat.
+export async function getShowPrices(): Promise<boolean> {
+  try {
+    const settings = await getSiteSettings()
+    return settings?.showPrices !== false
+  } catch {
+    return true
+  }
+}
 
 export async function getLinks(): Promise<ResolvedLinks> {
   const { LINKS } = await import('./config')
