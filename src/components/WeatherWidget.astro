@@ -1,0 +1,235 @@
+---
+// Strandwetter-Teaser vor dem Bestell-CTA. Rein clientseitig (Open-Meteo,
+// kostenlos, kein API-Key noetig): Wetter aendert sich staendig, die Seite
+// wird aber nicht bei jeder Aenderung neu gebaut (SSG) -- ein Server-Fetch
+// zur Build-Zeit waere sofort veraltet.
+//
+// Kennt zusaetzlich den Live-Öffnungsstatus (geteilt mit OpeningStatus.astro
+// via lib/opening-status-client.ts): bei offen gibt's die verspielte
+// Bestell-Anspielung, bei geschlossen stattdessen die naechste Öffnungszeit
+// statt eines "komm doch vorbei", das gerade nicht stimmt.
+import { parseOpeningHours } from '../lib/hours'
+import type { OpeningHoursEntry } from '../lib/sanity'
+
+export interface Props {
+  openingHours: OpeningHoursEntry[]
+}
+const { openingHours } = Astro.props
+const structuredHours = parseOpeningHours(openingHours)
+---
+
+<div class="weather-widget" id="weather-widget" data-hours={JSON.stringify(structuredHours)} hidden aria-live="polite">
+  <span class="ww-icon" aria-hidden="true"></span>
+  <span class="ww-text"></span>
+</div>
+
+<style>
+.weather-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 100px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--foam);
+}
+.weather-widget[hidden] { display: none; }
+.ww-icon { font-size: 1.1rem; line-height: 1; }
+</style>
+
+<script>
+  import { computeOpenStatus, type HoursEntry } from '../lib/opening-status-client'
+
+  const LAT = 54.337045
+  const LNG = 11.071475
+  const CACHE_KEY = 'baf_weather_cache_v1'
+  const CACHE_TTL_MS = 20 * 60 * 1000 // 20 Minuten -- Wetter muss nicht sekundengenau sein
+
+  interface WeatherData { temp: number; code: number }
+  type Band = 'hot' | 'warm' | 'mild' | 'cool' | 'cold'
+
+  function tempBand(t: number): Band {
+    if (t >= 26) return 'hot'
+    if (t >= 20) return 'warm'
+    if (t >= 14) return 'mild'
+    if (t >= 8) return 'cool'
+    return 'cold'
+  }
+
+  // Je Wettercode eine eigene Zeile pro Temperaturband -- "open" ist die
+  // verspielte Variante mit Bestell-/Vor-Ort-Anspielung, "closed" ist der
+  // rein beschreibende Teil ohne CTA-Anspielung (die Öffnungszeit wird
+  // separat angehängt, siehe buildMessage).
+  function weatherLines(code: number, t: number): { icon: string; open: string; closed: string } {
+    const band = tempBand(t)
+
+    // Klarer Himmel
+    if (code === 0) {
+      const byBand: Record<Band, [string, string]> = {
+        hot:  [`${t}°C und Sonne pur — Bikini-Wetter! Perfekt für einen kalten Drink.`, `${t}°C und Sonne pur`],
+        warm: [`${t}°C und sonnig — perfektes Strandwetter!`, `${t}°C und sonnig am Strand`],
+        mild: [`${t}°C, sonnig aber frisch — eine Currywurst wärmt von innen.`, `${t}°C, sonnig aber frisch`],
+        cool: [`${t}°C, klarer Himmel — kalt, aber richtig schön.`, `${t}°C, klarer Himmel`],
+        cold: [`${t}°C, eisig klar — Mütze nicht vergessen.`, `${t}°C, eisig klar`],
+      }
+      const [open, closed] = byBand[band]
+      return { icon: '☀️', open, closed }
+    }
+
+    // Meist sonnig / leicht bewölkt
+    if (code === 1 || code === 2) {
+      const byBand: Record<Band, [string, string]> = {
+        hot:  [`${t}°C, meist sonnig — ab an den Strand!`, `${t}°C, meist sonnig`],
+        warm: [`${t}°C, meist sonnig — gutes Strandwetter`, `${t}°C, meist sonnig`],
+        mild: [`${t}°C, ein paar Wolken, aber angenehm mild`, `${t}°C, wechselnd bewölkt`],
+        cool: [`${t}°C, sonnig-kühl — eine warme Currywurst tut gut`, `${t}°C, sonnig-kühl`],
+        cold: [`${t}°C, kalt aber freundlich`, `${t}°C, kalt aber freundlich`],
+      }
+      const [open, closed] = byBand[band]
+      return { icon: '🌤️', open, closed }
+    }
+
+    // Bewölkt
+    if (code === 3) {
+      const byBand: Record<Band, [string, string]> = {
+        hot:  [`${t}°C, bewölkt — trotzdem T-Shirt-Wetter`, `${t}°C, bewölkt und warm`],
+        warm: [`${t}°C, bewölkt — trotzdem ein guter Tag für Pommes`, `${t}°C, bewölkt`],
+        mild: [`${t}°C, grau-mild — Zeit für eine Currywurst`, `${t}°C, grau und mild`],
+        cool: [`${t}°C, grau und kühl — wärm dich mit Pommes auf`, `${t}°C, grau und kühl`],
+        cold: [`${t}°C, grau und kalt — Zeit für etwas Warmes`, `${t}°C, grau und kalt`],
+      }
+      const [open, closed] = byBand[band]
+      return { icon: '⛅', open, closed }
+    }
+
+    // Nebel
+    if (code === 45 || code === 48) {
+      return { icon: '🌫️', open: `${t}°C, neblig am Strand — mystisch schön`, closed: `${t}°C, neblig am Strand` }
+    }
+
+    // Regen/Niesel
+    if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) {
+      return band === 'hot' || band === 'warm'
+        ? { icon: '🌧️', open: `${t}°C, warmer Regen — wir haben einen Indoor-Sitzbereich!`, closed: `${t}°C und regnerisch` }
+        : { icon: '🌧️', open: `${t}°C und nass — perfekt, um sich drinnen mit Currywurst aufzuwärmen`, closed: `${t}°C und nass` }
+    }
+
+    // Schnee
+    if ([71,73,75,77,85,86].includes(code)) {
+      return { icon: '❄️', open: `${t}°C, winterlich am Strand — selten, aber schön`, closed: `${t}°C, winterlich am Strand` }
+    }
+
+    // Gewitter
+    if ([95,96,99].includes(code)) {
+      return { icon: '⛈️', open: `${t}°C, Gewitter unterwegs — bleib trocken im Bus!`, closed: `${t}°C, Gewitter unterwegs` }
+    }
+
+    return { icon: '🌊', open: `${t}°C am Sütel-Strand`, closed: `${t}°C am Sütel-Strand` }
+  }
+
+  function buildMessage(code: number, temp: number, hoursEntries: HoursEntry[]): { icon: string; text: string } {
+    const t = Math.round(temp)
+    const { icon, open, closed } = weatherLines(code, t)
+
+    if (hoursEntries.length === 0) {
+      // Keine Öffnungszeiten geparst -- offen/geschlossen unbekannt, dann
+      // lieber die neutrale Variante ohne CTA-Anspielung zeigen.
+      return { icon, text: closed }
+    }
+
+    const status = computeOpenStatus(hoursEntries)
+    if (status.open) {
+      return { icon, text: open }
+    }
+    if (status.nextOpenWhen) {
+      return { icon, text: `${closed} — wir öffnen ${status.nextOpenWhen} um ${status.nextOpenAt} Uhr` }
+    }
+    return { icon, text: closed }
+  }
+
+  async function loadWeather(): Promise<WeatherData> {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY)
+      if (cached) {
+        const { data, ts } = JSON.parse(cached)
+        if (Date.now() - ts < CACHE_TTL_MS) return data
+      }
+    } catch {
+      // sessionStorage kann in seltenen Privacy-Modi fehlschlagen -- dann
+      // wird einfach jedes Mal neu geladen, kein harter Fehler.
+    }
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LNG}&current=temperature_2m,weather_code&timezone=Europe%2FBerlin`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Open-Meteo: ${res.status}`)
+    const json = await res.json()
+    const data: WeatherData = { temp: json.current.temperature_2m, code: json.current.weather_code }
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }))
+    } catch {}
+    return data
+  }
+
+  // Antwortform von /api/opening-hours.json, siehe lib/google-places.ts --
+  // hier nur clientseitig, kein Zugriff auf Server-Env noetig (analog zu
+  // OpeningStatus.astro).
+  interface GoogleHoursResponse {
+    ok: boolean
+    periods?: HoursEntry[]
+  }
+
+  const el = document.getElementById('weather-widget')
+  if (el) {
+    // Sanity-basierte Daten aus dem Astro-Frontmatter -- sofort verfuegbar.
+    // Wird unten durch die Google-Antwort ersetzt, sobald/falls die eintrifft.
+    let hoursEntries: HoursEntry[] = []
+    try {
+      hoursEntries = JSON.parse(el.dataset.hours ?? '[]')
+    } catch {}
+
+    let weatherData: WeatherData | null = null
+
+    // Rendert nur, wenn das Wetter schon geladen ist -- hoursEntries kann
+    // sich danach noch (durch die Google-Antwort) aendern, dann wird hier
+    // einfach neu gerendert, das Widget bleibt aber bis zum ersten
+    // erfolgreichen Wetter-Load hidden wie bisher.
+    const render = () => {
+      if (!weatherData) return
+      const { icon, text } = buildMessage(weatherData.code, weatherData.temp, hoursEntries)
+      const iconEl = el.querySelector('.ww-icon')
+      const textEl = el.querySelector('.ww-text')
+      if (iconEl) iconEl.textContent = icon
+      if (textEl) textEl.textContent = text
+      el.removeAttribute('hidden')
+    }
+
+    loadWeather()
+      .then((data) => {
+        weatherData = data
+        render()
+      })
+      .catch(() => {
+        // Wetterdienst nicht erreichbar -- Widget bleibt versteckt (hidden),
+        // kein kaputter/leerer Zustand sichtbar.
+      })
+
+    // Live-Öffnungszeiten von Google nachladen -- laeuft unabhaengig vom
+    // Wetter-Load. Schlaegt der Fetch fehl (kein API-Key, Google nicht
+    // erreichbar, Kontingent aufgebraucht o.ae.), bleibt einfach die
+    // Sanity-Version stehen, kein Fehler wird dem Besucher angezeigt.
+    fetch('/api/opening-hours.json')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: GoogleHoursResponse | null) => {
+        if (!data || !data.ok || !data.periods || data.periods.length === 0) return
+        hoursEntries = data.periods
+        render()
+      })
+      .catch(() => {
+        // Netzwerkfehler o.ae. -- bewusst leise, Sanity-Fallback bleibt bestehen.
+      })
+  }
+</script>

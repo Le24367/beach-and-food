@@ -115,7 +115,16 @@ async function staleWhileRevalidate(request, cacheName) {
     if (response.ok) cache.put(request, response.clone())
     return response
   }).catch(() => null)
-  return cached || fetchPromise
+  // Cache-Hit: sofort zurückgeben (Revalidierung läuft im Hintergrund weiter).
+  if (cached) return cached
+  // Kein Cache: auf das Netzwerk warten. Offline + nicht gecacht → fetchPromise
+  // ist null; ohne Fallback bekäme respondWith() null und würde einen
+  // Fetch-Fehler auslösen. Darum hier ein 503-Response als Fallback.
+  const response = await fetchPromise
+  return response || new Response('Offline – bitte prüfe deine Internetverbindung.', {
+    status: 503,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
 }
 
 async function networkFirst(request, cacheName) {

@@ -62,6 +62,11 @@ const links = await getLinks()
   border-bottom: 1px solid rgba(244, 168, 32, 0.25);
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
   border-radius: 0 0 20px 20px;
+  transition: box-shadow 0.3s ease;
+}
+/* Beim Scrollen: kräftigerer Schatten + kompaktere Leiste. */
+.navbar.scrolled {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* ─── Nav Inner ─────────────────────────────────────────────────────── */
@@ -71,6 +76,11 @@ const links = await getLinks()
   gap: 2rem;
   padding-top: 1rem;
   padding-bottom: 1rem;
+  transition: padding 0.25s ease;
+}
+.navbar.scrolled .nav-inner {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
 }
 
 /* ─── Logo ──────────────────────────────────────────────────────────── */
@@ -80,7 +90,9 @@ const links = await getLinks()
   width: auto;
   object-fit: contain;
   display: block;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.logo:hover .logo-img { transform: scale(1.05) rotate(-2deg); }
 
 /* ─── Nav Links ─────────────────────────────────────────────────────── */
 .nav-links {
@@ -274,9 +286,12 @@ const links = await getLinks()
   .burger span,
   .mobile-menu,
   .mobile-menu li,
-  .mobile-menu a {
+  .mobile-menu a,
+  .logo-img,
+  .nav-inner {
     transition: none !important;
   }
+  .logo:hover .logo-img { transform: none; }
 }
 </style>
 
@@ -335,4 +350,18 @@ const links = await getLinks()
     const el = document.getElementById(id)
     if (el) sectionObserver.observe(el)
   })
+
+  // ── Scroll-Schatten: .scrolled ab ~12px Scroll-Offset ──────────────
+  const navbar = document.getElementById('navbar')
+  if (navbar) {
+    let ticking = false
+    const updateScrolled = () => {
+      navbar.classList.toggle('scrolled', window.scrollY > 12)
+      ticking = false
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) { ticking = true; requestAnimationFrame(updateScrolled) }
+    }, { passive: true })
+    updateScrolled()
+  }
 </script>

@@ -8,10 +8,10 @@
   Hinweis: @fontsource unterstützt font-display über den Dateipfad nicht direkt.
   Wir überschreiben es daher per @font-face unterhalb der Imports.
 */
-@import '@fontsource/dm-sans/400.css';
-@import '@fontsource/dm-sans/500.css';
-@import '@fontsource/dm-sans/600.css';
-@import '@fontsource/playfair-display/700.css';
+@import '@fontsource/source-sans-pro/400.css';
+@import '@fontsource/source-sans-pro/600.css';
+@import '@fontsource/source-sans-pro/700.css';
+@import '@fontsource/libre-baskerville/700.css';
 
 /*
   font-display: swap für alle importierten Webfonts erzwingen.
@@ -20,32 +20,43 @@
   Die src-Pfade entsprechen exakt den Astro-Build-Ausgaben von @fontsource.
 */
 @font-face {
-  font-family: 'DM Sans';
+  font-family: 'Source Sans Pro';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff2') format('woff2');
+  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-400-normal.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('@fontsource/dm-sans/files/dm-sans-latin-500-normal.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'DM Sans';
+  font-family: 'Source Sans Pro';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('@fontsource/dm-sans/files/dm-sans-latin-600-normal.woff2') format('woff2');
+  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-600-normal.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Playfair Display';
+  font-family: 'Source Sans Pro';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2') format('woff2');
+  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Libre Baskerville';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@fontsource/libre-baskerville/files/libre-baskerville-latin-700-normal.woff2') format('woff2');
+}
+/*
+  Metrisch grober Fallback für Libre Baskerville: verhindert einen zu
+  auffälligen Sprung (CLS) zwischen Systemfont und Webfont während des
+  Ladens. Nutzt eine lokal vorhandene Serife als Basis -- die exakten
+  ascent/descent/size-adjust-Werte der Produktivseite kennen wir nicht,
+  daher bewusst ohne fabrizierte Override-Zahlen.
+*/
+@font-face {
+  font-family: 'Libre Baskerville Fallback';
+  src: local('Times New Roman'), local('Times'), local('Georgia');
 }
 
 :root {
@@ -75,6 +86,14 @@ html {
   overflow-x: hidden;
   /* Scrollbar verstecken – Firefox */
   scrollbar-width: none;
+  /* Explizite Hintergrundfarbe auf <html> selbst (nicht nur <body>): Safaris
+     Liquid-Glass-Einfärbung der transluzenten Leisten (iOS 26) greift direkt
+     die background-color von <html>/<body> ab -- nicht das, was in
+     verschachtelten Overlays wie dem BusLoader gerendert wird. Ohne
+     explizite Farbe fällt Safari auf einen harten weißen/schwarzen
+     "Fallback"-Balken zurück, egal wie gut der eigentliche Seiteninhalt
+     randfüllend gestaltet ist. */
+  background: var(--sand-light);
 }
 
 /* Scrollbar verstecken – Chrome / Safari / Edge */
@@ -83,11 +102,62 @@ html::-webkit-scrollbar {
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   background: var(--sand-light);
   color: var(--text);
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll-Lock während der Bus-Ladeanimation: BEWUSST kein overflow:hidden
+   mehr auf <html>/<body> (siehe Git-Historie für den früheren Versuch).
+   Grund: iOS Safari (Liquid-Glass-Redesign, iOS 26) lässt Inhalt nur dann
+   hinter den transluzenten Leisten durchlaufen bzw. animieren, wenn die
+   Seite eine ganz normale, tatsächlich scrollbare Seite bleibt -- der Rest
+   dieser Website (kein overflow:hidden irgendwo) funktioniert deshalb schon
+   korrekt. overflow:hidden auf dem Root-Element schaltet die Seite dagegen
+   in einen "geclippten", nicht-scrollbaren Zustand, in dem Safari auf den
+   harten Fallback-Balken zurückfällt -- unabhängig davon, wie der Loader
+   selbst positioniert/dimensioniert ist. Das eigentliche Scroll-Lock
+   übernimmt jetzt BusLoader.astro per JS (touchmove/wheel preventDefault),
+   ohne die CSS-Scrollbarkeit der Seite selbst anzutasten. */
+/* Root-Hintergrund während des Intros auf das dunkle Ozeanblau umstellen --
+   der BusLoader ist über den größten Teil seiner Laufzeit (Strandband unten,
+   dann komplett während Portal/Willkommens-Screen) überwiegend dunkel.
+   Safari sampelt für die Leisten-Einfärbung nur EINEN Root-Farbwert (siehe
+   Kommentar oben bei html) -- kann also nicht gleichzeitig oben hell/unten
+   dunkel exakt matchen, aber die dunkle Wahl passt für den weit größeren
+   Teil des Intros und behebt den auffälligsten Bruch (dunkler Loader-Boden
+   gegen harten hellen Leisten-Fallback). */
+html.intro-active {
+  background: var(--ocean-deep);
+}
+
+/* Übergang zur eigentlichen Seite: #page-reveal (Wrapper um main) steht
+   während der Bus-Ladephase eine Viewport-Höhe tiefer (unsichtbar, da der
+   Loader ohnehin alles bedeckt) und fliegt beim Übergang von unten ins Bild,
+   während der Loader gleichzeitig nach oben rausfährt (siehe BusLoader.astro,
+   .bus-loader.slide-out). intro-reveal überschreibt intro-loading gezielt
+   (höhere Spezifität durch zwei Klassen), damit die Seite schon einfliegt,
+   während intro-loading noch den Loader sichtbar hält (display:block) —
+   beide Animationen laufen parallel.
+   Bewusst ein eigener Wrapper statt direkt "main": In manchen Umgebungen
+   (u.a. dieser Testumgebung) wird transform auf dem <main>-Element selbst
+   ignoriert (Inline-Styles inkl. !important zeigten keine Wirkung, obwohl
+   opacity/filter/margin auf demselben Element normal funktionierten) — ein
+   normales <div> ist davon nicht betroffen. */
+#page-reveal {
+  transition: transform 0.9s cubic-bezier(.4, 0, .2, 1);
+}
+html.intro-loading #page-reveal {
+  transform: translateY(100vh);
+  will-change: transform;
+}
+html.intro-loading.intro-reveal #page-reveal {
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  #page-reveal { transition: none !important; }
 }
 
 /* Dunkle Sections — volle Browserbreite */
@@ -98,7 +168,7 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif;
 }
 
 img {
@@ -152,4 +222,21 @@ a {
 */
 .reveal.visible {
   will-change: auto;
+}
+
+/*
+  Screenreader-only: visuell versteckt, aber für Screenreader und
+  Dokument-Outline vorhanden. Wird u.a. für die persistente <h1> der
+  Startseite genutzt (die sichtbaren Sektionen nutzen alle <h2>).
+*/
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

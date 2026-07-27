@@ -3,7 +3,8 @@ import Analytics from '@vercel/analytics/astro'
 import SpeedInsights from '@vercel/speed-insights/astro'
 import '../styles/global.css'
 import { getSiteSettings } from '../lib/sanity'
-import { CONTACT, SITE } from '../lib/config'
+import { CONTACT, LINKS, SITE } from '../lib/config'
+import { parseOpeningHours } from '../lib/hours'
 
 export interface Props {
   title?: string;
@@ -28,8 +29,33 @@ const addressLocality  = addr?.zip?.replace(/^\d+\s*/, '') || 'Neukirchen'
 const postalCodeMatch  = addr?.zip?.match(/^\d+/)
 const postalCode       = postalCodeMatch?.[0] ?? '23779'
 
-const canonicalUrl = SITE.url
+// FIX: canonicalUrl zeigte bisher immer auf SITE.url (die Startseite) --
+// auf /impressum, /datenschutz und der 404-Seite stand dadurch derselbe
+// canonical-Link wie auf der Startseite im <head>, was Google als
+// "diese Seiten sind Duplikate der Startseite" liest. Jetzt aus dem
+// tatsächlichen Pfad abgeleitet; SITE.url bleibt separat für JSON-LD
+// (dort ist die Domain-Wurzel, nicht die Unterseite, korrekt).
+const canonicalUrl = new URL(Astro.url.pathname, SITE.url).toString()
 const ogImage = `${SITE.url}/og-image.jpg`
+
+// Öffnungszeiten für JSON-LD: dieselbe Quelle wie Kontakt.astro (Sanity mit
+// Vorrang, sonst derselbe Fallback), damit sich beide nie widersprechen.
+const openingHours = settings?.openingHours ?? [
+  { _key: 'mo-do', days: 'Mo – Do', hours: 'Geschlossen', closed: true },
+  { _key: 'fr-so', days: 'Fr – So', hours: '11:30 – 20:00', closed: false },
+]
+
+// Google zeigt ein "Jetzt geöffnet"/"Geschlossen"-Badge im Suchergebnis nur,
+// wenn openingHoursSpecification vorhanden ist -- geschlossene Tage werden
+// hier bewusst weggelassen (die Spezifikation beschreibt NUR Öffnungszeiten,
+// nicht ihr Gegenteil). Parsing-Logik lebt jetzt in lib/hours.ts, geteilt
+// mit dem Live-Status-Badge in Kontakt.astro.
+const openingHoursSpecification = parseOpeningHours(openingHours).map((h) => ({
+  "@type": "OpeningHoursSpecification",
+  "dayOfWeek": h.dayOfWeek,
+  "opens": h.opens,
+  "closes": h.closes,
+}))
 
 // JSON-LD: LocalBusiness + FoodEstablishment
 const jsonLd = {
@@ -37,8 +63,8 @@ const jsonLd = {
   "@type": ["FoodEstablishment", "LocalBusiness"],
   "name": "Beach and Food",
   "description": description,
-  "url": canonicalUrl,
-  "logo": `${canonicalUrl}/logo/logo.jpeg`,
+  "url": SITE.url,
+  "logo": `${SITE.url}/logo/logo.jpeg`,
   "image": ogImage,
   "telephone": telephone,
   "email": email,
@@ -56,8 +82,9 @@ const jsonLd = {
     "latitude": 54.337045,
     "longitude": 11.071475
   },
+  ...(openingHoursSpecification.length > 0 ? { openingHoursSpecification } : {}),
   "sameAs": [
-    "https://www.instagram.com/beachandfood"
+    LINKS.instagram
   ]
 };
 ---
@@ -70,7 +97,13 @@ const jsonLd = {
     verhindert werden). maximum-scale bleibt bei 5, ein üblicher, unauffälliger
     Wert, der trotzdem echtes Zoomen für sehbeeinträchtigte Nutzer erlaubt.
   -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <!-- viewport-fit=cover: lässt fixed-position-Overlays (z.B. der BusLoader)
+       auf iOS bis unter die transparenten Safari-Leisten (oben/unten) reichen,
+       statt an deren Kante abrupt abzuschneiden. Aktiviert außerdem
+       env(safe-area-inset-*), das der BusLoader nutzt, um Bus/Text aus dem
+       Bereich der Leisten herauszuhalten, während der Hintergrund weiter bis
+       zum Bildschirmrand durchläuft. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <title>{title}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalUrl} />
@@ -103,6 +136,9 @@ const jsonLd = {
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImage} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Beach and Food – Foodtruck am Sütel-Strand" />
   <meta property="og:locale" content="de_DE" />
   <meta property="og:site_name" content="Beach and Food" />
 
@@ -111,6 +147,7 @@ const jsonLd = {
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={ogImage} />
+  <meta name="twitter:image:alt" content="Beach and Food – Foodtruck am Sütel-Strand" />
 
   <!-- JSON-LD Strukturierte Daten -->
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
@@ -156,16 +193,30 @@ const jsonLd = {
     });
 
     // ── Service Worker registrieren ──────────────────────────────────
-    // Kein Erfolgs-Log mehr in Produktion — nur eine Warnung, falls die
-    // Registrierung fehlschlägt (hilfreich für Support-Anfragen des Kunden).
+    // NUR in Produktion: sw.js liefert HTML/JS/CSS per stale-while-revalidate
+    // aus (siehe public/sw.js) — im Dev-Server (npm run dev) würde das jede
+    // Code-Änderung erst nach dem ÜBERNÄCHSTEN Reload sichtbar machen (Cache
+    // wird nur im Hintergrund fürs nächste Mal aktualisiert). Das hat in der
+    // Entwicklung wiederholt zu "Änderungen kommen nicht an"/"startet nicht"
+    // geführt. import.meta.env.DEV ist im Dev-Server true, im Build false.
+    // Zusätzlich: falls im Dev-Server bereits ein SW aus einer früheren
+    // Produktions-Vorschau registriert ist, hier automatisch entfernen.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js', { scope: '/' })
-          .catch((err) => {
-            console.warn('[SW] Registrierung fehlgeschlagen:', err);
-          });
-      });
+      if (import.meta.env.DEV) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister());
+        });
+      } else {
+        // Kein Erfolgs-Log mehr in Produktion — nur eine Warnung, falls die
+        // Registrierung fehlschlägt (hilfreich für Support-Anfragen des Kunden).
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .catch((err) => {
+              console.warn('[SW] Registrierung fehlgeschlagen:', err);
+            });
+        });
+      }
     }
   </script>
 </body>

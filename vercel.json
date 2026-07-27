@@ -1,0 +1,12 @@
+{
+  "headers": [
+    {
+      "source": "/llms.txt",
+      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+    },
+    {
+      "source": "/menu.json",
+      "headers": [{ "key": "Content-Type", "value": "application/json; charset=utf-8" }]
+    }
+  ]
+}

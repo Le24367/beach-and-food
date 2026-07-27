@@ -1,7 +1,8 @@
 ﻿---
-import { getMenuCategories, getMenuItems, getMenuSubCategories, urlFor } from '../lib/sanity'
-import type { MenuCategory, MenuItem, MenuSubCategory } from '../lib/sanity'
+import { urlFor } from '../lib/sanity'
+import type { MenuCategory, MenuItem } from '../lib/sanity'
 import imageMapRaw from '../generated/image-map.json'
+import { buildMenuJsonLd, getMenuData } from '../lib/menu'
 
 const imageMap: Record<string, { thumb: string; card: string; full: string }> = imageMapRaw as any
 
@@ -13,19 +14,11 @@ function localOrRemote(sanityUrl: string, mode: 'thumb' | 'card' | 'full'): stri
   return entry.full
 }
 
-let items: MenuCategory[] = []
-let menuItems: MenuItem[] = []
-let subCategories: MenuSubCategory[] = []
-
-try {
-  ;[items, menuItems, subCategories] = await Promise.all([
-    getMenuCategories(),
-    getMenuItems(),
-    getMenuSubCategories(),
-  ])
-} catch (e) {
-  console.warn('[Angebot] Sanity nicht erreichbar, Fallback wird verwendet.', e)
-}
+// Primär igetnow, Sanity-Fallback -- siehe getMenuData() in lib/menu.ts.
+const menuData = await getMenuData()
+let items: MenuCategory[] = menuData.categories
+const menuItems = menuData.menuItems
+const subCategories = menuData.subCategories
 
 if (items.length === 0) {
   items = [
@@ -100,27 +93,46 @@ const popupData = items.map(cat => {
 })
 
 function mapProduct(p: MenuItem, cat: MenuCategory) {
-  const sanityThumbUrl = p.image
-    ? urlFor(p.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
-    : null
-  const sanityFullUrl = p.image
-    ? urlFor(p.image).width(900).quality(80).auto('format').url()
-    : null
+  // igetnow liefert bereits fertige, absolute Bild-URLs (siehe imageUrls in
+  // lib/igetnow.ts) -- nur Sanity-Items brauchen den urlFor()/image-map-Umweg.
+  let imgThumb: string | null = null
+  let imgFull: string | null = null
+  if (p.imageUrls) {
+    imgThumb = p.imageUrls.thumb
+    imgFull  = p.imageUrls.full
+  } else if (p.image) {
+    const sanityThumbUrl = urlFor(p.image).width(200).height(200).fit('crop').quality(40).auto('format').url()
+    const sanityFullUrl  = urlFor(p.image).width(900).quality(80).auto('format').url()
+    imgThumb = localOrRemote(sanityThumbUrl, 'thumb')
+    imgFull  = localOrRemote(sanityFullUrl,  'full')
+  }
 
   return {
     id: p._id,
     title: p.title,
     price: p.price?.toFixed(2).replace('.', ',') + ' EUR',
     description: p.description ?? null,
-    imgThumb: sanityThumbUrl ? localOrRemote(sanityThumbUrl, 'thumb') : null,
-    imgFull:  sanityFullUrl  ? localOrRemote(sanityFullUrl,  'full')  : null,
+    imgThumb,
+    imgFull,
     emoji: p.emoji ?? null,
     badges: p.badges ?? [],
   }
 }
+
+// schema.org/Menu-Strukturdaten: dieselben Produktdaten, die weiter unten
+// nur als rohes JSON im Modal-Script stecken (erst nach Klick im DOM
+// sichtbar), landen hier zusätzlich als Menu/MenuSection/MenuItem im
+// statischen HTML -- maschinenlesbar für Google Rich Results und für
+// Agenten, die die Seite lesen statt Klicks auszuführen. Aufbau geteilt mit
+// /menu.json (siehe src/lib/menu.ts), damit es nur eine Quelle der Wahrheit
+// fuer diese Struktur gibt.
+const menuJsonLd = await buildMenuJsonLd()
 ---
 
 <section class="angebot" id="angebot">
+  {menuJsonLd.hasMenuSection.length > 0 && (
+    <script type="application/ld+json" set:html={JSON.stringify(menuJsonLd)} />
+  )}
   <div class="container">
     <div class="section-head reveal">
       <span class="section-label">Speisekarte</span>
@@ -139,7 +151,13 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
         let cardImgUrl: string | null = null
         let medImgUrl:  string | null = null
         let fullImgUrl: string | null = null
-        if (item.image) {
+        if (item.imageUrls) {
+          // igetnow liefert nur feste Breitenstufen, keine exakte 634x362-
+          // Zwischengröße wie Sanity -- medImgUrl bleibt hier leer, das
+          // srcset unten filtert leere Eintraege einfach raus.
+          cardImgUrl = item.imageUrls.card
+          fullImgUrl = item.imageUrls.full
+        } else if (item.image) {
           const sanityFUrl = urlFor(item.image).width(900).quality(80).auto('format').url()
           const entry = imageMap[sanityFUrl]
           if (entry) {
@@ -194,7 +212,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
               <h3 class="card-title">{item.title}</h3>
               <p class="card-desc">{item.description}</p>
               <div class="card-cta">
-                <span>{productCount > 0 ? `${productCount} Produkte ansehen` : 'Ansehen'}</span>
+                <span>{productCount > 0 ? `${productCount} ${productCount === 1 ? 'Produkt' : 'Produkte'} ansehen` : 'Ansehen'}</span>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </div>
             </div>
@@ -494,12 +512,34 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
     if (e.target === lightbox) closeLightbox()
   })
 
+  // Fokusfalle: hält Tab/Shift+Tab innerhalb des offenen Overlays, damit der
+  // Fokus nicht in den (weiterhin sichtbaren) Seiteninhalt dahinter wandert.
+  const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+  function trapFocus(container, e) {
+    const focusables = Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR))
+      .filter(function(el) { return el.getClientRects().length > 0 })
+    if (focusables.length === 0) { e.preventDefault(); return }
+    const first = focusables[0]
+    const last  = focusables[focusables.length - 1]
+    const active = document.activeElement
+    if (e.shiftKey) {
+      if (active === first || !container.contains(active)) { e.preventDefault(); last.focus() }
+    } else {
+      if (active === last || !container.contains(active)) { e.preventDefault(); first.focus() }
+    }
+  }
+
   document.addEventListener('keydown', function(e) {
-    if (e.key !== 'Escape') return
-    if (lightbox.classList.contains('open')) {
-      closeLightbox()
-    } else if (backdrop.classList.contains('open')) {
-      closeModal()
+    const lightboxOpen = lightbox.classList.contains('open')
+    const modalOpen    = backdrop.classList.contains('open')
+    if (!lightboxOpen && !modalOpen) return
+
+    if (e.key === 'Escape') {
+      if (lightboxOpen) closeLightbox()
+      else if (modalOpen) closeModal()
+    } else if (e.key === 'Tab') {
+      trapFocus(lightboxOpen ? lightbox : backdrop, e)
     }
   })
 </script>
@@ -552,7 +592,9 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   transition-delay: 0s;
 }
 .menu-card:hover .card-img { transform: scale(1.06); }
-.menu-card:hover .card-cta { color: var(--accent, #E85D3A); gap: 0.6rem; }
+.menu-card:hover .card-cta { color: var(--accent, #E85D3A); }
+.menu-card:hover .card-cta svg { transform: translateX(4px); }
+.menu-card:hover .card-tag { transform: scale(1.07); }
 
 .card-visual {
   position: relative; height: 190px;
@@ -564,11 +606,19 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
   position: absolute; top: 0.75rem; left: 0.75rem;
   font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
   color: #fff; padding: 0.25rem 0.65rem; border-radius: 100px;
+  transform-origin: left center;
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .card-inner { padding: 1.4rem 1.6rem 1.6rem; display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
 .card-title { font-size: 1.25rem; font-weight: 800; color: var(--ocean-deep); line-height: 1.2; }
 .card-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
-.card-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 700; color: var(--wave); margin-top: 0.6rem; transition: color 0.2s, gap 0.2s; }
+.card-cta { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; font-weight: 700; color: var(--wave); margin-top: 0.6rem; transition: color 0.2s; }
+.card-cta svg { transition: transform 0.2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-cta svg, .card-tag { transition: none; }
+  .menu-card:hover .card-cta svg, .menu-card:hover .card-tag { transform: none; }
+}
 
 .modal-backdrop {
   position: fixed; inset: 0; background: rgba(8,20,30,0.72);
@@ -603,7 +653,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 }
 .mh-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #E85D3A; margin-bottom: 2px; }
 .mh-title {
-  font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700;
+  font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif; font-size: 1.35rem; font-weight: 700;
   color: var(--ocean-deep, #002434); line-height: 1.15; margin: 0;
   text-transform: none; letter-spacing: normal;
 }
@@ -663,7 +713,7 @@ function mapProduct(p: MenuItem, cat: MenuCategory) {
 .mp-subcat-img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; flex-shrink: 0; border: 1px solid #f0ebe3; }
 .mp-subcat-emoji { font-size: 1.5rem; flex-shrink: 0; width: 36px; text-align: center; }
 .mp-subcat-text { display: flex; flex-direction: column; gap: 1px; }
-.mp-subcat-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; color: var(--ocean-deep, #0D2233); line-height: 1.2; }
+.mp-subcat-title { font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif; font-size: 0.95rem; font-weight: 700; color: var(--ocean-deep, #0D2233); line-height: 1.2; }
 .mp-subcat-desc { font-size: 0.75rem; color: var(--text-muted, #888); line-height: 1.4; }
 .mp-divider { height: 1px; background: #f0ebe3; margin: 12px 0; }
 .mp-list { list-style: none !important; padding: 0 !important; margin: 0 0 4px !important; display: flex; flex-direction: column; gap: 10px; }

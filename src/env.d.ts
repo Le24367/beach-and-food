@@ -19,6 +19,11 @@ interface ImportMetaEnv {
   // ── Browser-sicher (PUBLIC_ Präfix) ──────────────────────────────
   readonly PUBLIC_SANITY_PROJECT_ID: string  // Gleiche ID, aber für publicClient + Browser
   readonly PUBLIC_SANITY_DATASET:    string
+
+  // ── Google Places (Live-Öffnungszeiten) — nur serverseitig ───────
+  // Siehe .env.example für Anleitung, wie man an beide Werte kommt.
+  readonly GOOGLE_PLACES_API_KEY: string  // Google Cloud Console → API-Key mit "Places API" freigeschaltet
+  readonly GOOGLE_PLACE_ID:       string  // Place ID des Google-Business-Eintrags
 }
 
 interface ImportMeta {

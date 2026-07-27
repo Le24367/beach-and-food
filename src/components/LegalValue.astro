@@ -1,0 +1,29 @@
+---
+// Zeigt entweder den echten Wert oder, falls das Feld nicht in Sanity
+// gepflegt ist, einen unmissverständlichen "fehlt"-Hinweis statt des
+// Platzhaltertexts (der wie ein echter, nur seltsamer Wert aussah und beim
+// Abnehmen der Seite leicht übersehen werden konnte).
+export interface Props {
+  value: string
+  missing: boolean
+}
+const { value, missing } = Astro.props
+---
+{missing
+  ? <strong class="legal-missing">Fehlt noch — bitte im Sanity-Studio unter „Einstellungen → Impressum &amp; Rechtliches" eintragen</strong>
+  : value
+}
+
+<style>
+.legal-missing {
+  display: inline-block;
+  background: rgba(197, 30, 30, 0.1);
+  border: 1px solid rgba(197, 30, 30, 0.4);
+  color: #a3151a;
+  font-weight: 700;
+  font-size: 0.85em;
+  line-height: 1.4;
+  padding: 0.15em 0.65em;
+  border-radius: 100px;
+}
+</style>
