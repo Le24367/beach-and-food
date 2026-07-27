@@ -6,3 +6,4 @@ public/product-images/
 src/generated/image-map.json
 .vercel
 .env*
+.DS_Store
