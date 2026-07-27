@@ -125,8 +125,9 @@ const jsonLd = {
   <!--
     Logo früh laden — erstes sichtbares Bild in der Navbar.
     Fonts laufen über global.css mit font-display: swap — kein preload-Link
-    nötig, da @fontsource beim Build einen Hash in den Dateinamen einfügt
-    und ein hardcodierter Pfad immer 404 erzeugen würde.
+    hier nötig, da Vite beim Build einen Hash in den Dateinamen einfügt und
+    ein hardcodierter Pfad immer 404 erzeugen würde (siehe stattdessen
+    scripts/inject-font-preloads.js, das den Hash erst nach dem Build kennt).
   -->
   <link rel="preload" as="image" href="/logo/logo-300w.webp" type="image/webp" fetchpriority="high" />
 

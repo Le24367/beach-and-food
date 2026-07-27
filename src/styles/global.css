@@ -5,58 +5,85 @@
   den Webfont sobald er geladen ist. Verhindert "unsichtbaren Text" (FOIT)
   und entfernt die Fonts aus dem render-blocking-Pfad.
 
-  Hinweis: @fontsource unterstützt font-display über den Dateipfad nicht direkt.
-  Wir überschreiben es daher per @font-face unterhalb der Imports.
-*/
-@import '@fontsource/source-sans-pro/400.css';
-@import '@fontsource/source-sans-pro/600.css';
-@import '@fontsource/source-sans-pro/700.css';
-@import '@fontsource/libre-baskerville/700.css';
-
-/*
-  font-display: swap für alle importierten Webfonts erzwingen.
-  Diese @font-face-Blöcke überschreiben die von @fontsource erzeugten
-  (gleicher font-family + font-weight → Browser nimmt den letzten).
-  Die src-Pfade entsprechen exakt den Astro-Build-Ausgaben von @fontsource.
+  "Darwin ALT" ersetzt sowohl den bisherigen Fließtext-Font (Source Sans
+  Pro) als auch die Serifen-Überschriften (Libre Baskerville) -- eine
+  einzige Familie für die ganze Seite, in unterschiedlichen Schnitten.
+  Selbst gehostet (kein @fontsource-Paket dafür), Dateien liegen als
+  woff2 (aus den Original-.otf konvertiert) unter ../fonts/darwin-alt/.
 */
 @font-face {
-  font-family: 'Source Sans Pro';
+  font-family: 'Darwin ALT';
+  font-style: normal;
+  font-weight: 200;
+  font-display: swap;
+  src: url('../fonts/darwin-alt/Darwin-ALT-ExtraLight.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Darwin ALT';
+  font-style: italic;
+  font-weight: 200;
+  font-display: swap;
+  src: url('../fonts/darwin-alt/Darwin-ALT-ExtraLight-Italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Darwin ALT';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../fonts/darwin-alt/Darwin-ALT-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Darwin ALT';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-400-normal.woff2') format('woff2');
+  src: url('../fonts/darwin-alt/Darwin-ALT-Regular.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Source Sans Pro';
-  font-style: normal;
-  font-weight: 600;
+  font-family: 'Darwin ALT';
+  font-style: italic;
+  font-weight: 400;
   font-display: swap;
-  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-600-normal.woff2') format('woff2');
+  src: url('../fonts/darwin-alt/Darwin-ALT-Regular-Italic.woff2') format('woff2');
 }
 @font-face {
-  font-family: 'Source Sans Pro';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('@fontsource/source-sans-pro/files/source-sans-pro-latin-700-normal.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Libre Baskerville';
+  font-family: 'Darwin ALT';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('@fontsource/libre-baskerville/files/libre-baskerville-latin-700-normal.woff2') format('woff2');
+  src: url('../fonts/darwin-alt/Darwin-ALT-Bold.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Darwin ALT';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/darwin-alt/Darwin-ALT-Bold-Italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Darwin ALT';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../fonts/darwin-alt/Darwin-ALT-Black.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Darwin ALT';
+  font-style: italic;
+  font-weight: 900;
+  font-display: swap;
+  src: url('../fonts/darwin-alt/Darwin-ALT-Black-Italic.woff2') format('woff2');
 }
 /*
-  Metrisch grober Fallback für Libre Baskerville: verhindert einen zu
-  auffälligen Sprung (CLS) zwischen Systemfont und Webfont während des
-  Ladens. Nutzt eine lokal vorhandene Serife als Basis -- die exakten
-  ascent/descent/size-adjust-Werte der Produktivseite kennen wir nicht,
-  daher bewusst ohne fabrizierte Override-Zahlen.
+  Metrisch grober Fallback: verhindert einen zu auffälligen Sprung (CLS)
+  zwischen Systemfont und Webfont während des Ladens. Die exakten
+  ascent/descent/size-adjust-Werte von Darwin ALT kennen wir nicht,
+  daher bewusst ohne fabrizierte Override-Zahlen (wie zuvor bei der
+  Libre-Baskerville-Fallback).
 */
 @font-face {
-  font-family: 'Libre Baskerville Fallback';
-  src: local('Times New Roman'), local('Times'), local('Georgia');
+  font-family: 'Darwin ALT Fallback';
+  src: local('Arial'), local('Helvetica');
 }
 
 :root {
@@ -102,7 +129,7 @@ html::-webkit-scrollbar {
 }
 
 body {
-  font-family: 'Source Sans Pro', sans-serif;
+  font-family: 'Darwin ALT', 'Darwin ALT Fallback', sans-serif;
   background: var(--sand-light);
   color: var(--text);
   overflow-x: hidden;
@@ -168,7 +195,7 @@ html.intro-loading.intro-reveal #page-reveal {
 }
 
 h1, h2, h3 {
-  font-family: 'Libre Baskerville', 'Libre Baskerville Fallback', serif;
+  font-family: 'Darwin ALT', 'Darwin ALT Fallback', sans-serif;
 }
 
 img {

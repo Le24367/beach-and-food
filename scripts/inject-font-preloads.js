@@ -8,7 +8,7 @@
  *      → Browser lädt CSS parallel zum HTML-Parse statt danach
  *      → Beseitigt "Render-blocking"-Warnung in Lighthouse
  *
- *   2. Font-Preload-Tags für Source Sans Pro 400, Source Sans Pro 600, Libre Baskerville 700
+ *   2. Font-Preload-Tags für Darwin ALT Regular (400) und Darwin ALT Bold (700)
  *      → Fonts werden parallel zum CSS geladen statt sequenziell danach
  *
  * FIX: Lief vorher nur gegen dist/index.html -- Impressum/Datenschutz/404
@@ -83,9 +83,8 @@ function findLinkedCssFiles(html) {
 
 // ── 2. Font-Dateien finden ────────────────────────────────────────────────────
 const PRIORITY_FONTS = [
-  'source-sans-pro-latin-400-normal',
-  'source-sans-pro-latin-600-normal',
-  'libre-baskerville-latin-700-normal',
+  'Darwin-ALT-Regular',
+  'Darwin-ALT-Bold',
 ]
 
 const fontFiles = allFiles.filter(f => f.endsWith('.woff2'))
@@ -93,7 +92,11 @@ const fontPreloadLinks = []
 
 console.log(`\n🔤  Fonts für Preload:`)
 for (const pattern of PRIORITY_FONTS) {
-  const match = fontFiles.find(f => f.startsWith(pattern))
+  // Vite hasht Assets als "[name].[hash][extname]" -- ein reines startsWith()
+  // matcht sonst auch "Darwin-ALT-Regular-Italic.xxx.woff2" für das Pattern
+  // "Darwin-ALT-Regular", weil der Name selbst ein Präfix ist. Der Punkt vor
+  // dem Hash grenzt exakte Namensgleichheit von Präfix-Kollisionen ab.
+  const match = fontFiles.find(f => f.startsWith(`${pattern}.`))
   if (match) {
     fontPreloadLinks.push(
       `  <link rel="preload" as="font" type="font/woff2" crossorigin href="/_astro/${match}" />`
