@@ -70,11 +70,11 @@ const structuredHours = parseOpeningHours(openingHours)
     // Klarer Himmel
     if (code === 0) {
       const byBand: Record<Band, [string, string]> = {
-        hot:  [`${t}°C und Sonne pur — Bikini-Wetter! Perfekt für einen kalten Drink.`, `${t}°C und Sonne pur`],
-        warm: [`${t}°C und sonnig — perfektes Strandwetter!`, `${t}°C und sonnig am Strand`],
-        mild: [`${t}°C, sonnig aber frisch — eine Currywurst wärmt von innen.`, `${t}°C, sonnig aber frisch`],
-        cool: [`${t}°C, klarer Himmel — kalt, aber richtig schön.`, `${t}°C, klarer Himmel`],
-        cold: [`${t}°C, eisig klar — Mütze nicht vergessen.`, `${t}°C, eisig klar`],
+        hot:  [`Moin! ${t}°C und pralle Sonne — ab an den Strand.`, `${t}°C und pralle Sonne`],
+        warm: [`${t}°C und Sonne — besser geht's am Strand nicht.`, `${t}°C und sonnig am Strand`],
+        mild: [`${t}°C, sonnig, aber steife Brise vom Wasser.`, `${t}°C, sonnig, steife Brise`],
+        cool: [`${t}°C und klar, aber kalt genug für die Mütze.`, `${t}°C, klarer Himmel`],
+        cold: [`${t}°C, eisig klar — Schal nicht vergessen.`, `${t}°C, eisig klar`],
       }
       const [open, closed] = byBand[band]
       return { icon: '☀️', open, closed }
@@ -83,10 +83,10 @@ const structuredHours = parseOpeningHours(openingHours)
     // Meist sonnig / leicht bewölkt
     if (code === 1 || code === 2) {
       const byBand: Record<Band, [string, string]> = {
-        hot:  [`${t}°C, meist sonnig — ab an den Strand!`, `${t}°C, meist sonnig`],
+        hot:  [`${t}°C, meist sonnig — geht klar am Strand.`, `${t}°C, meist sonnig`],
         warm: [`${t}°C, meist sonnig — gutes Strandwetter`, `${t}°C, meist sonnig`],
-        mild: [`${t}°C, ein paar Wolken, aber angenehm mild`, `${t}°C, wechselnd bewölkt`],
-        cool: [`${t}°C, sonnig-kühl — eine warme Currywurst tut gut`, `${t}°C, sonnig-kühl`],
+        mild: [`${t}°C, ein paar Wolken, aber die Sonne blinzelt durch`, `${t}°C, wechselnd bewölkt`],
+        cool: [`${t}°C, sonnig-kühl — eine Currywurst wärmt`, `${t}°C, sonnig-kühl`],
         cold: [`${t}°C, kalt aber freundlich`, `${t}°C, kalt aber freundlich`],
       }
       const [open, closed] = byBand[band]
@@ -97,9 +97,9 @@ const structuredHours = parseOpeningHours(openingHours)
     if (code === 3) {
       const byBand: Record<Band, [string, string]> = {
         hot:  [`${t}°C, bewölkt — trotzdem T-Shirt-Wetter`, `${t}°C, bewölkt und warm`],
-        warm: [`${t}°C, bewölkt — trotzdem ein guter Tag für Pommes`, `${t}°C, bewölkt`],
-        mild: [`${t}°C, grau-mild — Zeit für eine Currywurst`, `${t}°C, grau und mild`],
-        cool: [`${t}°C, grau und kühl — wärm dich mit Pommes auf`, `${t}°C, grau und kühl`],
+        warm: [`${t}°C, bewölkt — reicht trotzdem für Pommes`, `${t}°C, bewölkt`],
+        mild: [`${t}°C, klassisches Schmuddelwetter — passt zu Pommes.`, `${t}°C, Schmuddelwetter`],
+        cool: [`${t}°C, grau und kühl — echtes Schmuddelwetter.`, `${t}°C, grau und kühl`],
         cold: [`${t}°C, grau und kalt — Zeit für etwas Warmes`, `${t}°C, grau und kalt`],
       }
       const [open, closed] = byBand[band]
@@ -108,27 +108,27 @@ const structuredHours = parseOpeningHours(openingHours)
 
     // Nebel
     if (code === 45 || code === 48) {
-      return { icon: '🌫️', open: `${t}°C, neblig am Strand — mystisch schön`, closed: `${t}°C, neblig am Strand` }
+      return { icon: '🌫️', open: `${t}°C, dicke Suppe überm Wasser — man sieht nicht mal die Möwen.`, closed: `${t}°C, dicke Suppe` }
     }
 
     // Regen/Niesel
     if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) {
       return band === 'hot' || band === 'warm'
-        ? { icon: '🌧️', open: `${t}°C, warmer Regen — wir haben einen Indoor-Sitzbereich!`, closed: `${t}°C und regnerisch` }
-        : { icon: '🌧️', open: `${t}°C und nass — perfekt, um sich drinnen mit Currywurst aufzuwärmen`, closed: `${t}°C und nass` }
+        ? { icon: '🌧️', open: `${t}°C, warmer Regen. Bei uns bleibst du trocken.`, closed: `${t}°C und regnerisch` }
+        : { icon: '🌧️', open: `${t}°C — heute ist Schietwetter. Zum Glück haben wir ein Dach.`, closed: `${t}°C, Schietwetter` }
     }
 
     // Schnee
     if ([71,73,75,77,85,86].includes(code)) {
-      return { icon: '❄️', open: `${t}°C, winterlich am Strand — selten, aber schön`, closed: `${t}°C, winterlich am Strand` }
+      return { icon: '❄️', open: `${t}°C, Schnee am Strand — sowas sieht man hier selten.`, closed: `${t}°C, Schnee am Strand` }
     }
 
     // Gewitter
     if ([95,96,99].includes(code)) {
-      return { icon: '⛈️', open: `${t}°C, Gewitter unterwegs — bleib trocken im Bus!`, closed: `${t}°C, Gewitter unterwegs` }
+      return { icon: '⛈️', open: `${t}°C, ordentlich Schietwetter mit Blitz und Donner — bleib trocken bei uns im Bus.`, closed: `${t}°C, Gewitter im Anzug` }
     }
 
-    return { icon: '🌊', open: `${t}°C am Sütel-Strand`, closed: `${t}°C am Sütel-Strand` }
+    return { icon: '🌊', open: `${t}°C am Sütel-Strand. Moin!`, closed: `${t}°C am Sütel-Strand` }
   }
 
   function buildMessage(code: number, temp: number, hoursEntries: HoursEntry[]): { icon: string; text: string } {
