@@ -93,13 +93,15 @@ const structuredHours = parseOpeningHours(openingHours)
       return { icon: '🌤️', open, closed }
     }
 
-    // Bewölkt
+    // Bewölkt (kein Niederschlag -- "Schmuddelwetter" ist den Regen-Codes
+    // vorbehalten, siehe unten. Bedeckter Himmel allein ist noch kein
+    // schlechtes Wetter.)
     if (code === 3) {
       const byBand: Record<Band, [string, string]> = {
         hot:  [`${t}°C, bewölkt — trotzdem T-Shirt-Wetter`, `${t}°C, bewölkt und warm`],
         warm: [`${t}°C, bewölkt — reicht trotzdem für Pommes`, `${t}°C, bewölkt`],
-        mild: [`${t}°C, klassisches Schmuddelwetter — passt zu Pommes.`, `${t}°C, Schmuddelwetter`],
-        cool: [`${t}°C, grau und kühl — echtes Schmuddelwetter.`, `${t}°C, grau und kühl`],
+        mild: [`${t}°C, bewölkt — gutes Pommes-Wetter.`, `${t}°C, bewölkt`],
+        cool: [`${t}°C, grau und kühl — eine Currywurst wärmt.`, `${t}°C, grau und kühl`],
         cold: [`${t}°C, grau und kalt — Zeit für etwas Warmes`, `${t}°C, grau und kalt`],
       }
       const [open, closed] = byBand[band]
