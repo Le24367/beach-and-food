@@ -74,12 +74,15 @@ const links = await getLinks()
   display: flex;
   align-items: center;
   gap: 2rem;
-  padding-top: 1rem;
+  /* padding-top zusätzlich um die iOS-Statusleiste ergänzt: als installierte PWA
+     (standalone + status-bar-style black-translucent) legt sich die Statusleiste
+     transparent über den Inhalt, sonst würde die Navbar darunter wegrutschen. */
+  padding-top: calc(1rem + env(safe-area-inset-top));
   padding-bottom: 1rem;
   transition: padding 0.25s ease;
 }
 .navbar.scrolled .nav-inner {
-  padding-top: 0.6rem;
+  padding-top: calc(0.6rem + env(safe-area-inset-top));
   padding-bottom: 0.6rem;
 }
 
