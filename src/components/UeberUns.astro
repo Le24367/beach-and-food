@@ -340,22 +340,39 @@ const slides: GallerySlide[] =
    position:sticky für alle Nachfahren, egal wie tief verschachtelt.
    initSnakeTimeline() baut das Pin-Verhalten deshalb per JS nach
    (fixed/absolute je nach Scroll-Position statt sticky). */
-.snake-desktop-pin { position: relative; height: 260vh; }
+.snake-desktop-pin {
+  position: relative;
+  height: 260vh;
+  /* Verhindert, dass der Browser diesen (sich später einklappenden)
+     Bereich als "Scroll Anchor" wählt -- Chrome/Firefox versuchen sonst
+     selbstständig gegenzusteuern, wenn sich Layout in der Nähe des
+     Viewports ändert, und das kollidiert mit unserer eigenen manuellen
+     scrollBy-Korrektur beim Abschluss (siehe initSnakeTimeline) --
+     Ergebnis ohne dies: ein doppelter Sprung (runter, dann wieder hoch). */
+  overflow-anchor: none;
+}
 /* Volle-Viewport-Backdrop (siehe Kommentar im Markup) -- unsichtbar per
    Default, wird von initSnakeTimeline nur GENAU während der gepinnten
    Phase (position:fixed auf .snake-desktop) auf opacity:1 geschaltet.
    Deckt inset:0 immer den kompletten Viewport ab, unabhängig von der
-   1200px-Container-Breite des eigentlichen Inhalts. */
+   1200px-Container-Breite des eigentlichen Inhalts. Kurze opacity-
+   Transition statt hartem Umschalten: .uu-card und diese Backdrop kacheln
+   dieselbe Textur unabhängig voneinander (unterschiedlicher Ursprung je
+   Box), das Muster steht beim Wechsel nie exakt an derselben Stelle --
+   ein sanftes Überblenden kaschiert den Versatz, ein hartes Umschalten
+   wirkt wie ein Sprung im Hintergrund. */
 .snake-desktop-backdrop {
   position: fixed;
   inset: 0;
   z-index: 0;
+  overflow-anchor: none;
   background-color: var(--ocean-deep);
   background-image:
     linear-gradient(rgba(13,34,51,0.8), rgba(13,34,51,0.8)),
     var(--slate-texture);
   background-repeat: repeat;
   opacity: 0;
+  transition: opacity 0.25s ease;
   pointer-events: none;
 }
 .snake-desktop-backdrop.pinned { opacity: 1; }
@@ -363,6 +380,7 @@ const slides: GallerySlide[] =
   position: relative;
   height: 700px;
   z-index: 1;
+  overflow-anchor: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .snake-desktop-pin { height: auto; }
@@ -926,6 +944,11 @@ const slides: GallerySlide[] =
     }
 
     let ticking = false
+    // Einmal komplett durchgescrollt (progress erreicht 1), soll die
+    // Pin/Scrub-Animation für den Rest des Seitenbesuchs nicht erneut
+    // laufen -- auch nicht, wenn man zurück- und wieder runterscrollt.
+    // Ab dann bleibt die Timeline einfach fertig gezeichnet stehen.
+    let desktopCompleted = false
 
     function update() {
       ticking = false
@@ -936,7 +959,7 @@ const slides: GallerySlide[] =
       // natives position:sticky funktioniert hier nicht) -- dadurch läuft
       // die Zeichnen-Animation über eine deutlich längere, ruhigere
       // Scroll-Strecke statt im alten kurzen 0.7-Viewport-Fenster.
-      if (!mobileQuery.matches && pinWrap) {
+      if (!mobileQuery.matches && pinWrap && !desktopCompleted) {
         const pinRect = pinWrap.getBoundingClientRect()
         const vh = window.innerHeight
         const scrollable = pinRect.height - vh
@@ -991,6 +1014,41 @@ const slides: GallerySlide[] =
 
         if (desktopDraw) desktopDraw.style.strokeDashoffset = String(1 - progress)
         desktopNodes.forEach((n, i) => n.classList.toggle('active', progress >= desktopThresholds[i]))
+
+        if (progress >= 1) {
+          // Fertig durchgescrollt -- Runway einklappen (keine Scroll-
+          // Kopplung mehr nötig) und Element normal in den Fluss
+          // zurücksetzen. desktopCompleted=true sorgt dafür, dass dieser
+          // ganze Block ab jetzt übersprungen wird, auch nach erneutem
+          // Hoch-/Runterscrollen.
+          //
+          // WICHTIG: Der Runway schrumpft dabei von ~260vh auf die reine
+          // Inhaltshöhe (~700px) -- ohne Gegenmaßnahme bleibt scrollY
+          // unverändert, während der ganze Inhalt UNTER dem Wrapper um
+          // genau diese Differenz nach oben rutscht. Das erzeugt exakt
+          // den gemeldeten harten Sprung nach unten (man landet an einer
+          // Stelle, die vorher viel weiter unten auf der Seite war).
+          // Fix: Höhendifferenz messen und den Scroll um denselben Betrag
+          // gegensteuern, synchron im selben Tick (vor dem nächsten Paint).
+          const oldPinHeight = pinRect.height
+          desktopCompleted = true
+          desktopEl.style.position = 'relative'
+          desktopEl.style.top = ''
+          desktopEl.style.bottom = ''
+          desktopEl.style.left = ''
+          desktopEl.style.width = ''
+          pinWrap.style.height = 'auto'
+          const newPinHeight = pinWrap.getBoundingClientRect().height
+          // behavior:'instant' ist hier Pflicht, nicht kosmetisch: die
+          // Seite setzt global html{scroll-behavior:smooth} (global.css).
+          // Ohne die explizite Option hätte der Browser genau DIESEN
+          // Korrektur-Scroll selbst weich animiert -- man landet dann
+          // sichtbar erst am unkorrigierten (zu weit unten liegenden)
+          // Punkt und gleitet erst danach hoch. Das war exakt der
+          // gemeldete Doppel-Sprung (runter, dann wieder hoch).
+          window.scrollBy({ top: newPinHeight - oldPinHeight, left: 0, behavior: 'instant' })
+          if (backdropEl) backdropEl.classList.remove('pinned')
+        }
       }
 
       // Mobile: unverändert das bisherige feste Scroll-Fenster (kein Pin --
