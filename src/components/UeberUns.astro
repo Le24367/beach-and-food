@@ -102,6 +102,17 @@ const slides: GallerySlide[] =
         Wrapper statt aus der Bounding-Box von .snake-desktop selbst).
       -->
       <div class="snake-desktop-pin" id="snake-desktop-pin">
+      <!--
+        Eigene volle-Viewport-Backdrop statt Hintergrund direkt auf
+        .snake-desktop: .snake-desktop selbst bleibt auf die 1200px-
+        Container-Breite begrenzt (für korrekte SVG/Node-Positionen), war
+        im gepinnten Zustand also nur ein schmalerer Kasten in der Mitte --
+        oben/unten/seitlich blieb der normal weiterscrollende Hintergrund
+        von .uu-card sichtbar. Diese Backdrop deckt während des Pins den
+        KOMPLETTEN Viewport ab (siehe initSnakeTimeline im Script), erst
+        dadurch wirkt wirklich der ganze Hintergrund eingefroren.
+      -->
+      <div class="snake-desktop-backdrop" id="snake-desktop-backdrop" aria-hidden="true"></div>
       <div class="snake-desktop" aria-hidden="true">
         <svg class="snake-svg" viewBox="0 0 1200 700" preserveAspectRatio="none">
           <path class="snake-track" d="M 60 110 C 246.7 103.3 450 78.3 620 90 C 790 101.7 990 145 1080 180 C 1170 215 1180 273.3 1160 300 C 1140 326.7 1060 328.3 960 340 C 860 351.7 670 360 560 370 C 450 380 368.3 390 300 400 C 231.7 410 181.7 420 150 430 C 118.3 440 120 448.3 110 460 C 100 471.7 83.3 483.3 90 500 C 96.7 516.7 106.7 541.7 150 560 C 193.3 578.3 275 596.7 350 610 C 425 623.3 558.3 625 600 640 C 641.7 655 600 680 600 700" />
@@ -330,9 +341,28 @@ const slides: GallerySlide[] =
    initSnakeTimeline() baut das Pin-Verhalten deshalb per JS nach
    (fixed/absolute je nach Scroll-Position statt sticky). */
 .snake-desktop-pin { position: relative; height: 260vh; }
+/* Volle-Viewport-Backdrop (siehe Kommentar im Markup) -- unsichtbar per
+   Default, wird von initSnakeTimeline nur GENAU während der gepinnten
+   Phase (position:fixed auf .snake-desktop) auf opacity:1 geschaltet.
+   Deckt inset:0 immer den kompletten Viewport ab, unabhängig von der
+   1200px-Container-Breite des eigentlichen Inhalts. */
+.snake-desktop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--ocean-deep);
+  background-image:
+    linear-gradient(rgba(13,34,51,0.8), rgba(13,34,51,0.8)),
+    var(--slate-texture);
+  background-repeat: repeat;
+  opacity: 0;
+  pointer-events: none;
+}
+.snake-desktop-backdrop.pinned { opacity: 1; }
 .snake-desktop {
   position: relative;
   height: 700px;
+  z-index: 1;
 }
 @media (prefers-reduced-motion: reduce) {
   .snake-desktop-pin { height: auto; }
@@ -841,11 +871,13 @@ const slides: GallerySlide[] =
     if (!wrap) return
 
     const desktopEl    = wrap.querySelector<HTMLElement>('.snake-desktop')
+    const backdropEl   = wrap.querySelector<HTMLElement>('.snake-desktop-backdrop')
     const desktopSvg   = wrap.querySelector<SVGSVGElement>('.snake-desktop .snake-svg')
     const desktopDraw  = wrap.querySelector<SVGPathElement>('.snake-desktop .snake-draw')
     const desktopNodes = Array.from(wrap.querySelectorAll<HTMLElement>('.snake-desktop .snake-node'))
     const pinWrap      = wrap.querySelector<HTMLElement>('.snake-desktop-pin')
     const PIN_TOP = 96 // px, entspricht --top: 6rem, lässt die feste Navbar frei
+    const SNAKE_HEIGHT = 700 // px, entspricht .snake-desktop { height: 700px }
     const mobileDraw   = wrap.querySelector<SVGPathElement>('.snake-mobile .snake-draw')
     const mobileItems  = Array.from(wrap.querySelectorAll<HTMLElement>('.snake-mobile-item'))
     const mobileQuery  = window.matchMedia('(max-width: 900px)')
@@ -912,14 +944,29 @@ const slides: GallerySlide[] =
         const progress = Math.min(Math.max(raw, 0), 1)
 
         if (desktopEl) {
-          if (pinRect.top > 0) {
+          // Schwellenwerte bewusst an PIN_TOP/SNAKE_HEIGHT ausgerichtet
+          // (nicht an 0/vh) -- nur so ist die Position an BEIDEN
+          // Übergängen exakt stetig, ohne Sprung:
+          //   Zustand A (relative): Element sitzt an Position 0 im
+          //     Wrapper, seine Viewport-Y ist also pinRect.top. Der
+          //     Wechsel zu "fixed" (Y=PIN_TOP) darf deshalb erst greifen,
+          //     wenn pinRect.top selbst PIN_TOP erreicht -- sonst
+          //     springt die Karte im Wechselmoment um die Differenz.
+          //   Zustand C (absolute, bottom:0): Element-Y wird
+          //     pinRect.bottom - SNAKE_HEIGHT. Der Wechsel weg von
+          //     "fixed" (Y=PIN_TOP) darf deshalb erst greifen, wenn
+          //     genau dieser Wert PIN_TOP erreicht, nicht erst wenn
+          //     pinRect.bottom die (von SNAKE_HEIGHT unabhängige)
+          //     Viewport-Höhe erreicht.
+          if (pinRect.top > PIN_TOP) {
             // Runway noch nicht erreicht -- normaler Fluss oben im Wrapper.
             desktopEl.style.position = 'relative'
             desktopEl.style.top = ''
             desktopEl.style.bottom = ''
             desktopEl.style.left = ''
             desktopEl.style.width = ''
-          } else if (pinRect.bottom <= vh) {
+            if (backdropEl) backdropEl.classList.remove('pinned')
+          } else if (pinRect.bottom - SNAKE_HEIGHT <= PIN_TOP) {
             // Runway durchgescrollt -- unten im Wrapper parken, damit der
             // Übergang zurück in den normalen Fluss nahtlos ist.
             desktopEl.style.position = 'absolute'
@@ -927,13 +974,18 @@ const slides: GallerySlide[] =
             desktopEl.style.bottom = '0'
             desktopEl.style.left = '0'
             desktopEl.style.width = '100%'
+            if (backdropEl) backdropEl.classList.remove('pinned')
           } else {
-            // Mittendrin -- am Viewport fixiert, Navbar bleibt frei.
+            // Mittendrin -- am Viewport fixiert, Navbar bleibt frei. Die
+            // volle-Viewport-Backdrop läuft NUR in diesem Zustand mit --
+            // genau hier war vorher noch der alte (nur container-breite)
+            // Hintergrund zu schmal/kurz, der Rest scrollte sichtbar weiter.
             desktopEl.style.position = 'fixed'
             desktopEl.style.top = `${PIN_TOP}px`
             desktopEl.style.bottom = ''
             desktopEl.style.left = `${pinRect.left}px`
             desktopEl.style.width = `${pinRect.width}px`
+            if (backdropEl) backdropEl.classList.add('pinned')
           }
         }
 
